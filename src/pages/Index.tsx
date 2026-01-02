@@ -3,12 +3,13 @@ import { Header } from '@/components/Header';
 import { TuneTypeSelector } from '@/components/TuneTypeSelector';
 import { CarSpecsForm } from '@/components/CarSpecsForm';
 import { CarSelector } from '@/components/CarSelector';
-import { TuneResults } from '@/components/TuneResults';
+import { ForzaTunePanel } from '@/components/ForzaTunePanel';
+import { SavedTunesManager } from '@/components/SavedTunesManager';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { CarSpecs, TuneType, calculateTune } from '@/lib/tuningCalculator';
-import { FH5Car } from '@/data/carDatabase';
-import { Calculator, RotateCcw, Share2 } from 'lucide-react';
+import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
+import { SavedTune } from '@/hooks/useSavedTunes';
+import { Calculator, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const defaultSpecs: CarSpecs = {
@@ -28,6 +29,8 @@ export default function Index() {
   const [selectedCar, setSelectedCar] = useState<FH5Car | null>(null);
 
   const tuneSettings = useMemo(() => calculateTune(specs, tuneType), [specs, tuneType]);
+  
+  const carName = selectedCar ? getCarDisplayName(selectedCar) : 'Custom Car';
 
   const handleCarSelect = (car: FH5Car) => {
     setSelectedCar(car);
@@ -52,43 +55,78 @@ export default function Index() {
     setSelectedCar(null);
   };
 
+  const handleLoadTune = (tune: SavedTune) => {
+    setSpecs(tune.specs);
+    setTuneType(tune.tuneType);
+    setShowResults(true);
+    // Try to find matching car
+    setSelectedCar(null);
+  };
+
   return (
     <div className="min-h-screen pb-16">
       <div className="container max-w-7xl mx-auto px-4">
         <Header />
         
-        <div className="grid lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <Card className="card-racing p-6">
+        <div className="grid lg:grid-cols-[400px_1fr] gap-6">
+          {/* Left Panel - Setup */}
+          <div className="space-y-4">
+            {/* Tune Type */}
+            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-4 border border-[hsl(220,15%,18%)]">
               <TuneTypeSelector selected={tuneType} onChange={setTuneType} />
-            </Card>
+            </div>
             
-            <Card className="card-racing p-6">
+            {/* Car Selector */}
+            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-4 border border-[hsl(220,15%,18%)]">
               <CarSelector onSelect={handleCarSelect} selectedCar={selectedCar} />
-            </Card>
+            </div>
             
-            <Card className="card-racing p-6">
-              <h3 className="font-display text-lg text-primary mb-6">Car Specifications</h3>
+            {/* Car Specs */}
+            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-4 border border-[hsl(220,15%,18%)]">
+              <h3 className="font-display text-sm text-[hsl(var(--racing-yellow))] mb-4 uppercase tracking-wider">
+                Car Specifications
+              </h3>
               <CarSpecsForm specs={specs} onChange={setSpecs} />
-            </Card>
+            </div>
 
+            {/* Actions */}
             <div className="flex gap-3">
-              <Button variant="racing" size="xl" onClick={handleCalculate} className="flex-1">
-                <Calculator className="w-5 h-5" />
+              <Button 
+                onClick={handleCalculate} 
+                className="flex-1 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(45,100%,45%)] text-black font-display uppercase tracking-wider h-12"
+              >
+                <Calculator className="w-5 h-5 mr-2" />
                 Calculate Tune
               </Button>
-              <Button variant="outline" size="xl" onClick={handleReset}>
+              <Button 
+                variant="outline" 
+                onClick={handleReset}
+                className="h-12 px-4 border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,15%)]"
+              >
                 <RotateCcw className="w-5 h-5" />
               </Button>
             </div>
+            
+            {/* Save/Load */}
+            <SavedTunesManager 
+              carName={carName}
+              tuneType={tuneType}
+              specs={specs}
+              onLoad={handleLoadTune}
+            />
           </div>
 
+          {/* Right Panel - Tune Results (Forza Style) */}
           <div className={showResults ? 'animate-fade-in' : 'opacity-30 pointer-events-none'}>
-            <TuneResults tune={tuneSettings} driveType={specs.driveType} tuneType={tuneType} />
+            <ForzaTunePanel 
+              tune={tuneSettings} 
+              driveType={specs.driveType} 
+              tuneType={tuneType} 
+            />
           </div>
         </div>
 
-        <footer className="mt-16 text-center text-muted-foreground text-sm">
+        <footer className="mt-16 text-center text-muted-foreground text-xs">
           <p>Based on community tuning guides. Not affiliated with Playground Games.</p>
         </footer>
       </div>
