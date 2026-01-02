@@ -18,6 +18,7 @@ const defaultSpecs: CarSpecs = {
   piClass: 'A',
   hasAero: false,
   tireCompound: 'sport',
+  horsepower: 400,
 };
 
 export default function Index() {
@@ -83,7 +84,7 @@ export default function Index() {
           </div>
 
           <div className={showResults ? 'animate-fade-in' : 'opacity-30 pointer-events-none'}>
-            <TuneResults tune={tuneSettings} driveType={specs.driveType} />
+            <TuneResults tune={tuneSettings} driveType={specs.driveType} tuneType={tuneType} />
           </div>
         </div>
 

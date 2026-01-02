@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Car, Gauge, Scale, Compass } from 'lucide-react';
+import { Car, Gauge, Scale, Compass, Zap } from 'lucide-react';
 
 interface CarSpecsFormProps {
   specs: CarSpecs;
@@ -21,30 +21,60 @@ export function CarSpecsForm({ specs, onChange }: CarSpecsFormProps) {
 
   return (
     <div className="space-y-8">
-      {/* Weight Input */}
-      <div className="space-y-3">
-        <Label className="flex items-center gap-2 text-base font-display">
-          <Scale className="w-5 h-5 text-primary" />
-          Vehicle Weight (lbs)
-        </Label>
-        <Input
-          type="number"
-          value={specs.weight}
-          onChange={(e) => updateSpec('weight', Number(e.target.value))}
-          className="bg-muted border-border focus:border-primary text-lg font-body h-12"
-          min={1000}
-          max={10000}
-        />
-        <Slider
-          value={[specs.weight]}
-          onValueChange={([v]) => updateSpec('weight', v)}
-          min={1000}
-          max={6000}
-          step={10}
-        />
-        <p className="text-xs text-muted-foreground">
-          Find this in the tuning menu under "Car Stats"
-        </p>
+      {/* Weight & Horsepower Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Weight Input */}
+        <div className="space-y-3">
+          <Label className="flex items-center gap-2 text-base font-display">
+            <Scale className="w-5 h-5 text-primary" />
+            Vehicle Weight (lbs)
+          </Label>
+          <Input
+            type="number"
+            value={specs.weight}
+            onChange={(e) => updateSpec('weight', Number(e.target.value))}
+            className="bg-muted border-border focus:border-primary text-lg font-body h-12"
+            min={1000}
+            max={10000}
+          />
+          <Slider
+            value={[specs.weight]}
+            onValueChange={([v]) => updateSpec('weight', v)}
+            min={1000}
+            max={6000}
+            step={10}
+          />
+        </div>
+
+        {/* Horsepower Input */}
+        <div className="space-y-3">
+          <Label className="flex items-center gap-2 text-base font-display">
+            <Zap className="w-5 h-5 text-racing-yellow" />
+            Horsepower (HP)
+          </Label>
+          <Input
+            type="number"
+            value={specs.horsepower || 400}
+            onChange={(e) => updateSpec('horsepower', Number(e.target.value))}
+            className="bg-muted border-border focus:border-primary text-lg font-body h-12"
+            min={50}
+            max={3000}
+          />
+          <Slider
+            value={[specs.horsepower || 400]}
+            onValueChange={([v]) => updateSpec('horsepower', v)}
+            min={100}
+            max={2000}
+            step={10}
+          />
+          <p className="text-xs text-muted-foreground">
+            {(specs.horsepower || 400) >= 400 ? (
+              <span className="text-racing-yellow">High power mode: Springs & dampers adjusted</span>
+            ) : (
+              'Standard power settings'
+            )}
+          </p>
+        </div>
       </div>
 
       {/* Weight Distribution */}

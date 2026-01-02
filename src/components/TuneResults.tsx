@@ -1,4 +1,4 @@
-import { TuneSettings, DriveType } from '@/lib/tuningCalculator';
+import { TuneSettings, DriveType, TuneType, tuneTypeDescriptions } from '@/lib/tuningCalculator';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { 
@@ -9,12 +9,14 @@ import {
   Layers, 
   Wind, 
   Cog, 
-  SquareSlash 
+  SquareSlash,
+  Lightbulb
 } from 'lucide-react';
 
 interface TuneResultsProps {
   tune: TuneSettings;
   driveType: DriveType;
+  tuneType: TuneType;
 }
 
 interface TuneCardProps {
@@ -78,10 +80,18 @@ function ValuePair({ frontLabel, rearLabel, front, rear, unit }: {
   );
 }
 
-export function TuneResults({ tune, driveType }: TuneResultsProps) {
+export function TuneResults({ tune, driveType, tuneType }: TuneResultsProps) {
+  const tuneInfo = tuneTypeDescriptions[tuneType];
+  
   return (
     <div className="space-y-4">
-      <h3 className="font-display text-xl text-gradient-racing mb-6">Calculated Tune Settings</h3>
+      <div className="flex items-center gap-3 mb-6">
+        <span className="text-3xl">{tuneInfo.icon}</span>
+        <div>
+          <h3 className="font-display text-xl text-gradient-racing">{tuneInfo.title} Tune Settings</h3>
+          <p className="text-sm text-muted-foreground">{tuneInfo.description}</p>
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {/* Tires */}
@@ -93,13 +103,18 @@ export function TuneResults({ tune, driveType }: TuneResultsProps) {
             rear={tune.tirePressureRear}
             unit="PSI"
           />
+          {tuneType === 'drift' && (
+            <p className="text-xs text-racing-yellow mt-2">
+              ⚠️ Low front pressure (14.5 PSI) maximizes friction for wide angles
+            </p>
+          )}
         </TuneCard>
 
         {/* Gearing */}
         <TuneCard title="Gearing" icon={<Settings className="w-5 h-5" />} accentColor="racing-yellow">
           <ValueRow label="Final Drive" value={tune.finalDrive.toFixed(2)} highlight />
           <p className="text-xs text-muted-foreground mt-2">
-            Adjust individual gears based on track and preference
+            {tune.gearingNote}
           </p>
         </TuneCard>
 
@@ -231,14 +246,29 @@ export function TuneResults({ tune, driveType }: TuneResultsProps) {
         </TuneCard>
       </div>
 
-      {/* Tips */}
+      {/* Tune-Specific Tips */}
       <Card className="card-racing p-4 mt-6">
-        <h4 className="font-display text-primary text-sm uppercase tracking-wider mb-3">Pro Tips</h4>
+        <h4 className="font-display text-primary text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Lightbulb className="w-4 h-4" />
+          {tuneInfo.title} Tuning Tips
+        </h4>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          {tuneInfo.tips.map((tip, i) => (
+            <li key={i}>• <span className="text-foreground">{tip}</span></li>
+          ))}
+        </ul>
+      </Card>
+
+      {/* General Tips */}
+      <Card className="card-racing p-4">
+        <h4 className="font-display text-racing-cyan text-sm uppercase tracking-wider mb-3">Fine-Tuning Guide</h4>
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li>• <span className="text-foreground">Test and adjust</span> — These are starting points. Fine-tune based on feel.</li>
-          <li>• <span className="text-foreground">Tire temps</span> — Check telemetry for even heat distribution.</li>
-          <li>• <span className="text-foreground">Understeer fix</span> — Soften front ARB or add front downforce.</li>
-          <li>• <span className="text-foreground">Oversteer fix</span> — Soften rear ARB or add rear downforce.</li>
+          <li>• <span className="text-foreground">Tire temps</span> — Check telemetry for even heat distribution (inside/outside).</li>
+          <li>• <span className="text-foreground">Understeer fix</span> — Soften front ARB, add front downforce, or reduce front spring rate.</li>
+          <li>• <span className="text-foreground">Oversteer fix</span> — Soften rear ARB, add rear downforce, or reduce rear spring rate.</li>
+          <li>• <span className="text-foreground">Corner entry loose</span> — Increase rear rebound damping or lower rear decel diff.</li>
+          <li>• <span className="text-foreground">Corner exit loose</span> — Lower rear accel diff or stiffen rear bump damping.</li>
         </ul>
       </Card>
     </div>
