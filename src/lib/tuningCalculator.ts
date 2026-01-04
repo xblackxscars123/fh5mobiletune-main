@@ -15,7 +15,10 @@ export interface CarSpecs {
   rearDownforce?: number;
   tireCompound: 'street' | 'sport' | 'semi-slick' | 'slick' | 'rally' | 'offroad' | 'drag';
   horsepower?: number; // optional for high-power adjustments
+  gearCount?: number; // 4-10 gears
 }
+
+export type UnitSystem = 'imperial' | 'metric';
 
 export interface TuneSettings {
   // Tires
@@ -24,6 +27,7 @@ export interface TuneSettings {
   
   // Gearing
   finalDrive: number;
+  gearRatios: number[]; // Individual gear ratios (1st through nth)
   gearingNote: string;
   
   // Alignment
@@ -200,6 +204,91 @@ const damperOffsets: Record<TuneType, { frontRebound: number; rearRebound: numbe
   rally: { frontRebound: -1.0, rearRebound: -0.5, frontBump: -1.0, rearBump: -0.5 },
   street: { frontRebound: 0, rearRebound: 0, frontBump: 0, rearBump: 0 },
 };
+
+// Calculate individual gear ratios based on final drive and gear count
+// Uses geometric progression formula common in racing games
+function calculateGearRatios(finalDrive: number, gearCount: number, tuneType: TuneType): number[] {
+  // Base ratios for a typical 6-speed (based on real transmission data)
+  const baseRatios6Speed: Record<TuneType, number[]> = {
+    grip: [3.36, 2.09, 1.49, 1.13, 0.88, 0.69],
+    drift: [3.82, 2.36, 1.69, 1.28, 1.00, 0.79],
+    offroad: [3.50, 2.20, 1.55, 1.18, 0.92, 0.73],
+    drag: [2.97, 1.90, 1.36, 1.03, 0.81, 0.64],
+    rally: [3.45, 2.15, 1.52, 1.15, 0.90, 0.71],
+    street: [3.30, 2.05, 1.46, 1.11, 0.87, 0.68],
+  };
+  
+  const base = baseRatios6Speed[tuneType];
+  const firstGear = base[0];
+  const lastGear = base[5];
+  
+  // Calculate ratio spread factor
+  const spreadFactor = Math.pow(lastGear / firstGear, 1 / (gearCount - 1));
+  
+  // Generate gear ratios using geometric progression
+  const ratios: number[] = [];
+  for (let i = 0; i < gearCount; i++) {
+    const ratio = firstGear * Math.pow(spreadFactor, i);
+    ratios.push(Math.round(ratio * 100) / 100);
+  }
+  
+  return ratios;
+}
+
+// Unit conversion utilities
+export const unitConversions = {
+  // Weight
+  lbsToKg: (lbs: number) => Math.round(lbs * 0.453592),
+  kgToLbs: (kg: number) => Math.round(kg * 2.20462),
+  
+  // Pressure
+  psiToBar: (psi: number) => Math.round(psi * 0.0689476 * 100) / 100,
+  barToPsi: (bar: number) => Math.round(bar * 14.5038 * 10) / 10,
+  
+  // Length (ride height, springs)
+  inchesToCm: (inches: number) => Math.round(inches * 2.54 * 10) / 10,
+  cmToInches: (cm: number) => Math.round(cm / 2.54 * 10) / 10,
+  
+  // Spring rate
+  lbInToKgMm: (lbIn: number) => Math.round(lbIn * 0.017858 * 100) / 100,
+  kgMmToLbIn: (kgMm: number) => Math.round(kgMm / 0.017858),
+  
+  // Force (aero)
+  lbsToN: (lbs: number) => Math.round(lbs * 4.44822),
+  nToLbs: (n: number) => Math.round(n / 4.44822),
+};
+
+export function convertTuneToUnits(tune: TuneSettings, toSystem: UnitSystem): TuneSettings {
+  if (toSystem === 'imperial') return tune; // Already in imperial
+  
+  return {
+    ...tune,
+    tirePressureFront: unitConversions.psiToBar(tune.tirePressureFront),
+    tirePressureRear: unitConversions.psiToBar(tune.tirePressureRear),
+    springsFront: unitConversions.lbInToKgMm(tune.springsFront),
+    springsRear: unitConversions.lbInToKgMm(tune.springsRear),
+    rideHeightFront: unitConversions.inchesToCm(tune.rideHeightFront),
+    rideHeightRear: unitConversions.inchesToCm(tune.rideHeightRear),
+    aeroFront: unitConversions.lbsToN(tune.aeroFront),
+    aeroRear: unitConversions.lbsToN(tune.aeroRear),
+  };
+}
+
+export function getUnitLabels(system: UnitSystem) {
+  return system === 'imperial' ? {
+    pressure: 'PSI',
+    springs: 'LB/IN',
+    rideHeight: 'IN',
+    aero: 'LB',
+    weight: 'lbs',
+  } : {
+    pressure: 'BAR',
+    springs: 'KG/MM',
+    rideHeight: 'CM',
+    aero: 'N',
+    weight: 'kg',
+  };
+}
 
 export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings {
   const { 
@@ -407,6 +496,10 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   
   let finalDrive = baseFinalDrive + gearingOffsets[tuneType];
   
+  // Calculate individual gear ratios based on final drive and gear count
+  const gearCount = specs.gearCount || 6;
+  const gearRatios = calculateGearRatios(finalDrive, gearCount, tuneType);
+  
   // Gearing note
   const gearingNotes: Record<TuneType, string> = {
     grip: 'Shorter gearing (+0.5) for better corner exit acceleration',
@@ -421,6 +514,7 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
     tirePressureFront: Math.round(tirePressureFront * 10) / 10,
     tirePressureRear: Math.round(tirePressureRear * 10) / 10,
     finalDrive: Math.round(finalDrive * 100) / 100,
+    gearRatios,
     gearingNote: gearingNotes[tuneType],
     camberFront: Math.round(camberFront * 10) / 10,
     camberRear: Math.round(camberRear * 10) / 10,
