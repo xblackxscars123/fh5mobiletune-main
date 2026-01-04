@@ -6,7 +6,7 @@ import { CarSelector } from '@/components/CarSelector';
 import { ForzaTunePanel } from '@/components/ForzaTunePanel';
 import { SavedTunesManager } from '@/components/SavedTunesManager';
 import { Button } from '@/components/ui/button';
-import { CarSpecs, TuneType, calculateTune } from '@/lib/tuningCalculator';
+import { CarSpecs, TuneType, calculateTune, UnitSystem } from '@/lib/tuningCalculator';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
 import { SavedTune } from '@/hooks/useSavedTunes';
 import { Calculator, RotateCcw } from 'lucide-react';
@@ -20,6 +20,7 @@ const defaultSpecs: CarSpecs = {
   hasAero: false,
   tireCompound: 'sport',
   horsepower: 400,
+  gearCount: 6,
 };
 
 export default function Index() {
@@ -27,6 +28,7 @@ export default function Index() {
   const [specs, setSpecs] = useState<CarSpecs>(defaultSpecs);
   const [showResults, setShowResults] = useState(false);
   const [selectedCar, setSelectedCar] = useState<FH5Car | null>(null);
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
 
   const tuneSettings = useMemo(() => calculateTune(specs, tuneType), [specs, tuneType]);
   
@@ -86,7 +88,12 @@ export default function Index() {
               <h3 className="font-display text-sm text-[hsl(var(--racing-yellow))] mb-4 uppercase tracking-wider">
                 Car Specifications
               </h3>
-              <CarSpecsForm specs={specs} onChange={setSpecs} />
+              <CarSpecsForm 
+                specs={specs} 
+                onChange={setSpecs} 
+                unitSystem={unitSystem}
+                onUnitSystemChange={setUnitSystem}
+              />
             </div>
 
             {/* Actions */}
@@ -121,7 +128,8 @@ export default function Index() {
             <ForzaTunePanel 
               tune={tuneSettings} 
               driveType={specs.driveType} 
-              tuneType={tuneType} 
+              tuneType={tuneType}
+              unitSystem={unitSystem}
             />
           </div>
         </div>

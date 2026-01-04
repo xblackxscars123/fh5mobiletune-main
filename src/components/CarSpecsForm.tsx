@@ -1,48 +1,85 @@
-import { CarSpecs, DriveType, piClasses, tireCompounds } from '@/lib/tuningCalculator';
+import { CarSpecs, DriveType, piClasses, tireCompounds, UnitSystem } from '@/lib/tuningCalculator';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Car, Gauge, Scale, Compass, Zap } from 'lucide-react';
+import { Car, Gauge, Scale, Compass, Zap, Settings2 } from 'lucide-react';
 
 interface CarSpecsFormProps {
   specs: CarSpecs;
   onChange: (specs: CarSpecs) => void;
+  unitSystem: UnitSystem;
+  onUnitSystemChange: (system: UnitSystem) => void;
 }
 
 const driveTypes: DriveType[] = ['RWD', 'FWD', 'AWD'];
+const gearCounts = [4, 5, 6, 7, 8, 9, 10];
 
-export function CarSpecsForm({ specs, onChange }: CarSpecsFormProps) {
+export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }: CarSpecsFormProps) {
   const updateSpec = <K extends keyof CarSpecs>(key: K, value: CarSpecs[K]) => {
     onChange({ ...specs, [key]: value });
   };
 
+  const weightLabel = unitSystem === 'imperial' ? 'lbs' : 'kg';
+  const displayWeight = unitSystem === 'imperial' ? specs.weight : Math.round(specs.weight * 0.453592);
+
   return (
     <div className="space-y-8">
+      {/* Unit System Toggle */}
+      <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
+        <Label className="flex items-center gap-2 text-base font-display">
+          <Settings2 className="w-5 h-5 text-primary" />
+          Unit System
+        </Label>
+        <div className="flex gap-2">
+          <Button
+            variant={unitSystem === 'imperial' ? 'tuneTypeActive' : 'tuneType'}
+            onClick={() => onUnitSystemChange('imperial')}
+            size="sm"
+          >
+            Imperial (lbs, PSI, in)
+          </Button>
+          <Button
+            variant={unitSystem === 'metric' ? 'tuneTypeActive' : 'tuneType'}
+            onClick={() => onUnitSystemChange('metric')}
+            size="sm"
+          >
+            Metric (kg, bar, cm)
+          </Button>
+        </div>
+      </div>
+
       {/* Weight & Horsepower Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Weight Input */}
         <div className="space-y-3">
           <Label className="flex items-center gap-2 text-base font-display">
             <Scale className="w-5 h-5 text-primary" />
-            Vehicle Weight (lbs)
+            Vehicle Weight ({weightLabel})
           </Label>
           <Input
             type="number"
-            value={specs.weight}
-            onChange={(e) => updateSpec('weight', Number(e.target.value))}
+            value={displayWeight}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              const lbsValue = unitSystem === 'imperial' ? value : Math.round(value * 2.20462);
+              updateSpec('weight', lbsValue);
+            }}
             className="bg-muted border-border focus:border-primary text-lg font-body h-12"
-            min={1000}
-            max={10000}
+            min={unitSystem === 'imperial' ? 1000 : 454}
+            max={unitSystem === 'imperial' ? 10000 : 4536}
           />
           <Slider
-            value={[specs.weight]}
-            onValueChange={([v]) => updateSpec('weight', v)}
-            min={1000}
-            max={6000}
-            step={10}
+            value={[displayWeight]}
+            onValueChange={([v]) => {
+              const lbsValue = unitSystem === 'imperial' ? v : Math.round(v * 2.20462);
+              updateSpec('weight', lbsValue);
+            }}
+            min={unitSystem === 'imperial' ? 1000 : 454}
+            max={unitSystem === 'imperial' ? 6000 : 2722}
+            step={unitSystem === 'imperial' ? 10 : 5}
           />
         </div>
 
@@ -75,6 +112,30 @@ export function CarSpecsForm({ specs, onChange }: CarSpecsFormProps) {
             )}
           </p>
         </div>
+      </div>
+
+      {/* Gear Count */}
+      <div className="space-y-3">
+        <Label className="flex items-center gap-2 text-base font-display">
+          <Settings2 className="w-5 h-5 text-racing-cyan" />
+          Number of Gears
+        </Label>
+        <div className="flex gap-2 flex-wrap">
+          {gearCounts.map((count) => (
+            <Button
+              key={count}
+              variant={(specs.gearCount || 6) === count ? 'tuneTypeActive' : 'tuneType'}
+              onClick={() => updateSpec('gearCount', count)}
+              size="sm"
+              className="min-w-[50px]"
+            >
+              {count}
+            </Button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Select the number of forward gears in your transmission
+        </p>
       </div>
 
       {/* Weight Distribution */}
