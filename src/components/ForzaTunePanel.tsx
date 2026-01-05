@@ -238,15 +238,18 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
         return (
           <div className="space-y-1">
             <h3 className="text-sm text-muted-foreground uppercase mb-4">Braking Force</h3>
-            <ForzaSlider label="BALANCE" value={tune.brakeBalance} min={30} max={70} unit="%" leftLabel="FRONT" rightLabel="REAR" isHighlighted />
+            <ForzaSlider label="BALANCE (SLIDER)" value={tune.brakeBalance} min={30} max={70} unit="%" leftLabel="FRONT" rightLabel="REAR" isHighlighted />
             <ForzaSlider label="PRESSURE" value={tune.brakePressure} min={50} max={200} unit="%" leftLabel="LOW" rightLabel="HIGH" />
             
             <div className="mt-6 p-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
-              <p className="text-xs text-[hsl(var(--racing-red))]">
-                Lower % = MORE braking on Front | Higher % = MORE on Rear
+              <p className="text-xs text-[hsl(var(--racing-yellow))] font-bold mb-2">
+                ⚠️ FH5 SLIDER ANOMALY
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Twitchy under braking? Reduce pressure. Lock-ups? Lower brake balance.
+              <p className="text-xs text-[hsl(var(--racing-cyan))]">
+                {tune.brakeBalanceNote}
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                The in-game slider is inverted! Lower values = more front braking.
               </p>
             </div>
           </div>
