@@ -1,27 +1,79 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ShopifyProduct, fetchProducts } from '@/lib/shopify';
 import { ProductCard } from '@/components/shop/ProductCard';
 import { CartDrawer } from '@/components/shop/CartDrawer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ShoppingCart, Car, Loader2, Youtube, ChevronDown, ChevronUp, Music2 } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Car, Loader2, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Music2, ChevronDown } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import shopHeroBg from '@/assets/shop-hero-bg.jpg';
 
-// Preset playlists for users to choose from
-const PLAYLISTS = [
-  { id: 'PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf', name: 'Lo-fi Beats', icon: '🎧' },
-  { id: 'PLChOO_ZAB22WuyDODJ3kjJiU0oQzWOTyb', name: 'Synthwave', icon: '🌆' },
-  { id: 'PLw-VjHDlEOgtl4ldJJ8Arb2WeSlAyBkJS', name: 'Driving Music', icon: '🚗' },
-  { id: 'PL4o29bINVT4EG_y-k5jGoOu3-Am8Nvi10', name: 'Night Drive', icon: '🌙' },
-];
+// Genre playlists with royalty-free tracks from Pixabay/Free sources
+const GENRE_PLAYLISTS: Record<string, { name: string; icon: string; tracks: { title: string; artist: string; url: string; duration: number }[] }> = {
+  lofi: {
+    name: 'Lo-fi Beats',
+    icon: '🎧',
+    tracks: [
+      { title: 'Chill Vibes', artist: 'LoFi Zone', url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3', duration: 147 },
+      { title: 'Late Night Study', artist: 'Ambient Beats', url: 'https://cdn.pixabay.com/download/audio/2022/10/25/audio_946bc3eb61.mp3', duration: 130 },
+      { title: 'Coffee Shop', artist: 'Mellow Sounds', url: 'https://cdn.pixabay.com/download/audio/2023/07/30/audio_e5cc05e664.mp3', duration: 108 },
+    ]
+  },
+  synthwave: {
+    name: 'Synthwave',
+    icon: '🌆',
+    tracks: [
+      { title: 'Neon Nights', artist: 'Retro Wave', url: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_0f5c9a5d1a.mp3', duration: 156 },
+      { title: 'Cyber Drive', artist: 'Future Sound', url: 'https://cdn.pixabay.com/download/audio/2022/10/30/audio_f6a4dbc3ad.mp3', duration: 178 },
+      { title: 'Digital Dreams', artist: 'Synth Masters', url: 'https://cdn.pixabay.com/download/audio/2023/03/23/audio_1e4e443d01.mp3', duration: 142 },
+    ]
+  },
+  driving: {
+    name: 'Driving Music',
+    icon: '🚗',
+    tracks: [
+      { title: 'Highway Rush', artist: 'Road Trip', url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0ef98e61c.mp3', duration: 125 },
+      { title: 'Open Road', artist: 'Speed Demons', url: 'https://cdn.pixabay.com/download/audio/2021/11/25/audio_5c46b1eb1f.mp3', duration: 168 },
+      { title: 'Full Throttle', artist: 'Engine Sound', url: 'https://cdn.pixabay.com/download/audio/2022/08/02/audio_884fe92c21.mp3', duration: 134 },
+    ]
+  },
+  electronic: {
+    name: 'Electronic',
+    icon: '⚡',
+    tracks: [
+      { title: 'Bass Drop', artist: 'EDM Collective', url: 'https://cdn.pixabay.com/download/audio/2022/04/27/audio_67bcefcfe4.mp3', duration: 189 },
+      { title: 'Energy Surge', artist: 'Beat Factory', url: 'https://cdn.pixabay.com/download/audio/2023/09/25/audio_f2b1b0c0de.mp3', duration: 145 },
+      { title: 'Club Night', artist: 'DJ Pulse', url: 'https://cdn.pixabay.com/download/audio/2022/11/22/audio_dc39bbc9c4.mp3', duration: 167 },
+    ]
+  },
+};
+
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
 
 export default function Shop() {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
-  const [selectedPlaylist, setSelectedPlaylist] = useState(PLAYLISTS[0]);
-  const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
+  
+  // Audio player state
+  const [selectedGenre, setSelectedGenre] = useState<string>('lofi');
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(0.7);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showGenreMenu, setShowGenreMenu] = useState(false);
+  const [isPlayerExpanded, setIsPlayerExpanded] = useState(true);
+  
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  const currentPlaylist = GENRE_PLAYLISTS[selectedGenre];
+  const currentTrack = currentPlaylist.tracks[currentTrackIndex];
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -39,6 +91,113 @@ export default function Shop() {
 
     loadProducts();
   }, []);
+
+  // Initialize audio element
+  useEffect(() => {
+    const audio = new Audio();
+    audio.volume = volume;
+    audioRef.current = audio;
+
+    audio.addEventListener('timeupdate', () => {
+      setCurrentTime(audio.currentTime);
+    });
+
+    audio.addEventListener('loadedmetadata', () => {
+      setDuration(audio.duration);
+    });
+
+    audio.addEventListener('ended', () => {
+      handleNext();
+    });
+
+    audio.addEventListener('error', (e) => {
+      console.error('Audio error:', e);
+    });
+
+    return () => {
+      audio.pause();
+      audio.src = '';
+    };
+  }, []);
+
+  // Load track when genre or track changes
+  useEffect(() => {
+    if (audioRef.current && currentTrack) {
+      const wasPlaying = isPlaying;
+      audioRef.current.src = currentTrack.url;
+      audioRef.current.load();
+      
+      if (wasPlaying) {
+        audioRef.current.play().catch(console.error);
+      }
+    }
+  }, [selectedGenre, currentTrackIndex]);
+
+  // Update volume
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
+    }
+  }, [volume, isMuted]);
+
+  const handlePlayPause = () => {
+    if (!audioRef.current) return;
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(console.error);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentTime > 3) {
+      // Restart current track if more than 3 seconds in
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+      }
+    } else {
+      setCurrentTrackIndex((prev) => 
+        prev === 0 ? currentPlaylist.tracks.length - 1 : prev - 1
+      );
+    }
+  };
+
+  const handleNext = () => {
+    setCurrentTrackIndex((prev) => 
+      prev === currentPlaylist.tracks.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const handleSeek = (value: number[]) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = value[0];
+      setCurrentTime(value[0]);
+    }
+  };
+
+  const handleVolumeChange = (value: number[]) => {
+    setVolume(value[0]);
+    setIsMuted(false);
+  };
+
+  const handleGenreChange = (genreKey: string) => {
+    setSelectedGenre(genreKey);
+    setCurrentTrackIndex(0);
+    setShowGenreMenu(false);
+    
+    // Auto-play when changing genre
+    if (audioRef.current) {
+      setTimeout(() => {
+        audioRef.current?.play().then(() => {
+          setIsPlaying(true);
+        }).catch(console.error);
+      }, 100);
+    }
+  };
 
   return (
     <div className="min-h-screen pb-8 md:pb-16 relative">
@@ -91,85 +250,43 @@ export default function Shop() {
           </div>
         </div>
 
-        {/* Collapsible YouTube Music Player */}
+        {/* Audio Player */}
         <div className="mb-8 bg-[hsl(220,18%,8%)/0.9] backdrop-blur-md border border-[hsl(220,15%,25%)] rounded-lg overflow-hidden">
-          {/* Player Header - Always Visible */}
-          <div 
-            className="p-4 md:p-5 cursor-pointer hover:bg-[hsl(220,15%,12%)] transition-colors"
-            onClick={() => setIsPlayerExpanded(!isPlayerExpanded)}
-          >
-            <div className="flex items-center justify-between">
+          {/* Player Header */}
+          <div className="p-4 md:p-5">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-red-500 flex items-center justify-center">
-                  <Youtube className="w-5 h-5 text-white" />
+                <div className={`w-12 h-12 rounded-lg bg-gradient-to-br from-[hsl(var(--racing-orange))] to-[hsl(var(--racing-orange)/0.6)] flex items-center justify-center ${isPlaying ? 'animate-pulse' : ''}`}>
+                  <Music2 className="w-6 h-6 text-black" />
                 </div>
                 <div>
-                  <h3 className="font-display text-sm md:text-base uppercase tracking-wide text-foreground flex items-center gap-2">
-                    Racing Vibes
-                    <span className="text-xs font-normal normal-case text-muted-foreground">
-                      {isPlayerExpanded ? 'Click to minimize' : 'Click to expand'}
-                    </span>
-                  </h3>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Music2 className="w-3 h-3" />
-                    {selectedPlaylist.icon} {selectedPlaylist.name}
-                  </p>
+                  <h3 className="font-medium text-foreground">{currentTrack.title}</h3>
+                  <p className="text-xs text-muted-foreground">{currentTrack.artist}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <a 
-                  href={`https://www.youtube.com/playlist?list=${selectedPlaylist.id}`}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-xs text-red-500 hover:underline hidden sm:flex items-center gap-1"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Open on YouTube <Youtube className="w-3 h-3" />
-                </a>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 hover:bg-[hsl(220,15%,20%)]"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsPlayerExpanded(!isPlayerExpanded);
-                  }}
-                >
-                  {isPlayerExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Expandable Content */}
-          <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isPlayerExpanded ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
-            {/* Playlist Selector */}
-            <div className="px-4 pb-3 border-b border-[hsl(220,15%,20%)]">
+              
+              {/* Genre Selector */}
               <div className="relative">
                 <Button
                   variant="outline"
-                  className="w-full justify-between bg-[hsl(220,15%,12%)] border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,18%)]"
-                  onClick={() => setShowPlaylistMenu(!showPlaylistMenu)}
+                  size="sm"
+                  className="bg-[hsl(220,15%,12%)] border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,18%)] gap-2"
+                  onClick={() => setShowGenreMenu(!showGenreMenu)}
                 >
-                  <span className="flex items-center gap-2">
-                    <span>{selectedPlaylist.icon}</span>
-                    <span>{selectedPlaylist.name}</span>
-                  </span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showPlaylistMenu ? 'rotate-180' : ''}`} />
+                  <span>{currentPlaylist.icon}</span>
+                  <span className="hidden sm:inline">{currentPlaylist.name}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showGenreMenu ? 'rotate-180' : ''}`} />
                 </Button>
                 
-                {showPlaylistMenu && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,25%)] rounded-md overflow-hidden z-20">
-                    {PLAYLISTS.map((playlist) => (
+                {showGenreMenu && (
+                  <div className="absolute top-full right-0 mt-1 bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,25%)] rounded-md overflow-hidden z-20 min-w-[160px]">
+                    {Object.entries(GENRE_PLAYLISTS).map(([key, playlist]) => (
                       <button
-                        key={playlist.id}
+                        key={key}
                         className={`w-full px-4 py-2.5 text-left text-sm hover:bg-[hsl(220,15%,18%)] flex items-center gap-2 transition-colors ${
-                          selectedPlaylist.id === playlist.id ? 'bg-[hsl(var(--racing-orange)/0.1)] text-[hsl(var(--racing-orange))]' : ''
+                          selectedGenre === key ? 'bg-[hsl(var(--racing-orange)/0.1)] text-[hsl(var(--racing-orange))]' : ''
                         }`}
-                        onClick={() => {
-                          setSelectedPlaylist(playlist);
-                          setShowPlaylistMenu(false);
-                        }}
+                        onClick={() => handleGenreChange(key)}
                       >
                         <span>{playlist.icon}</span>
                         <span>{playlist.name}</span>
@@ -179,18 +296,96 @@ export default function Shop() {
                 )}
               </div>
             </div>
-            
-            {/* Embedded YouTube Player */}
-            <div className="aspect-video w-full">
-              <iframe
-                width="100%"
-                height="100%"
-                src={`https://www.youtube.com/embed/videoseries?list=${selectedPlaylist.id}&autoplay=0&rel=0`}
-                title="Racing Vibes Playlist"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="border-0"
+
+            {/* Progress Bar */}
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-xs text-muted-foreground w-10 text-right">
+                {formatTime(currentTime)}
+              </span>
+              <Slider
+                value={[currentTime]}
+                max={duration || 100}
+                step={1}
+                onValueChange={handleSeek}
+                className="flex-1"
               />
+              <span className="text-xs text-muted-foreground w-10">
+                {formatTime(duration)}
+              </span>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 hover:bg-[hsl(220,15%,15%)]"
+                  onClick={handlePrevious}
+                >
+                  <SkipBack className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  className={`h-11 w-11 ${isPlaying ? 'bg-green-500 hover:bg-green-600' : 'bg-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.8)]'} text-black`}
+                  onClick={handlePlayPause}
+                >
+                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 hover:bg-[hsl(220,15%,15%)]"
+                  onClick={handleNext}
+                >
+                  <SkipForward className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Volume Control */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 hover:bg-[hsl(220,15%,15%)]"
+                  onClick={() => setIsMuted(!isMuted)}
+                >
+                  {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                </Button>
+                <Slider
+                  value={[isMuted ? 0 : volume]}
+                  max={1}
+                  step={0.01}
+                  onValueChange={handleVolumeChange}
+                  className="w-20"
+                />
+              </div>
+            </div>
+
+            {/* Track List */}
+            <div className="mt-4 pt-4 border-t border-[hsl(220,15%,20%)]">
+              <div className="flex flex-wrap gap-2">
+                {currentPlaylist.tracks.map((track, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setCurrentTrackIndex(index);
+                      if (audioRef.current) {
+                        setTimeout(() => {
+                          audioRef.current?.play().then(() => setIsPlaying(true)).catch(console.error);
+                        }, 100);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs transition-colors ${
+                      currentTrackIndex === index
+                        ? 'bg-[hsl(var(--racing-orange))] text-black font-medium'
+                        : 'bg-[hsl(220,15%,15%)] text-muted-foreground hover:bg-[hsl(220,15%,20%)]'
+                    }`}
+                  >
+                    {track.title}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
