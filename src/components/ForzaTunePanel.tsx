@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { TuneSettings, DriveType, TuneType, tuneTypeDescriptions, UnitSystem, convertTuneToUnits, getUnitLabels } from '@/lib/tuningCalculator';
 import { cn } from '@/lib/utils';
+import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 
 interface ForzaTunePanelProps {
   tune: TuneSettings;
@@ -104,6 +105,27 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
   // Convert tune to selected unit system
   const displayTune = convertTuneToUnits(tune, unitSystem);
   const units = getUnitLabels(unitSystem);
+
+  // Swipe gesture handlers for mobile tab navigation
+  const goToNextTab = useCallback(() => {
+    const currentIndex = tabs.findIndex(t => t.id === activeTab);
+    if (currentIndex < tabs.length - 1) {
+      setActiveTab(tabs[currentIndex + 1].id);
+    }
+  }, [activeTab]);
+
+  const goToPrevTab = useCallback(() => {
+    const currentIndex = tabs.findIndex(t => t.id === activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(tabs[currentIndex - 1].id);
+    }
+  }, [activeTab]);
+
+  const swipeHandlers = useSwipeGesture({
+    onSwipeLeft: goToNextTab,
+    onSwipeRight: goToPrevTab,
+    threshold: 50,
+  });
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -345,8 +367,13 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
           </div>
         </div>
         
-        {/* Right: Tune Controls */}
-        <div className="flex-1 p-3 sm:p-4 min-h-[300px] sm:min-h-[400px]">
+        {/* Right: Tune Controls - Swipeable on mobile */}
+        <div 
+          className="flex-1 p-3 sm:p-4 min-h-[300px] sm:min-h-[400px] touch-pan-y"
+          onTouchStart={swipeHandlers.onTouchStart}
+          onTouchMove={swipeHandlers.onTouchMove}
+          onTouchEnd={swipeHandlers.onTouchEnd}
+        >
           {renderTabContent()}
         </div>
       </div>
