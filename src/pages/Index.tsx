@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TuneTypeSelector } from '@/components/TuneTypeSelector';
 import { CarSpecsForm } from '@/components/CarSpecsForm';
@@ -9,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { CarSpecs, TuneType, calculateTune, UnitSystem } from '@/lib/tuningCalculator';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
 import { SavedTune } from '@/hooks/useSavedTunes';
-import { Calculator, RotateCcw } from 'lucide-react';
+import { Calculator, RotateCcw, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 
 const defaultSpecs: CarSpecs = {
@@ -78,14 +79,44 @@ export default function Index() {
           <p className="text-xs text-muted-foreground mt-1 hidden sm:block">
             Got ideas, found bugs, or want to contribute? Drop a comment on the Reddit post!
           </p>
-          <a 
-            href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 mt-2 md:mt-3 px-3 md:px-4 py-1.5 md:py-2 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-xs md:text-sm rounded-md transition-colors"
-          >
-            ☕ Support Development
-          </a>
+          {/* Desktop: Side by side buttons */}
+          <div className="hidden sm:flex items-center justify-center gap-3 mt-2 md:mt-3">
+            <a 
+              href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-xs md:text-sm rounded-md transition-colors"
+            >
+              ☕ Support Development
+            </a>
+            <Link 
+              to="/shop"
+              className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.8)] text-black font-medium text-xs md:text-sm rounded-md transition-colors shadow-[0_0_15px_hsl(var(--racing-orange)/0.5),0_0_30px_hsl(var(--racing-orange)/0.3)] hover:shadow-[0_0_20px_hsl(var(--racing-orange)/0.7),0_0_40px_hsl(var(--racing-orange)/0.4)] animate-pulse"
+              style={{ animationDuration: '2s' }}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              🔥 Garage Shop
+            </Link>
+          </div>
+          {/* Mobile: Stack vertically */}
+          <div className="flex sm:hidden flex-col items-center gap-2 mt-2">
+            <a 
+              href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-xs rounded-md transition-colors"
+            >
+              ☕ Support Development
+            </a>
+            <Link 
+              to="/shop"
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.8)] text-black font-medium text-xs rounded-md transition-colors shadow-[0_0_15px_hsl(var(--racing-orange)/0.5),0_0_30px_hsl(var(--racing-orange)/0.3)] animate-pulse"
+              style={{ animationDuration: '2s' }}
+            >
+              <ShoppingBag className="w-3 h-3" />
+              🔥 Garage Shop
+            </Link>
+          </div>
         </div>
         
         {/* Mobile: Stack vertically, Desktop: Side by side */}
