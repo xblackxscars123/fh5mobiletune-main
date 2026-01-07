@@ -110,6 +110,27 @@ export default function Shop() {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const categories = ['All', 'Detailing', 'Electronics', 'Interior', 'Tools'] as const;
+  type Category = typeof categories[number];
+  const [selectedCategory, setSelectedCategory] = useState<Category>('All');
+
+  const normalizedCategory = selectedCategory.toLowerCase();
+
+  const filteredProducts =
+    selectedCategory === 'All'
+      ? products
+      : products.filter(({ node }) => {
+          const productType = (node.productType || '').toLowerCase();
+          const tags = (node.tags || []).map(t => t.toLowerCase());
+          return productType === normalizedCategory || tags.includes(normalizedCategory);
+        });
+
+  const featuredProducts = products
+    .filter(({ node }) =>
+      (node.tags || []).some(t => ['featured', 'best-seller', 'bestseller', 'best_seller'].includes(t.toLowerCase())),
+    )
+    .slice(0, 4);
   
   // Audio player state
   const [selectedGenre, setSelectedGenre] = useState<string>('lofi');
@@ -461,6 +482,50 @@ export default function Shop() {
           </div>
         </div>
 
+        {/* Featured + Filters */}
+        {!loading && !error && products.length > 0 && (
+          <section className="mb-6 space-y-4">
+            {featuredProducts.length > 0 && (
+              <div className="bg-card/80 backdrop-blur-md border border-border rounded-lg p-4">
+                <div className="flex items-end justify-between gap-4 mb-4">
+                  <div>
+                    <h2 className="font-display text-lg uppercase tracking-wide text-primary">Featured Picks</h2>
+                    <p className="text-xs text-muted-foreground">Tagged as featured / best-sellers</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {featuredProducts.map((product) => (
+                    <ProductCard key={`featured-${product.node.id}`} product={product} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="bg-card/80 backdrop-blur-md border border-border rounded-lg p-4">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <h3 className="font-display text-sm uppercase tracking-wide text-foreground">Browse by type</h3>
+                  <p className="text-xs text-muted-foreground">Uses Shopify productType or tags</p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((cat) => (
+                    <Button
+                      key={cat}
+                      variant={selectedCategory === cat ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedCategory(cat)}
+                      className={selectedCategory === cat ? 'bg-primary text-primary-foreground' : ''}
+                    >
+                      {cat}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Products Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -481,9 +546,19 @@ export default function Shop() {
               💡 Try: "Create a product for a car phone mount for $29.99"
             </p>
           </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-16 bg-card/80 backdrop-blur-md rounded-lg border border-border">
+            <h3 className="font-display text-lg uppercase tracking-wide text-foreground">No matches</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              No products found for <span className="text-primary">{selectedCategory}</span>.
+            </p>
+            <p className="text-xs text-muted-foreground mt-3">
+              Tip: add a Shopify tag like <span className="text-primary">{normalizedCategory}</span> or set productType to <span className="text-primary">{selectedCategory}</span>.
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard key={product.node.id} product={product} />
             ))}
           </div>

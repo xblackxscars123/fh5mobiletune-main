@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ShopifyProduct } from '@/lib/shopify';
 import { useCartStore, CartItem } from '@/stores/cartStore';
 import { ShoppingCart, Plus } from 'lucide-react';
@@ -12,15 +13,19 @@ interface ProductCardProps {
 export const ProductCard = ({ product }: ProductCardProps) => {
   const addItem = useCartStore(state => state.addItem);
   const { node } = product;
-  
+
   const firstImage = node.images?.edges?.[0]?.node;
   const firstVariant = node.variants?.edges?.[0]?.node;
   const price = node.priceRange.minVariantPrice;
 
+  const isBestSeller = (node.tags || []).some(tag =>
+    ['best-seller', 'bestseller', 'best_seller'].includes(tag.toLowerCase()),
+  );
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!firstVariant) {
       toast.error('Product not available');
       return;
@@ -32,12 +37,12 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       variantTitle: firstVariant.title,
       price: firstVariant.price,
       quantity: 1,
-      selectedOptions: firstVariant.selectedOptions || []
+      selectedOptions: firstVariant.selectedOptions || [],
     };
-    
+
     addItem(cartItem);
     toast.success(`Added ${node.title} to cart`, {
-      position: 'top-center'
+      position: 'top-center',
     });
   };
 
@@ -50,6 +55,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             <img
               src={firstImage.url}
               alt={firstImage.altText || node.title}
+              loading="lazy"
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
@@ -57,7 +63,16 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               <ShoppingCart className="w-12 h-12 text-muted-foreground" />
             </div>
           )}
-          
+
+          {isBestSeller && (
+            <Badge
+              variant="secondary"
+              className="absolute top-3 left-3 border-transparent bg-secondary text-secondary-foreground"
+            >
+              Best Seller
+            </Badge>
+          )}
+
           {/* Quick Add Button */}
           <Button
             onClick={handleAddToCart}
@@ -67,7 +82,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             <Plus className="w-4 h-4" />
           </Button>
         </div>
-        
+
         {/* Product Info */}
         <div className="p-4">
           <h3 className="font-display text-sm uppercase tracking-wide text-foreground truncate group-hover:text-[hsl(var(--racing-orange))] transition-colors">
