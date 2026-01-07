@@ -4,16 +4,24 @@ import { ShopifyProduct, fetchProducts } from '@/lib/shopify';
 import { ProductCard } from '@/components/shop/ProductCard';
 import { CartDrawer } from '@/components/shop/CartDrawer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ShoppingCart, Car, Loader2, Music, Youtube } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Car, Loader2, Youtube, ChevronDown, ChevronUp, Music2 } from 'lucide-react';
 import shopHeroBg from '@/assets/shop-hero-bg.jpg';
 
-// YouTube playlist - car/racing themed music
-const YOUTUBE_PLAYLIST_ID = 'PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf'; // Lo-fi beats playlist
+// Preset playlists for users to choose from
+const PLAYLISTS = [
+  { id: 'PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf', name: 'Lo-fi Beats', icon: '🎧' },
+  { id: 'PLChOO_ZAB22WuyDODJ3kjJiU0oQzWOTyb', name: 'Synthwave', icon: '🌆' },
+  { id: 'PLw-VjHDlEOgtl4ldJJ8Arb2WeSlAyBkJS', name: 'Driving Music', icon: '🚗' },
+  { id: 'PL4o29bINVT4EG_y-k5jGoOu3-Am8Nvi10', name: 'Night Drive', icon: '🌙' },
+];
 
 export default function Shop() {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
+  const [selectedPlaylist, setSelectedPlaylist] = useState(PLAYLISTS[0]);
+  const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -83,45 +91,107 @@ export default function Shop() {
           </div>
         </div>
 
-        {/* YouTube Music Player */}
+        {/* Collapsible YouTube Music Player */}
         <div className="mb-8 bg-[hsl(220,18%,8%)/0.9] backdrop-blur-md border border-[hsl(220,15%,25%)] rounded-lg overflow-hidden">
-          <div className="p-4 md:p-6 border-b border-[hsl(220,15%,20%)]">
+          {/* Player Header - Always Visible */}
+          <div 
+            className="p-4 md:p-5 cursor-pointer hover:bg-[hsl(220,15%,12%)] transition-colors"
+            onClick={() => setIsPlayerExpanded(!isPlayerExpanded)}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-red-500 flex items-center justify-center">
                   <Youtube className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-display text-sm md:text-base uppercase tracking-wide text-foreground">
+                  <h3 className="font-display text-sm md:text-base uppercase tracking-wide text-foreground flex items-center gap-2">
                     Racing Vibes
+                    <span className="text-xs font-normal normal-case text-muted-foreground">
+                      {isPlayerExpanded ? 'Click to minimize' : 'Click to expand'}
+                    </span>
                   </h3>
-                  <p className="text-xs text-muted-foreground">
-                    YouTube Music • Drive playlist
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Music2 className="w-3 h-3" />
+                    {selectedPlaylist.icon} {selectedPlaylist.name}
                   </p>
                 </div>
               </div>
-              <a 
-                href={`https://www.youtube.com/playlist?list=${YOUTUBE_PLAYLIST_ID}`}
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-xs text-red-500 hover:underline flex items-center gap-1"
-              >
-                Open on YouTube <Youtube className="w-3 h-3" />
-              </a>
+              <div className="flex items-center gap-2">
+                <a 
+                  href={`https://www.youtube.com/playlist?list=${selectedPlaylist.id}`}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-red-500 hover:underline hidden sm:flex items-center gap-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Open on YouTube <Youtube className="w-3 h-3" />
+                </a>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 hover:bg-[hsl(220,15%,20%)]"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsPlayerExpanded(!isPlayerExpanded);
+                  }}
+                >
+                  {isPlayerExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </Button>
+              </div>
             </div>
           </div>
-          
-          {/* Embedded YouTube Player */}
-          <div className="aspect-video w-full">
-            <iframe
-              width="100%"
-              height="100%"
-              src={`https://www.youtube.com/embed/videoseries?list=${YOUTUBE_PLAYLIST_ID}&autoplay=0&rel=0`}
-              title="Racing Vibes Playlist"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="border-0"
-            />
+
+          {/* Expandable Content */}
+          <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isPlayerExpanded ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            {/* Playlist Selector */}
+            <div className="px-4 pb-3 border-b border-[hsl(220,15%,20%)]">
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  className="w-full justify-between bg-[hsl(220,15%,12%)] border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,18%)]"
+                  onClick={() => setShowPlaylistMenu(!showPlaylistMenu)}
+                >
+                  <span className="flex items-center gap-2">
+                    <span>{selectedPlaylist.icon}</span>
+                    <span>{selectedPlaylist.name}</span>
+                  </span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showPlaylistMenu ? 'rotate-180' : ''}`} />
+                </Button>
+                
+                {showPlaylistMenu && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,25%)] rounded-md overflow-hidden z-20">
+                    {PLAYLISTS.map((playlist) => (
+                      <button
+                        key={playlist.id}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-[hsl(220,15%,18%)] flex items-center gap-2 transition-colors ${
+                          selectedPlaylist.id === playlist.id ? 'bg-[hsl(var(--racing-orange)/0.1)] text-[hsl(var(--racing-orange))]' : ''
+                        }`}
+                        onClick={() => {
+                          setSelectedPlaylist(playlist);
+                          setShowPlaylistMenu(false);
+                        }}
+                      >
+                        <span>{playlist.icon}</span>
+                        <span>{playlist.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Embedded YouTube Player */}
+            <div className="aspect-video w-full">
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/videoseries?list=${selectedPlaylist.id}&autoplay=0&rel=0`}
+                title="Racing Vibes Playlist"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="border-0"
+              />
+            </div>
           </div>
         </div>
 
