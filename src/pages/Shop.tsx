@@ -111,7 +111,7 @@ export default function Shop() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const categories = ['All', 'Detailing', 'Electronics', 'Interior', 'Tools'] as const;
+  const categories = ['All', 'Detailing', 'Electronics', 'Interior', 'Exterior', 'Tools', 'Accessories', 'Safety'] as const;
   type Category = typeof categories[number];
   const [selectedCategory, setSelectedCategory] = useState<Category>('All');
 
