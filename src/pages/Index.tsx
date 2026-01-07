@@ -78,6 +78,14 @@ export default function Index() {
           <p className="text-xs text-muted-foreground mt-1">
             Got ideas, found bugs, or want to contribute? Drop a comment on the Reddit post!
           </p>
+          <a 
+            href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-sm rounded-md transition-colors"
+          >
+            ☕ Support Development
+          </a>
         </div>
         
         <div className="grid lg:grid-cols-[400px_1fr] gap-6">
