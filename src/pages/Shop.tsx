@@ -4,7 +4,7 @@ import { ShopifyProduct, fetchProducts } from '@/lib/shopify';
 import { ProductCard } from '@/components/shop/ProductCard';
 import { CartDrawer } from '@/components/shop/CartDrawer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ShoppingCart, Car, Loader2, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Music2, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Car, Loader2, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Music2, ChevronDown, Shuffle } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import shopHeroBg from '@/assets/shop-hero-bg.jpg';
 
@@ -121,6 +121,7 @@ export default function Shop() {
   const [isMuted, setIsMuted] = useState(false);
   const [showGenreMenu, setShowGenreMenu] = useState(false);
   const [isPlayerExpanded, setIsPlayerExpanded] = useState(true);
+  const [isShuffleOn, setIsShuffleOn] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
@@ -219,9 +220,18 @@ export default function Shop() {
   };
 
   const handleNext = () => {
-    setCurrentTrackIndex((prev) => 
-      prev === currentPlaylist.tracks.length - 1 ? 0 : prev + 1
-    );
+    if (isShuffleOn) {
+      // Pick a random track that's different from current
+      let randomIndex;
+      do {
+        randomIndex = Math.floor(Math.random() * currentPlaylist.tracks.length);
+      } while (randomIndex === currentTrackIndex && currentPlaylist.tracks.length > 1);
+      setCurrentTrackIndex(randomIndex);
+    } else {
+      setCurrentTrackIndex((prev) => 
+        prev === currentPlaylist.tracks.length - 1 ? 0 : prev + 1
+      );
+    }
   };
 
   const handleSeek = (value: number[]) => {
@@ -369,6 +379,15 @@ export default function Shop() {
             {/* Controls */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-9 w-9 hover:bg-[hsl(220,15%,15%)] ${isShuffleOn ? 'text-[hsl(var(--racing-orange))]' : ''}`}
+                  onClick={() => setIsShuffleOn(!isShuffleOn)}
+                  title={isShuffleOn ? 'Shuffle: On' : 'Shuffle: Off'}
+                >
+                  <Shuffle className="w-4 h-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
