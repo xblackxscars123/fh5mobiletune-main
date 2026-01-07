@@ -66,44 +66,45 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen pb-16">
-      <div className="container max-w-7xl mx-auto px-4">
+    <div className="min-h-screen pb-8 md:pb-16">
+      <div className="container max-w-7xl mx-auto px-3 sm:px-4 md:px-6">
         <Header />
         
         {/* Development Help Banner */}
-        <div className="mb-6 bg-gradient-to-r from-[hsl(var(--racing-yellow)/0.15)] via-[hsl(var(--racing-yellow)/0.1)] to-[hsl(var(--racing-yellow)/0.15)] border border-[hsl(var(--racing-yellow)/0.3)] rounded-lg p-4 text-center">
-          <p className="text-sm text-[hsl(var(--racing-yellow))] font-medium">
+        <div className="mb-4 md:mb-6 bg-gradient-to-r from-[hsl(var(--racing-yellow)/0.15)] via-[hsl(var(--racing-yellow)/0.1)] to-[hsl(var(--racing-yellow)/0.15)] border border-[hsl(var(--racing-yellow)/0.3)] rounded-lg p-3 md:p-4 text-center">
+          <p className="text-xs sm:text-sm text-[hsl(var(--racing-yellow))] font-medium">
             🛠️ <span className="font-display uppercase tracking-wide">We'd love your help developing this app!</span> 🛠️
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1 hidden sm:block">
             Got ideas, found bugs, or want to contribute? Drop a comment on the Reddit post!
           </p>
           <a 
             href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-sm rounded-md transition-colors"
+            className="inline-flex items-center gap-2 mt-2 md:mt-3 px-3 md:px-4 py-1.5 md:py-2 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-xs md:text-sm rounded-md transition-colors"
           >
             ☕ Support Development
           </a>
         </div>
         
-        <div className="grid lg:grid-cols-[400px_1fr] gap-6">
+        {/* Mobile: Stack vertically, Desktop: Side by side */}
+        <div className="flex flex-col lg:grid lg:grid-cols-[minmax(320px,400px)_1fr] gap-4 md:gap-6">
           {/* Left Panel - Setup */}
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             {/* Tune Type */}
-            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-4 border border-[hsl(220,15%,18%)]">
+            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
               <TuneTypeSelector selected={tuneType} onChange={setTuneType} />
             </div>
             
             {/* Car Selector */}
-            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-4 border border-[hsl(220,15%,18%)]">
+            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
               <CarSelector onSelect={handleCarSelect} selectedCar={selectedCar} />
             </div>
             
             {/* Car Specs */}
-            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-4 border border-[hsl(220,15%,18%)]">
-              <h3 className="font-display text-sm text-[hsl(var(--racing-yellow))] mb-4 uppercase tracking-wider">
+            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
+              <h3 className="font-display text-sm text-[hsl(var(--racing-yellow))] mb-3 md:mb-4 uppercase tracking-wider">
                 Car Specifications
               </h3>
               <CarSpecsForm 
@@ -115,20 +116,20 @@ export default function Index() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 md:gap-3">
               <Button 
                 onClick={handleCalculate} 
-                className="flex-1 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(45,100%,45%)] text-black font-display uppercase tracking-wider h-12"
+                className="flex-1 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(45,100%,45%)] text-black font-display uppercase tracking-wider h-10 md:h-12 text-sm md:text-base"
               >
-                <Calculator className="w-5 h-5 mr-2" />
+                <Calculator className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                 Calculate Tune
               </Button>
               <Button 
                 variant="outline" 
                 onClick={handleReset}
-                className="h-12 px-4 border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,15%)]"
+                className="h-10 md:h-12 px-3 md:px-4 border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,15%)]"
               >
-                <RotateCcw className="w-5 h-5" />
+                <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
               </Button>
             </div>
             
@@ -152,7 +153,7 @@ export default function Index() {
           </div>
         </div>
 
-        <footer className="mt-16 text-center text-muted-foreground text-xs">
+        <footer className="mt-8 md:mt-16 text-center text-muted-foreground text-xs px-4">
           <p>Based on community tuning guides. Not affiliated with Playground Games.</p>
         </footer>
       </div>

@@ -45,24 +45,24 @@ function ForzaSlider({
   const percentage = ((value - min) / (max - min)) * 100;
   
   return (
-    <div className="py-2">
+    <div className="py-1.5 sm:py-2">
       <div className="flex items-center justify-between mb-1">
         <span className={cn(
-          "text-sm uppercase tracking-wide",
+          "text-xs sm:text-sm uppercase tracking-wide",
           isHighlighted ? "text-[hsl(var(--racing-yellow))]" : "text-foreground"
         )}>
           {label}
         </span>
-        <span className="text-sm text-foreground font-display">
+        <span className="text-xs sm:text-sm text-foreground font-display">
           {typeof value === 'number' ? value.toFixed(value % 1 === 0 ? 0 : 1) : value}{unit}
         </span>
       </div>
       
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3">
         {leftLabel && (
-          <span className="text-xs text-muted-foreground w-16 text-right">{leftLabel}</span>
+          <span className="text-[10px] sm:text-xs text-muted-foreground w-10 sm:w-16 text-right hidden xs:block">{leftLabel}</span>
         )}
-        <div className="flex-1 relative h-2 bg-[hsl(220,15%,15%)] rounded-sm">
+        <div className="flex-1 relative h-1.5 sm:h-2 bg-[hsl(220,15%,15%)] rounded-sm">
           {/* Track background gradient */}
           <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,15%,20%)] to-[hsl(220,15%,25%)] rounded-sm" />
           
@@ -74,12 +74,12 @@ function ForzaSlider({
           
           {/* Thumb indicator */}
           <div 
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-4 bg-white rounded-sm shadow-lg"
-            style={{ left: `calc(${Math.min(100, Math.max(0, percentage))}% - 6px)` }}
+            className="absolute top-1/2 -translate-y-1/2 w-2 h-3 sm:w-3 sm:h-4 bg-white rounded-sm shadow-lg"
+            style={{ left: `calc(${Math.min(100, Math.max(0, percentage))}% - 4px)` }}
           />
         </div>
         {rightLabel && (
-          <span className="text-xs text-muted-foreground w-16">{rightLabel}</span>
+          <span className="text-[10px] sm:text-xs text-muted-foreground w-10 sm:w-16 hidden xs:block">{rightLabel}</span>
         )}
       </div>
     </div>
@@ -88,9 +88,9 @@ function ForzaSlider({
 
 function ForzaValueRow({ label, value, unit = '' }: { label: string; value: string | number; unit?: string }) {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-[hsl(220,15%,18%)] last:border-0">
-      <span className="text-sm text-foreground uppercase">{label}</span>
-      <span className="font-display text-[hsl(var(--racing-yellow))]">
+    <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-[hsl(220,15%,18%)] last:border-0">
+      <span className="text-xs sm:text-sm text-foreground uppercase">{label}</span>
+      <span className="font-display text-sm sm:text-base text-[hsl(var(--racing-yellow))]">
         {value}{unit}
       </span>
     </div>
@@ -130,25 +130,25 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
       case 'gearing':
         return (
           <div className="space-y-1">
-            <h3 className="text-sm text-muted-foreground uppercase mb-4">Final Drive</h3>
+            <h3 className="text-xs sm:text-sm text-muted-foreground uppercase mb-3 sm:mb-4">Final Drive</h3>
             <ForzaSlider label="FINAL DRIVE" value={tune.finalDrive} min={2.0} max={6.0} unit="" isHighlighted />
             
-            <h3 className="text-sm text-muted-foreground uppercase mt-6 mb-4">Individual Gear Ratios</h3>
-            <div className="grid grid-cols-2 gap-2">
+            <h3 className="text-xs sm:text-sm text-muted-foreground uppercase mt-4 sm:mt-6 mb-3 sm:mb-4">Individual Gear Ratios</h3>
+            <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-1.5 sm:gap-2">
               {tune.gearRatios.map((ratio, index) => (
-                <div key={index} className="flex justify-between items-center py-2 px-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
-                  <span className="text-sm text-foreground uppercase font-display">
+                <div key={index} className="flex justify-between items-center py-1.5 sm:py-2 px-2 sm:px-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
+                  <span className="text-xs sm:text-sm text-foreground uppercase font-display">
                     {index === 0 ? '1st' : index === 1 ? '2nd' : index === 2 ? '3rd' : `${index + 1}th`}
                   </span>
-                  <span className="font-display text-[hsl(var(--racing-cyan))]">
+                  <span className="font-display text-xs sm:text-sm text-[hsl(var(--racing-cyan))]">
                     {ratio.toFixed(2)}
                   </span>
                 </div>
               ))}
             </div>
             
-            <div className="mt-6 p-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
-              <p className="text-sm text-muted-foreground">{tune.gearingNote}</p>
+            <div className="mt-4 sm:mt-6 p-2 sm:p-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
+              <p className="text-xs sm:text-sm text-muted-foreground">{tune.gearingNote}</p>
             </div>
           </div>
         );
@@ -297,20 +297,20 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
   return (
     <div className="bg-[hsl(220,18%,8%)] rounded-lg overflow-hidden border border-[hsl(220,15%,18%)]">
       {/* Header */}
-      <div className="bg-[hsl(220,18%,6%)] px-4 py-2 flex items-center gap-2 border-b border-[hsl(220,15%,18%)]">
-        <span className="text-xl">{tuneInfo.icon}</span>
-        <span className="font-display text-sm text-foreground uppercase tracking-wider">TUNE</span>
-        <span className="text-sm text-muted-foreground">— {tuneInfo.title}</span>
+      <div className="bg-[hsl(220,18%,6%)] px-3 sm:px-4 py-2 flex items-center gap-2 border-b border-[hsl(220,15%,18%)]">
+        <span className="text-lg sm:text-xl">{tuneInfo.icon}</span>
+        <span className="font-display text-xs sm:text-sm text-foreground uppercase tracking-wider">TUNE</span>
+        <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">— {tuneInfo.title}</span>
       </div>
       
-      {/* Tab Navigation */}
-      <div className="flex overflow-x-auto bg-[hsl(220,18%,7%)] border-b border-[hsl(220,15%,18%)]">
+      {/* Tab Navigation - Scrollable on mobile */}
+      <div className="flex overflow-x-auto bg-[hsl(220,18%,7%)] border-b border-[hsl(220,15%,18%)] scrollbar-hide">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "px-3 py-2 text-xs font-display uppercase tracking-wide whitespace-nowrap transition-colors",
+              "px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-display uppercase tracking-wide whitespace-nowrap transition-colors flex-shrink-0",
               activeTab === tab.id 
                 ? "bg-[hsl(var(--racing-yellow))] text-black" 
                 : "text-muted-foreground hover:text-foreground hover:bg-[hsl(220,15%,12%)]"
@@ -322,42 +322,42 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
       </div>
 
       {/* Content Area with Performance Stats */}
-      <div className="flex">
-        {/* Left: Performance Stats (simplified) */}
-        <div className="w-48 bg-[hsl(220,18%,6%)] p-4 border-r border-[hsl(220,15%,18%)] hidden lg:block">
-          <h4 className="text-xs text-muted-foreground uppercase mb-4">Performance</h4>
-          <div className="space-y-4 text-sm">
-            <div>
+      <div className="flex flex-col lg:flex-row">
+        {/* Left: Performance Stats (hidden on mobile) */}
+        <div className="w-full lg:w-48 bg-[hsl(220,18%,6%)] p-3 sm:p-4 border-b lg:border-b-0 lg:border-r border-[hsl(220,15%,18%)] hidden md:block">
+          <h4 className="text-xs text-muted-foreground uppercase mb-3 sm:mb-4">Performance</h4>
+          <div className="flex lg:flex-col gap-4 lg:gap-4 text-sm overflow-x-auto">
+            <div className="flex-shrink-0">
               <p className="text-muted-foreground text-xs">BRAKING DISTANCE</p>
-              <p className="text-foreground">97 km/h - 0</p>
-              <p className="font-display text-[hsl(var(--racing-cyan))]">~26.7 m</p>
+              <p className="text-foreground text-xs sm:text-sm">97 km/h - 0</p>
+              <p className="font-display text-[hsl(var(--racing-cyan))] text-sm">~26.7 m</p>
             </div>
-            <div>
+            <div className="flex-shrink-0">
               <p className="text-muted-foreground text-xs">LATERAL Gs</p>
-              <p className="text-foreground">97 km/h</p>
-              <p className="font-display text-[hsl(var(--racing-cyan))]">~1.36</p>
+              <p className="text-foreground text-xs sm:text-sm">97 km/h</p>
+              <p className="font-display text-[hsl(var(--racing-cyan))] text-sm">~1.36</p>
             </div>
-            <div>
+            <div className="flex-shrink-0">
               <p className="text-muted-foreground text-xs">ACCELERATION</p>
-              <p className="text-foreground">0 - 97 km/h</p>
-              <p className="font-display text-[hsl(var(--racing-cyan))]">~4.5s</p>
+              <p className="text-foreground text-xs sm:text-sm">0 - 97 km/h</p>
+              <p className="font-display text-[hsl(var(--racing-cyan))] text-sm">~4.5s</p>
             </div>
           </div>
         </div>
         
         {/* Right: Tune Controls */}
-        <div className="flex-1 p-4 min-h-[400px]">
+        <div className="flex-1 p-3 sm:p-4 min-h-[300px] sm:min-h-[400px]">
           {renderTabContent()}
         </div>
       </div>
       
       {/* Tips Footer */}
-      <div className="bg-[hsl(220,18%,6%)] px-4 py-3 border-t border-[hsl(220,15%,18%)]">
+      <div className="bg-[hsl(220,18%,6%)] px-3 sm:px-4 py-2 sm:py-3 border-t border-[hsl(220,15%,18%)]">
         <div className="flex items-start gap-2">
-          <span className="text-[hsl(var(--racing-cyan))]">💡</span>
-          <div className="text-xs text-muted-foreground">
+          <span className="text-[hsl(var(--racing-cyan))] text-sm">💡</span>
+          <div className="text-[10px] sm:text-xs text-muted-foreground">
             <span className="text-[hsl(var(--racing-yellow))]">{tuneInfo.title}:</span>{' '}
-            {tuneInfo.tips[0]}
+            <span className="line-clamp-2">{tuneInfo.tips[0]}</span>
           </div>
         </div>
       </div>
