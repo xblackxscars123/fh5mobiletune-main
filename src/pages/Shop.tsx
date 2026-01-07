@@ -17,6 +17,8 @@ const GENRE_PLAYLISTS: Record<string, { name: string; icon: string; tracks: { ti
       { title: 'Chill Vibes', artist: 'LoFi Zone', url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3', duration: 147 },
       { title: 'Late Night Study', artist: 'Ambient Beats', url: 'https://cdn.pixabay.com/download/audio/2022/10/25/audio_946bc3eb61.mp3', duration: 130 },
       { title: 'Coffee Shop', artist: 'Mellow Sounds', url: 'https://cdn.pixabay.com/download/audio/2023/07/30/audio_e5cc05e664.mp3', duration: 108 },
+      { title: 'Rainy Day', artist: 'Chill Hop', url: 'https://cdn.pixabay.com/download/audio/2022/02/22/audio_d1718ab41b.mp3', duration: 120 },
+      { title: 'Sunset Dreams', artist: 'Lo-Fi Lab', url: 'https://cdn.pixabay.com/download/audio/2022/08/25/audio_4f3b0a1e1e.mp3', duration: 135 },
     ]
   },
   synthwave: {
@@ -26,6 +28,8 @@ const GENRE_PLAYLISTS: Record<string, { name: string; icon: string; tracks: { ti
       { title: 'Neon Nights', artist: 'Retro Wave', url: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_0f5c9a5d1a.mp3', duration: 156 },
       { title: 'Cyber Drive', artist: 'Future Sound', url: 'https://cdn.pixabay.com/download/audio/2022/10/30/audio_f6a4dbc3ad.mp3', duration: 178 },
       { title: 'Digital Dreams', artist: 'Synth Masters', url: 'https://cdn.pixabay.com/download/audio/2023/03/23/audio_1e4e443d01.mp3', duration: 142 },
+      { title: 'Retrograde', artist: 'Outrun', url: 'https://cdn.pixabay.com/download/audio/2022/06/07/audio_b9bd4170e4.mp3', duration: 165 },
+      { title: 'Chrome Future', artist: 'Midnight Run', url: 'https://cdn.pixabay.com/download/audio/2023/01/16/audio_5e5a6e5f66.mp3', duration: 148 },
     ]
   },
   driving: {
@@ -35,6 +39,8 @@ const GENRE_PLAYLISTS: Record<string, { name: string; icon: string; tracks: { ti
       { title: 'Highway Rush', artist: 'Road Trip', url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0ef98e61c.mp3', duration: 125 },
       { title: 'Open Road', artist: 'Speed Demons', url: 'https://cdn.pixabay.com/download/audio/2021/11/25/audio_5c46b1eb1f.mp3', duration: 168 },
       { title: 'Full Throttle', artist: 'Engine Sound', url: 'https://cdn.pixabay.com/download/audio/2022/08/02/audio_884fe92c21.mp3', duration: 134 },
+      { title: 'Cruise Control', artist: 'Velocity', url: 'https://cdn.pixabay.com/download/audio/2022/05/16/audio_1f7f8e2f3a.mp3', duration: 152 },
+      { title: 'Night Drive', artist: 'Asphalt', url: 'https://cdn.pixabay.com/download/audio/2022/12/10/audio_3e8c7d5a2b.mp3', duration: 140 },
     ]
   },
   electronic: {
@@ -44,6 +50,52 @@ const GENRE_PLAYLISTS: Record<string, { name: string; icon: string; tracks: { ti
       { title: 'Bass Drop', artist: 'EDM Collective', url: 'https://cdn.pixabay.com/download/audio/2022/04/27/audio_67bcefcfe4.mp3', duration: 189 },
       { title: 'Energy Surge', artist: 'Beat Factory', url: 'https://cdn.pixabay.com/download/audio/2023/09/25/audio_f2b1b0c0de.mp3', duration: 145 },
       { title: 'Club Night', artist: 'DJ Pulse', url: 'https://cdn.pixabay.com/download/audio/2022/11/22/audio_dc39bbc9c4.mp3', duration: 167 },
+      { title: 'Voltage', artist: 'Circuit', url: 'https://cdn.pixabay.com/download/audio/2022/07/14/audio_2e9f8d4c1a.mp3', duration: 175 },
+      { title: 'Frequency', artist: 'Waveform', url: 'https://cdn.pixabay.com/download/audio/2023/04/19/audio_9a7b3c2d1e.mp3', duration: 158 },
+    ]
+  },
+  rock: {
+    name: 'Rock',
+    icon: '🎸',
+    tracks: [
+      { title: 'Power Riff', artist: 'Guitar Heroes', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_8c9b5d3e2a.mp3', duration: 142 },
+      { title: 'Stadium Anthem', artist: 'Arena Rock', url: 'https://cdn.pixabay.com/download/audio/2022/09/20/audio_4f7d2e1a8b.mp3', duration: 168 },
+      { title: 'Electric Storm', artist: 'Thunder', url: 'https://cdn.pixabay.com/download/audio/2022/06/28/audio_7a3c9e5d4f.mp3', duration: 155 },
+      { title: 'Rebel Soul', artist: 'Outlaws', url: 'https://cdn.pixabay.com/download/audio/2023/02/08/audio_1b4e7f9a2c.mp3', duration: 178 },
+      { title: 'Heavy Metal', artist: 'Iron Forge', url: 'https://cdn.pixabay.com/download/audio/2022/11/05/audio_5c8d2a1b3e.mp3', duration: 162 },
+    ]
+  },
+  jazz: {
+    name: 'Jazz',
+    icon: '🎷',
+    tracks: [
+      { title: 'Smooth Sax', artist: 'Jazz Quartet', url: 'https://cdn.pixabay.com/download/audio/2022/02/15/audio_2a4b6c8d1e.mp3', duration: 185 },
+      { title: 'Late Night Club', artist: 'Blue Note', url: 'https://cdn.pixabay.com/download/audio/2022/08/10/audio_9e7f3a2b5c.mp3', duration: 195 },
+      { title: 'Piano Bar', artist: 'Ivory Keys', url: 'https://cdn.pixabay.com/download/audio/2022/04/05/audio_3d5e7a9c1b.mp3', duration: 172 },
+      { title: 'Swing Time', artist: 'Big Band', url: 'https://cdn.pixabay.com/download/audio/2023/05/22/audio_6b8c4d2e1f.mp3', duration: 165 },
+      { title: 'Midnight Blues', artist: 'Soul Train', url: 'https://cdn.pixabay.com/download/audio/2022/10/18/audio_1a3e5c7d9b.mp3', duration: 188 },
+    ]
+  },
+  ambient: {
+    name: 'Ambient',
+    icon: '🌊',
+    tracks: [
+      { title: 'Ocean Waves', artist: 'Nature Sounds', url: 'https://cdn.pixabay.com/download/audio/2022/01/20/audio_4e6d8a2c1b.mp3', duration: 240 },
+      { title: 'Forest Rain', artist: 'Atmosphere', url: 'https://cdn.pixabay.com/download/audio/2022/07/25/audio_8b3e5a7d9c.mp3', duration: 210 },
+      { title: 'Space Drift', artist: 'Cosmos', url: 'https://cdn.pixabay.com/download/audio/2022/05/08/audio_2c4e6a8d1b.mp3', duration: 225 },
+      { title: 'Meditation', artist: 'Zen Garden', url: 'https://cdn.pixabay.com/download/audio/2023/03/12/audio_7a9c3e5d1b.mp3', duration: 200 },
+      { title: 'Deep Relaxation', artist: 'Calm Waters', url: 'https://cdn.pixabay.com/download/audio/2022/09/30/audio_5e7d2a4c8b.mp3', duration: 235 },
+    ]
+  },
+  hiphop: {
+    name: 'Hip-Hop',
+    icon: '🎤',
+    tracks: [
+      { title: 'Street Beat', artist: 'Urban Flow', url: 'https://cdn.pixabay.com/download/audio/2022/04/12/audio_9a7c3e5d1b.mp3', duration: 145 },
+      { title: 'Boom Bap', artist: 'Old School', url: 'https://cdn.pixabay.com/download/audio/2022/08/18/audio_2b4e6a8c1d.mp3', duration: 138 },
+      { title: 'Trap King', artist: 'Bass Heavy', url: 'https://cdn.pixabay.com/download/audio/2022/11/28/audio_5c7d9a3e1b.mp3', duration: 155 },
+      { title: 'Flow State', artist: 'Rhythm', url: 'https://cdn.pixabay.com/download/audio/2023/01/05/audio_8e3a5c7d9b.mp3', duration: 162 },
+      { title: 'City Lights', artist: 'Metro', url: 'https://cdn.pixabay.com/download/audio/2022/06/15/audio_1a4e7c9d3b.mp3', duration: 148 },
     ]
   },
 };
