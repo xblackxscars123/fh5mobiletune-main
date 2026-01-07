@@ -70,6 +70,16 @@ export default function Index() {
       <div className="container max-w-7xl mx-auto px-4">
         <Header />
         
+        {/* Development Help Banner */}
+        <div className="mb-6 bg-gradient-to-r from-[hsl(var(--racing-yellow)/0.15)] via-[hsl(var(--racing-yellow)/0.1)] to-[hsl(var(--racing-yellow)/0.15)] border border-[hsl(var(--racing-yellow)/0.3)] rounded-lg p-4 text-center">
+          <p className="text-sm text-[hsl(var(--racing-yellow))] font-medium">
+            🛠️ <span className="font-display uppercase tracking-wide">We'd love your help developing this app!</span> 🛠️
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Got ideas, found bugs, or want to contribute? Drop a comment on the Reddit post!
+          </p>
+        </div>
+        
         <div className="grid lg:grid-cols-[400px_1fr] gap-6">
           {/* Left Panel - Setup */}
           <div className="space-y-4">
