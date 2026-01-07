@@ -94,6 +94,8 @@ const STOREFRONT_QUERY = `
           title
           description
           handle
+          productType
+          tags
           priceRange {
             minVariantPrice {
               amount
@@ -186,6 +188,8 @@ const PRODUCT_BY_HANDLE_QUERY = `
       title
       description
       handle
+      productType
+      tags
       priceRange {
         minVariantPrice {
           amount
@@ -226,8 +230,8 @@ const PRODUCT_BY_HANDLE_QUERY = `
 `;
 
 // Fetch products
-export async function fetchProducts(first: number = 20): Promise<ShopifyProduct[]> {
-  const data = await storefrontApiRequest(STOREFRONT_QUERY, { first });
+export async function fetchProducts(first: number = 20, query?: string): Promise<ShopifyProduct[]> {
+  const data = await storefrontApiRequest(STOREFRONT_QUERY, { first, query });
   if (!data) return [];
   return data.data.products.edges;
 }
