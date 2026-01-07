@@ -29,7 +29,7 @@ export function TuneTypeSelector({ selected, onChange }: TuneTypeSelectorProps) 
               )}
             >
               <span className="text-lg sm:text-xl md:text-2xl">{info.icon}</span>
-              <span className="font-display text-[10px] sm:text-xs">{info.title}</span>
+              <span className="font-display text-[10px] sm:text-xs leading-tight text-center break-words hyphens-auto">{info.title}</span>
             </Button>
           );
         })}

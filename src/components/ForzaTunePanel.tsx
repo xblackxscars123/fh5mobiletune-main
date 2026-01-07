@@ -310,7 +310,7 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-display uppercase tracking-wide whitespace-nowrap transition-colors flex-shrink-0",
+              "px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-display uppercase tracking-wide transition-colors flex-shrink-0 min-w-fit",
               activeTab === tab.id 
                 ? "bg-[hsl(var(--racing-yellow))] text-black" 
                 : "text-muted-foreground hover:text-foreground hover:bg-[hsl(220,15%,12%)]"
