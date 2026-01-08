@@ -135,6 +135,20 @@ export const JDMStickerBombBackground = () => {
         </div>
       ))}
       
+      {/* Frosted glass blur overlay for content readability */}
+      <div 
+        className="absolute inset-0 backdrop-blur-sm"
+        style={{
+          background: `
+            radial-gradient(ellipse 80% 60% at 50% 50%, 
+              hsl(220, 20%, 6% / 0.65) 0%, 
+              hsl(220, 20%, 6% / 0.5) 40%,
+              hsl(220, 20%, 6% / 0.4) 100%
+            )
+          `,
+        }}
+      />
+      
       {/* Strong vignette for content focus */}
       <div 
         className="absolute inset-0"
