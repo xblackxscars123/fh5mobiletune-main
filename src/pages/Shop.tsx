@@ -4,101 +4,15 @@ import { ShopifyProduct, fetchProducts } from '@/lib/shopify';
 import { ProductCard } from '@/components/shop/ProductCard';
 import { CartDrawer } from '@/components/shop/CartDrawer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ShoppingCart, Car, Loader2, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Music2, ChevronDown, Shuffle } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Car, Loader2, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Music2, Shuffle } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import shopHeroBg from '@/assets/shop-hero-bg.jpg';
 
-// Genre playlists with royalty-free tracks from Pixabay/Free sources
-const GENRE_PLAYLISTS: Record<string, { name: string; icon: string; tracks: { title: string; artist: string; url: string; duration: number }[] }> = {
-  lofi: {
-    name: 'Lo-fi Beats',
-    icon: '🎧',
-    tracks: [
-      { title: 'Chill Vibes', artist: 'LoFi Zone', url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3', duration: 147 },
-      { title: 'Late Night Study', artist: 'Ambient Beats', url: 'https://cdn.pixabay.com/download/audio/2022/10/25/audio_946bc3eb61.mp3', duration: 130 },
-      { title: 'Coffee Shop', artist: 'Mellow Sounds', url: 'https://cdn.pixabay.com/download/audio/2023/07/30/audio_e5cc05e664.mp3', duration: 108 },
-      { title: 'Rainy Day', artist: 'Chill Hop', url: 'https://cdn.pixabay.com/download/audio/2022/02/22/audio_d1718ab41b.mp3', duration: 120 },
-      { title: 'Sunset Dreams', artist: 'Lo-Fi Lab', url: 'https://cdn.pixabay.com/download/audio/2022/08/25/audio_4f3b0a1e1e.mp3', duration: 135 },
-    ]
-  },
-  synthwave: {
-    name: 'Synthwave',
-    icon: '🌆',
-    tracks: [
-      { title: 'Neon Nights', artist: 'Retro Wave', url: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_0f5c9a5d1a.mp3', duration: 156 },
-      { title: 'Cyber Drive', artist: 'Future Sound', url: 'https://cdn.pixabay.com/download/audio/2022/10/30/audio_f6a4dbc3ad.mp3', duration: 178 },
-      { title: 'Digital Dreams', artist: 'Synth Masters', url: 'https://cdn.pixabay.com/download/audio/2023/03/23/audio_1e4e443d01.mp3', duration: 142 },
-      { title: 'Retrograde', artist: 'Outrun', url: 'https://cdn.pixabay.com/download/audio/2022/06/07/audio_b9bd4170e4.mp3', duration: 165 },
-      { title: 'Chrome Future', artist: 'Midnight Run', url: 'https://cdn.pixabay.com/download/audio/2023/01/16/audio_5e5a6e5f66.mp3', duration: 148 },
-    ]
-  },
-  driving: {
-    name: 'Driving Music',
-    icon: '🚗',
-    tracks: [
-      { title: 'Highway Rush', artist: 'Road Trip', url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0ef98e61c.mp3', duration: 125 },
-      { title: 'Open Road', artist: 'Speed Demons', url: 'https://cdn.pixabay.com/download/audio/2021/11/25/audio_5c46b1eb1f.mp3', duration: 168 },
-      { title: 'Full Throttle', artist: 'Engine Sound', url: 'https://cdn.pixabay.com/download/audio/2022/08/02/audio_884fe92c21.mp3', duration: 134 },
-      { title: 'Cruise Control', artist: 'Velocity', url: 'https://cdn.pixabay.com/download/audio/2022/05/16/audio_1f7f8e2f3a.mp3', duration: 152 },
-      { title: 'Night Drive', artist: 'Asphalt', url: 'https://cdn.pixabay.com/download/audio/2022/12/10/audio_3e8c7d5a2b.mp3', duration: 140 },
-    ]
-  },
-  electronic: {
-    name: 'Electronic',
-    icon: '⚡',
-    tracks: [
-      { title: 'Bass Drop', artist: 'EDM Collective', url: 'https://cdn.pixabay.com/download/audio/2022/04/27/audio_67bcefcfe4.mp3', duration: 189 },
-      { title: 'Energy Surge', artist: 'Beat Factory', url: 'https://cdn.pixabay.com/download/audio/2023/09/25/audio_f2b1b0c0de.mp3', duration: 145 },
-      { title: 'Club Night', artist: 'DJ Pulse', url: 'https://cdn.pixabay.com/download/audio/2022/11/22/audio_dc39bbc9c4.mp3', duration: 167 },
-      { title: 'Voltage', artist: 'Circuit', url: 'https://cdn.pixabay.com/download/audio/2022/07/14/audio_2e9f8d4c1a.mp3', duration: 175 },
-      { title: 'Frequency', artist: 'Waveform', url: 'https://cdn.pixabay.com/download/audio/2023/04/19/audio_9a7b3c2d1e.mp3', duration: 158 },
-    ]
-  },
-  rock: {
-    name: 'Rock',
-    icon: '🎸',
-    tracks: [
-      { title: 'Power Riff', artist: 'Guitar Heroes', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_8c9b5d3e2a.mp3', duration: 142 },
-      { title: 'Stadium Anthem', artist: 'Arena Rock', url: 'https://cdn.pixabay.com/download/audio/2022/09/20/audio_4f7d2e1a8b.mp3', duration: 168 },
-      { title: 'Electric Storm', artist: 'Thunder', url: 'https://cdn.pixabay.com/download/audio/2022/06/28/audio_7a3c9e5d4f.mp3', duration: 155 },
-      { title: 'Rebel Soul', artist: 'Outlaws', url: 'https://cdn.pixabay.com/download/audio/2023/02/08/audio_1b4e7f9a2c.mp3', duration: 178 },
-      { title: 'Heavy Metal', artist: 'Iron Forge', url: 'https://cdn.pixabay.com/download/audio/2022/11/05/audio_5c8d2a1b3e.mp3', duration: 162 },
-    ]
-  },
-  jazz: {
-    name: 'Jazz',
-    icon: '🎷',
-    tracks: [
-      { title: 'Smooth Sax', artist: 'Jazz Quartet', url: 'https://cdn.pixabay.com/download/audio/2022/02/15/audio_2a4b6c8d1e.mp3', duration: 185 },
-      { title: 'Late Night Club', artist: 'Blue Note', url: 'https://cdn.pixabay.com/download/audio/2022/08/10/audio_9e7f3a2b5c.mp3', duration: 195 },
-      { title: 'Piano Bar', artist: 'Ivory Keys', url: 'https://cdn.pixabay.com/download/audio/2022/04/05/audio_3d5e7a9c1b.mp3', duration: 172 },
-      { title: 'Swing Time', artist: 'Big Band', url: 'https://cdn.pixabay.com/download/audio/2023/05/22/audio_6b8c4d2e1f.mp3', duration: 165 },
-      { title: 'Midnight Blues', artist: 'Soul Train', url: 'https://cdn.pixabay.com/download/audio/2022/10/18/audio_1a3e5c7d9b.mp3', duration: 188 },
-    ]
-  },
-  ambient: {
-    name: 'Ambient',
-    icon: '🌊',
-    tracks: [
-      { title: 'Ocean Waves', artist: 'Nature Sounds', url: 'https://cdn.pixabay.com/download/audio/2022/01/20/audio_4e6d8a2c1b.mp3', duration: 240 },
-      { title: 'Forest Rain', artist: 'Atmosphere', url: 'https://cdn.pixabay.com/download/audio/2022/07/25/audio_8b3e5a7d9c.mp3', duration: 210 },
-      { title: 'Space Drift', artist: 'Cosmos', url: 'https://cdn.pixabay.com/download/audio/2022/05/08/audio_2c4e6a8d1b.mp3', duration: 225 },
-      { title: 'Meditation', artist: 'Zen Garden', url: 'https://cdn.pixabay.com/download/audio/2023/03/12/audio_7a9c3e5d1b.mp3', duration: 200 },
-      { title: 'Deep Relaxation', artist: 'Calm Waters', url: 'https://cdn.pixabay.com/download/audio/2022/09/30/audio_5e7d2a4c8b.mp3', duration: 235 },
-    ]
-  },
-  hiphop: {
-    name: 'Hip-Hop',
-    icon: '🎤',
-    tracks: [
-      { title: 'Street Beat', artist: 'Urban Flow', url: 'https://cdn.pixabay.com/download/audio/2022/04/12/audio_9a7c3e5d1b.mp3', duration: 145 },
-      { title: 'Boom Bap', artist: 'Old School', url: 'https://cdn.pixabay.com/download/audio/2022/08/18/audio_2b4e6a8c1d.mp3', duration: 138 },
-      { title: 'Trap King', artist: 'Bass Heavy', url: 'https://cdn.pixabay.com/download/audio/2022/11/28/audio_5c7d9a3e1b.mp3', duration: 155 },
-      { title: 'Flow State', artist: 'Rhythm', url: 'https://cdn.pixabay.com/download/audio/2023/01/05/audio_8e3a5c7d9b.mp3', duration: 162 },
-      { title: 'City Lights', artist: 'Metro', url: 'https://cdn.pixabay.com/download/audio/2022/06/15/audio_1a4e7c9d3b.mp3', duration: 148 },
-    ]
-  },
-};
+// Music player tracks - add your uploaded songs here
+// Example: { title: 'Song Name', artist: 'Artist Name', url: '/path/to/song.mp3', duration: 180 }
+const UPLOADED_TRACKS: { title: string; artist: string; url: string; duration: number }[] = [
+  // Add your uploaded songs here
+];
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -133,21 +47,18 @@ export default function Shop() {
     .slice(0, 4);
   
   // Audio player state
-  const [selectedGenre, setSelectedGenre] = useState<string>('lofi');
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
-  const [showGenreMenu, setShowGenreMenu] = useState(false);
-  const [isPlayerExpanded, setIsPlayerExpanded] = useState(true);
   const [isShuffleOn, setIsShuffleOn] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
-  const currentPlaylist = GENRE_PLAYLISTS[selectedGenre];
-  const currentTrack = currentPlaylist.tracks[currentTrackIndex];
+  const hasMusic = UPLOADED_TRACKS.length > 0;
+  const currentTrack = hasMusic ? UPLOADED_TRACKS[currentTrackIndex] : null;
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -194,7 +105,7 @@ export default function Shop() {
     };
   }, []);
 
-  // Load track when genre or track changes
+  // Load track when track changes
   useEffect(() => {
     if (audioRef.current && currentTrack) {
       const wasPlaying = isPlaying;
@@ -205,7 +116,7 @@ export default function Shop() {
         audioRef.current.play().catch(console.error);
       }
     }
-  }, [selectedGenre, currentTrackIndex]);
+  }, [currentTrackIndex]);
 
   // Update volume
   useEffect(() => {
@@ -215,7 +126,7 @@ export default function Shop() {
   }, [volume, isMuted]);
 
   const handlePlayPause = () => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || !hasMusic) return;
     
     if (isPlaying) {
       audioRef.current.pause();
@@ -228,6 +139,7 @@ export default function Shop() {
   };
 
   const handlePrevious = () => {
+    if (!hasMusic) return;
     if (currentTime > 3) {
       // Restart current track if more than 3 seconds in
       if (audioRef.current) {
@@ -235,22 +147,23 @@ export default function Shop() {
       }
     } else {
       setCurrentTrackIndex((prev) => 
-        prev === 0 ? currentPlaylist.tracks.length - 1 : prev - 1
+        prev === 0 ? UPLOADED_TRACKS.length - 1 : prev - 1
       );
     }
   };
 
   const handleNext = () => {
+    if (!hasMusic) return;
     if (isShuffleOn) {
       // Pick a random track that's different from current
       let randomIndex;
       do {
-        randomIndex = Math.floor(Math.random() * currentPlaylist.tracks.length);
-      } while (randomIndex === currentTrackIndex && currentPlaylist.tracks.length > 1);
+        randomIndex = Math.floor(Math.random() * UPLOADED_TRACKS.length);
+      } while (randomIndex === currentTrackIndex && UPLOADED_TRACKS.length > 1);
       setCurrentTrackIndex(randomIndex);
     } else {
       setCurrentTrackIndex((prev) => 
-        prev === currentPlaylist.tracks.length - 1 ? 0 : prev + 1
+        prev === UPLOADED_TRACKS.length - 1 ? 0 : prev + 1
       );
     }
   };
@@ -267,20 +180,6 @@ export default function Shop() {
     setIsMuted(false);
   };
 
-  const handleGenreChange = (genreKey: string) => {
-    setSelectedGenre(genreKey);
-    setCurrentTrackIndex(0);
-    setShowGenreMenu(false);
-    
-    // Auto-play when changing genre
-    if (audioRef.current) {
-      setTimeout(() => {
-        audioRef.current?.play().then(() => {
-          setIsPlaying(true);
-        }).catch(console.error);
-      }, 100);
-    }
-  };
 
   return (
     <div className="min-h-screen pb-8 md:pb-16 relative">
@@ -343,40 +242,23 @@ export default function Shop() {
                   <Music2 className="w-6 h-6 text-black" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-foreground">{currentTrack.title}</h3>
-                  <p className="text-xs text-muted-foreground">{currentTrack.artist}</p>
+                  {hasMusic && currentTrack ? (
+                    <>
+                      <h3 className="font-medium text-foreground">{currentTrack.title}</h3>
+                      <p className="text-xs text-muted-foreground">{currentTrack.artist}</p>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="font-medium text-muted-foreground">No music uploaded</h3>
+                      <p className="text-xs text-muted-foreground">Upload songs to play</p>
+                    </>
+                  )}
                 </div>
               </div>
               
-              {/* Genre Selector */}
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-[hsl(220,15%,12%)] border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,18%)] gap-2"
-                  onClick={() => setShowGenreMenu(!showGenreMenu)}
-                >
-                  <span>{currentPlaylist.icon}</span>
-                  <span className="hidden sm:inline">{currentPlaylist.name}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showGenreMenu ? 'rotate-180' : ''}`} />
-                </Button>
-                
-                {showGenreMenu && (
-                  <div className="absolute top-full right-0 mt-1 bg-[hsl(220,15%,10%)] border border-[hsl(220,15%,25%)] rounded-md overflow-hidden z-20 min-w-[160px]">
-                    {Object.entries(GENRE_PLAYLISTS).map(([key, playlist]) => (
-                      <button
-                        key={key}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-[hsl(220,15%,18%)] flex items-center gap-2 transition-colors ${
-                          selectedGenre === key ? 'bg-[hsl(var(--racing-orange)/0.1)] text-[hsl(var(--racing-orange))]' : ''
-                        }`}
-                        onClick={() => handleGenreChange(key)}
-                      >
-                        <span>{playlist.icon}</span>
-                        <span>{playlist.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+              {/* Track count */}
+              <div className="text-xs text-muted-foreground">
+                {hasMusic ? `${UPLOADED_TRACKS.length} track${UPLOADED_TRACKS.length > 1 ? 's' : ''}` : 'No tracks'}
               </div>
             </div>
 
@@ -455,30 +337,36 @@ export default function Shop() {
             </div>
 
             {/* Track List */}
-            <div className="mt-4 pt-4 border-t border-[hsl(220,15%,20%)]">
-              <div className="flex flex-wrap gap-2">
-                {currentPlaylist.tracks.map((track, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setCurrentTrackIndex(index);
-                      if (audioRef.current) {
-                        setTimeout(() => {
-                          audioRef.current?.play().then(() => setIsPlaying(true)).catch(console.error);
-                        }, 100);
-                      }
-                    }}
-                    className={`px-3 py-1.5 rounded-full text-xs transition-colors ${
-                      currentTrackIndex === index
-                        ? 'bg-[hsl(var(--racing-orange))] text-black font-medium'
-                        : 'bg-[hsl(220,15%,15%)] text-muted-foreground hover:bg-[hsl(220,15%,20%)]'
-                    }`}
-                  >
-                    {track.title}
-                  </button>
-                ))}
+            {hasMusic ? (
+              <div className="mt-4 pt-4 border-t border-[hsl(220,15%,20%)]">
+                <div className="flex flex-wrap gap-2">
+                  {UPLOADED_TRACKS.map((track, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCurrentTrackIndex(index);
+                        if (audioRef.current) {
+                          setTimeout(() => {
+                            audioRef.current?.play().then(() => setIsPlaying(true)).catch(console.error);
+                          }, 100);
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs transition-colors ${
+                        currentTrackIndex === index
+                          ? 'bg-[hsl(var(--racing-orange))] text-black font-medium'
+                          : 'bg-[hsl(220,15%,15%)] text-muted-foreground hover:bg-[hsl(220,15%,20%)]'
+                      }`}
+                    >
+                      {track.title}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="mt-4 pt-4 border-t border-[hsl(220,15%,20%)] text-center text-sm text-muted-foreground">
+                Upload your own music files to enable playback
+              </div>
+            )}
           </div>
         </div>
 
