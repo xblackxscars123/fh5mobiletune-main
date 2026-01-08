@@ -259,4 +259,32 @@
       opacity: 0.5;
     }
   }
+  
+  @keyframes roadLineZoom {
+    0% { 
+      transform: translateY(0) scale(0.5);
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
+    }
+    100% { 
+      transform: translateY(200px) scale(2);
+      opacity: 0;
+    }
+  }
+
+  @keyframes speedLine {
+    0% { 
+      transform: translateX(-100px) scaleX(0.5);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% { 
+      transform: translateX(100px) scaleX(1.5);
+      opacity: 0;
+    }
+  }
 }
