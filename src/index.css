@@ -241,12 +241,10 @@
     to { right: 110%; opacity: 0; }
   }
   
+  /* Window glow - EPILEPSY SAFE: Very slow, gentle transitions */
   @keyframes windowFlicker {
-    0%, 100% { opacity: 0.3; }
-    20% { opacity: 0.8; }
-    40% { opacity: 0.5; }
-    60% { opacity: 0.9; }
-    80% { opacity: 0.4; }
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.7; }
   }
   
   @keyframes float {
@@ -256,17 +254,21 @@
     }
     50% { 
       transform: translateY(-20px) translateX(10px); 
-      opacity: 0.5;
+      opacity: 0.4;
     }
   }
   
+  /* Road lines - EPILEPSY SAFE: Smooth motion, no flashing */
   @keyframes roadLineZoom {
     0% { 
       transform: translateY(0) scale(0.5);
       opacity: 0;
     }
-    20% {
-      opacity: 1;
+    15% {
+      opacity: 0.6;
+    }
+    85% {
+      opacity: 0.6;
     }
     100% { 
       transform: translateY(200px) scale(2);
@@ -274,13 +276,17 @@
     }
   }
 
+  /* Speed lines - EPILEPSY SAFE: Slower, smoother transitions */
   @keyframes speedLine {
     0% { 
       transform: translateX(-100px) scaleX(0.5);
       opacity: 0;
     }
-    50% {
-      opacity: 1;
+    30% {
+      opacity: 0.3;
+    }
+    70% {
+      opacity: 0.3;
     }
     100% { 
       transform: translateX(100px) scaleX(1.5);
