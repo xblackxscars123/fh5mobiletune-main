@@ -130,8 +130,19 @@ export function YouTubeMusicPlayer() {
 
   return (
     <>
-      {/* Hidden YouTube player */}
-      <div id="yt-player" className="hidden" />
+      {/* Hidden YouTube player - positioned off-screen for audio only */}
+      <div 
+        id="yt-player" 
+        style={{ 
+          position: 'absolute', 
+          left: '-9999px', 
+          top: '-9999px',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+          pointerEvents: 'none'
+        }} 
+      />
       
       {/* Floating music controls */}
       <div className="fixed bottom-4 left-4 z-50 bg-[hsl(220,18%,8%)/0.95] backdrop-blur-md border border-[hsl(220,15%,25%)] rounded-full px-2 py-1.5 flex items-center gap-1 shadow-lg">
