@@ -1,4 +1,7 @@
 import { useMemo } from 'react';
+import nissanZ from '@/assets/cars/nissan-z.jpg';
+import skylineR34 from '@/assets/cars/skyline-r34.jpg';
+import toyotaSupra from '@/assets/cars/toyota-supra.jpg';
 
 // Japanese-themed chill lofi background with stanced JDM cars
 export function JapaneseLofiBackground() {
@@ -150,128 +153,122 @@ export function JapaneseLofiBackground() {
         }}
       />
 
-      {/* Stanced JDM Cars */}
-      {/* Silvia S15 style - left side */}
-      <div className="absolute bottom-[8%] left-[8%]">
-        <svg width="140" height="50" viewBox="0 0 140 50" fill="none">
-          {/* Car body */}
-          <path 
-            d="M15,35 L20,35 L25,22 L45,18 L90,18 L110,20 L125,30 L130,35 L15,35" 
-            fill="hsl(200, 80%, 35%)"
+      {/* Real JDM Cars with atmospheric integration */}
+      
+      {/* Nissan Fairlady Z - left side, main focus */}
+      <div className="absolute bottom-[4%] left-[3%] w-[280px] sm:w-[350px]">
+        <div className="relative">
+          {/* Car shadow on ground */}
+          <div 
+            className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[90%] h-4 rounded-full"
+            style={{
+              background: 'radial-gradient(ellipse, hsl(0 0% 0% / 0.6) 0%, transparent 70%)',
+              filter: 'blur(8px)',
+            }}
           />
-          {/* Hood and roof line */}
-          <path 
-            d="M25,22 L45,18 L90,18 L95,20 L80,20 L65,22 L45,22 L30,24" 
-            fill="hsl(200, 75%, 30%)"
+          {/* Car image with night atmosphere */}
+          <img 
+            src={nissanZ} 
+            alt="Nissan Fairlady Z" 
+            className="w-full h-auto object-cover rounded-sm"
+            style={{
+              filter: 'brightness(0.6) contrast(1.1) saturate(0.9)',
+              maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)',
+            }}
           />
-          {/* Windows */}
-          <path 
-            d="M50,20 L52,23 L78,23 L82,20 L50,20" 
-            fill="hsl(220, 30%, 15%)"
-            opacity="0.8"
-          />
-          {/* Headlights glow */}
-          <ellipse cx="120" cy="28" rx="4" ry="3" fill="hsl(45, 90%, 70%)" opacity="0.8" />
-          <ellipse cx="120" cy="28" rx="6" ry="4" fill="hsl(45, 90%, 70%)" opacity="0.3" />
-          {/* Tail lights */}
-          <rect x="18" y="26" width="4" height="6" rx="1" fill="hsl(0, 80%, 50%)" opacity="0.9" />
-          {/* Wheels - stanced low */}
-          <circle cx="38" cy="38" r="8" fill="hsl(0, 0%, 8%)" />
-          <circle cx="38" cy="38" r="5" fill="hsl(0, 0%, 20%)" />
-          <circle cx="100" cy="38" r="8" fill="hsl(0, 0%, 8%)" />
-          <circle cx="100" cy="38" r="5" fill="hsl(0, 0%, 20%)" />
-          {/* Wheel lips / fenders */}
-          <path d="M28,35 Q38,28 48,35" stroke="hsl(200, 80%, 32%)" strokeWidth="2" fill="none" />
-          <path d="M90,35 Q100,28 110,35" stroke="hsl(200, 80%, 32%)" strokeWidth="2" fill="none" />
-          {/* Ground reflection */}
-          <path 
-            d="M15,38 L130,38 L130,42 L15,42 Z" 
-            fill="hsl(200, 80%, 35%)"
-            opacity="0.15"
-          />
-        </svg>
+          {/* Reflection on wet ground */}
+          <div 
+            className="absolute top-full left-0 right-0 h-8 overflow-hidden opacity-20"
+            style={{
+              transform: 'scaleY(-1)',
+              filter: 'blur(3px)',
+            }}
+          >
+            <img 
+              src={nissanZ} 
+              alt="" 
+              className="w-full h-auto object-cover"
+              style={{
+                filter: 'brightness(0.4)',
+              }}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* R34 GT-R style - right side */}
-      <div className="absolute bottom-[6%] right-[5%]">
-        <svg width="160" height="55" viewBox="0 0 160 55" fill="none">
-          {/* Car body - midnight purple */}
-          <path 
-            d="M10,38 L15,38 L22,24 L50,19 L105,19 L130,22 L145,32 L150,38 L10,38" 
-            fill="hsl(280, 50%, 25%)"
+      {/* Skyline R34 GT-R - right side, prominent */}
+      <div className="absolute bottom-[3%] right-[2%] w-[300px] sm:w-[380px]">
+        <div className="relative">
+          {/* Car shadow */}
+          <div 
+            className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[85%] h-5 rounded-full"
+            style={{
+              background: 'radial-gradient(ellipse, hsl(0 0% 0% / 0.7) 0%, transparent 70%)',
+              filter: 'blur(10px)',
+            }}
           />
-          {/* Hood detail */}
-          <path 
-            d="M25,24 L50,20 L100,20 L105,22 L95,22 L55,24 L30,26" 
-            fill="hsl(280, 45%, 22%)"
+          {/* Car image */}
+          <img 
+            src={skylineR34} 
+            alt="Nissan Skyline R34 GT-R" 
+            className="w-full h-auto object-cover rounded-sm"
+            style={{
+              filter: 'brightness(0.55) contrast(1.15) saturate(0.85)',
+              maskImage: 'linear-gradient(to bottom, black 75%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 75%, transparent 100%)',
+            }}
           />
-          {/* Iconic R34 headlights */}
-          <rect x="130" y="26" width="12" height="3" rx="1" fill="hsl(45, 90%, 70%)" opacity="0.9" />
-          <rect x="130" y="30" width="10" height="2" rx="1" fill="hsl(45, 90%, 70%)" opacity="0.7" />
-          {/* Light glow */}
-          <ellipse cx="136" cy="28" rx="10" ry="6" fill="hsl(45, 90%, 70%)" opacity="0.2" />
-          {/* Windows */}
-          <path 
-            d="M55,22 L58,26 L92,26 L98,22 L55,22" 
-            fill="hsl(220, 30%, 12%)"
-            opacity="0.85"
+          {/* Subtle purple glow from city lights */}
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'linear-gradient(135deg, hsl(280 50% 50% / 0.1) 0%, transparent 50%)',
+            }}
           />
-          {/* R34 wing */}
-          <rect x="12" y="16" width="30" height="2" rx="1" fill="hsl(280, 45%, 20%)" />
-          <rect x="18" y="18" width="3" height="8" fill="hsl(280, 45%, 18%)" />
-          <rect x="35" y="18" width="3" height="8" fill="hsl(280, 45%, 18%)" />
-          {/* Round tail lights */}
-          <circle cx="18" cy="30" r="3" fill="hsl(0, 80%, 50%)" opacity="0.9" />
-          <circle cx="26" cy="30" r="3" fill="hsl(0, 80%, 50%)" opacity="0.9" />
-          {/* Wheels - deep dish stanced */}
-          <circle cx="45" cy="42" r="9" fill="hsl(0, 0%, 5%)" />
-          <circle cx="45" cy="42" r="6" fill="hsl(45, 50%, 40%)" />
-          <circle cx="45" cy="42" r="3" fill="hsl(0, 0%, 15%)" />
-          <circle cx="115" cy="42" r="9" fill="hsl(0, 0%, 5%)" />
-          <circle cx="115" cy="42" r="6" fill="hsl(45, 50%, 40%)" />
-          <circle cx="115" cy="42" r="3" fill="hsl(0, 0%, 15%)" />
-          {/* Fender flares */}
-          <path d="M34,38 Q45,30 56,38" stroke="hsl(280, 50%, 23%)" strokeWidth="2" fill="none" />
-          <path d="M104,38 Q115,30 126,38" stroke="hsl(280, 50%, 23%)" strokeWidth="2" fill="none" />
-          {/* Ground reflection */}
-          <path 
-            d="M10,42 L150,42 L150,48 L10,48 Z" 
-            fill="hsl(280, 50%, 25%)"
-            opacity="0.12"
-          />
-        </svg>
+          {/* Reflection */}
+          <div 
+            className="absolute top-full left-0 right-0 h-10 overflow-hidden opacity-15"
+            style={{
+              transform: 'scaleY(-1)',
+              filter: 'blur(4px)',
+            }}
+          >
+            <img 
+              src={skylineR34} 
+              alt="" 
+              className="w-full h-auto object-cover"
+              style={{
+                filter: 'brightness(0.3)',
+              }}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* AE86 Trueno style - center background */}
-      <div className="absolute bottom-[12%] left-[38%] opacity-60">
-        <svg width="100" height="35" viewBox="0 0 100 35" fill="none">
-          {/* Classic boxy body - panda scheme */}
-          <path 
-            d="M10,26 L12,26 L18,16 L32,14 L68,14 L80,15 L88,22 L92,26 L10,26" 
-            fill="hsl(0, 0%, 95%)"
+      {/* Toyota Supra - center background, smaller for depth */}
+      <div className="absolute bottom-[10%] left-[35%] w-[180px] sm:w-[220px] opacity-50">
+        <div className="relative">
+          {/* Shadow */}
+          <div 
+            className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-[80%] h-3 rounded-full"
+            style={{
+              background: 'radial-gradient(ellipse, hsl(0 0% 0% / 0.5) 0%, transparent 70%)',
+              filter: 'blur(6px)',
+            }}
           />
-          {/* Black hood */}
-          <path 
-            d="M18,16 L32,14 L60,14 L62,15 L55,15 L35,16 L22,18" 
-            fill="hsl(0, 0%, 10%)"
+          {/* Car image - more muted for distance */}
+          <img 
+            src={toyotaSupra} 
+            alt="Toyota GR Supra" 
+            className="w-full h-auto object-cover rounded-sm"
+            style={{
+              filter: 'brightness(0.4) contrast(1.05) saturate(0.7) blur(1px)',
+              maskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
+            }}
           />
-          {/* Windows */}
-          <path 
-            d="M35,15 L37,19 L58,19 L62,15 L35,15" 
-            fill="hsl(220, 30%, 15%)"
-            opacity="0.8"
-          />
-          {/* Pop-up headlights */}
-          <rect x="78" y="14" width="6" height="4" rx="1" fill="hsl(0, 0%, 90%)" />
-          <rect x="79" y="15" width="4" height="2" fill="hsl(0, 0%, 10%)" />
-          {/* Red tail lights */}
-          <rect x="12" y="20" width="3" height="4" rx="1" fill="hsl(0, 80%, 50%)" opacity="0.8" />
-          {/* Wheels */}
-          <circle cx="28" cy="28" r="6" fill="hsl(0, 0%, 8%)" />
-          <circle cx="28" cy="28" r="4" fill="hsl(0, 0%, 25%)" />
-          <circle cx="72" cy="28" r="6" fill="hsl(0, 0%, 8%)" />
-          <circle cx="72" cy="28" r="4" fill="hsl(0, 0%, 25%)" />
-        </svg>
+        </div>
       </div>
 
       {/* Falling cherry blossom petals */}
