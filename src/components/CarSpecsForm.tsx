@@ -1,4 +1,4 @@
-import { CarSpecs, DriveType, piClasses, tireCompounds, UnitSystem } from '@/lib/tuningCalculator';
+import { CarSpecs, DriveType, piClasses, tireCompounds, UnitSystem, unitConversions } from '@/lib/tuningCalculator';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,11 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
   };
 
   const weightLabel = unitSystem === 'imperial' ? 'lbs' : 'kg';
+  const powerLabel = unitSystem === 'imperial' ? 'HP' : 'kW';
   const displayWeight = unitSystem === 'imperial' ? specs.weight : Math.round(specs.weight * 0.453592);
+  const displayPower = unitSystem === 'imperial' 
+    ? (specs.horsepower || 400) 
+    : unitConversions.hpToKw(specs.horsepower || 400);
 
   return (
     <div className="space-y-5 md:space-y-8">
@@ -87,26 +91,33 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
           />
         </div>
 
-        {/* Horsepower Input */}
+        {/* Power Input - HP or kW based on unit system */}
         <div className="space-y-2 md:space-y-3">
           <Label className="flex items-center gap-2 text-sm md:text-base font-display">
             <Zap className="w-4 h-4 md:w-5 md:h-5 text-racing-yellow" />
-            Horsepower (HP)
+            Power ({powerLabel})
           </Label>
           <Input
             type="number"
-            value={specs.horsepower || 400}
-            onChange={(e) => updateSpec('horsepower', Number(e.target.value))}
+            value={displayPower}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              const hpValue = unitSystem === 'imperial' ? value : unitConversions.kwToHp(value);
+              updateSpec('horsepower', hpValue);
+            }}
             className="bg-muted border-border focus:border-primary text-base md:text-lg font-body h-10 md:h-12"
-            min={50}
-            max={3000}
+            min={unitSystem === 'imperial' ? 50 : 37}
+            max={unitSystem === 'imperial' ? 3000 : 2237}
           />
           <Slider
-            value={[specs.horsepower || 400]}
-            onValueChange={([v]) => updateSpec('horsepower', v)}
-            min={100}
-            max={2000}
-            step={10}
+            value={[displayPower]}
+            onValueChange={([v]) => {
+              const hpValue = unitSystem === 'imperial' ? v : unitConversions.kwToHp(v);
+              updateSpec('horsepower', hpValue);
+            }}
+            min={unitSystem === 'imperial' ? 100 : 75}
+            max={unitSystem === 'imperial' ? 2000 : 1491}
+            step={unitSystem === 'imperial' ? 10 : 5}
           />
           <p className="text-xs text-muted-foreground">
             {(specs.horsepower || 400) >= 400 ? (
@@ -241,27 +252,32 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
         
         {specs.hasAero && (
           <div className="space-y-3 md:space-y-4 pt-3 md:pt-4 border-t border-border animate-fade-in">
+            <p className="text-xs text-muted-foreground">
+              Enter your aero's <strong>maximum</strong> downforce range. The calculator will determine optimal settings.
+            </p>
             <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <div className="space-y-1.5 md:space-y-2">
-                <Label className="text-xs sm:text-sm">Front Downforce (lbs)</Label>
+                <Label className="text-xs sm:text-sm">Max Front Downforce (lbs)</Label>
                 <Input
                   type="number"
-                  value={specs.frontDownforce || 0}
+                  value={specs.frontDownforce || 400}
                   onChange={(e) => updateSpec('frontDownforce', Number(e.target.value))}
                   className="bg-background h-9 md:h-10 text-sm"
                   min={0}
                   max={500}
+                  placeholder="400"
                 />
               </div>
               <div className="space-y-1.5 md:space-y-2">
-                <Label className="text-xs sm:text-sm">Rear Downforce (lbs)</Label>
+                <Label className="text-xs sm:text-sm">Max Rear Downforce (lbs)</Label>
                 <Input
                   type="number"
-                  value={specs.rearDownforce || 0}
+                  value={specs.rearDownforce || 400}
                   onChange={(e) => updateSpec('rearDownforce', Number(e.target.value))}
                   className="bg-background h-9 md:h-10 text-sm"
                   min={0}
                   max={500}
+                  placeholder="400"
                 />
               </div>
             </div>
