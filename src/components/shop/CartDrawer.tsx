@@ -11,30 +11,55 @@ import {
 } from "@/components/ui/sheet";
 import { ShoppingCart, Minus, Plus, Trash2, ExternalLink, Loader2 } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
+import { createStorefrontCheckout } from "@/lib/shopify";
+import { toast } from "sonner";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { 
     items, 
-    isLoading, 
     updateQuantity, 
-    removeItem, 
-    createCheckout 
+    removeItem,
+    clearCart
   } = useCartStore();
   
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
 
   const handleCheckout = async () => {
+    if (items.length === 0) return;
+    
+    setIsCheckingOut(true);
     try {
-      await createCheckout();
-      const checkoutUrl = useCartStore.getState().checkoutUrl;
+      const checkoutUrl = await createStorefrontCheckout(
+        items.map(item => ({ variantId: item.variantId, quantity: item.quantity }))
+      );
+      
       if (checkoutUrl) {
-        window.open(checkoutUrl, '_blank');
+        // Open in new tab
+        const newWindow = window.open(checkoutUrl, '_blank');
+        
+        // If popup was blocked, provide a fallback
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          // Create a temporary link and click it
+          const link = document.createElement('a');
+          link.href = checkoutUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        
+        toast.success("Redirecting to checkout...");
         setIsOpen(false);
       }
     } catch (error) {
       console.error('Checkout failed:', error);
+      toast.error("Failed to create checkout. Please try again.");
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
@@ -140,9 +165,9 @@ export const CartDrawer = () => {
                   onClick={handleCheckout}
                   className="w-full bg-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.8)] text-black font-display uppercase tracking-wider" 
                   size="lg"
-                  disabled={items.length === 0 || isLoading}
+                  disabled={items.length === 0 || isCheckingOut}
                 >
-                  {isLoading ? (
+                  {isCheckingOut ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Creating Checkout...
