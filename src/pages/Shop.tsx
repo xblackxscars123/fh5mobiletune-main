@@ -1,24 +1,51 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShopifyProduct, fetchProducts } from '@/lib/shopify';
 import { ProductCard } from '@/components/shop/ProductCard';
 import { CartDrawer } from '@/components/shop/CartDrawer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ShoppingCart, Car, Loader2, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Music2, Shuffle } from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
+import { ArrowLeft, ShoppingCart, Car, Loader2, Music2, ExternalLink } from 'lucide-react';
 import shopHeroBg from '@/assets/shop-hero-bg.jpg';
 
-// Music player tracks - add your uploaded songs here
-// Example: { title: 'Song Name', artist: 'Artist Name', url: '/path/to/song.mp3', duration: 180 }
-const UPLOADED_TRACKS: { title: string; artist: string; url: string; duration: number }[] = [
-  // Add your uploaded songs here
+// Curated car scene music genres with Spotify playlist links
+const MUSIC_GENRES = [
+  { 
+    name: 'Synthwave', 
+    description: 'Retro-futuristic vibes', 
+    color: 'from-purple-500 to-pink-500',
+    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DXdLEN7aqioXM'
+  },
+  { 
+    name: 'Drum & Bass', 
+    description: 'High-energy racing beats', 
+    color: 'from-orange-500 to-red-500',
+    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX8tZsk68tuDw'
+  },
+  { 
+    name: 'Lo-Fi Beats', 
+    description: 'Chill cruising sessions', 
+    color: 'from-cyan-500 to-blue-500',
+    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DWWQRwui0ExPn'
+  },
+  { 
+    name: 'EDM', 
+    description: 'Festival-ready car audio', 
+    color: 'from-yellow-500 to-orange-500',
+    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX4dyzvuaRJ0n'
+  },
+  { 
+    name: 'Hip-Hop', 
+    description: 'Street scene classics', 
+    color: 'from-green-500 to-emerald-500',
+    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd'
+  },
+  { 
+    name: 'Phonk', 
+    description: 'Drift-ready underground', 
+    color: 'from-red-600 to-purple-600',
+    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DWWY64wDtewQt'
+  },
 ];
-
-const formatTime = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-};
 
 export default function Shop() {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
@@ -45,20 +72,6 @@ export default function Shop() {
       (node.tags || []).some(t => ['featured', 'best-seller', 'bestseller', 'best_seller'].includes(t.toLowerCase())),
     )
     .slice(0, 4);
-  
-  // Audio player state
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.7);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isShuffleOn, setIsShuffleOn] = useState(false);
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  const hasMusic = UPLOADED_TRACKS.length > 0;
-  const currentTrack = hasMusic ? UPLOADED_TRACKS[currentTrackIndex] : null;
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -76,111 +89,6 @@ export default function Shop() {
 
     loadProducts();
   }, []);
-
-  // Initialize audio element
-  useEffect(() => {
-    const audio = new Audio();
-    audio.volume = volume;
-    audioRef.current = audio;
-
-    audio.addEventListener('timeupdate', () => {
-      setCurrentTime(audio.currentTime);
-    });
-
-    audio.addEventListener('loadedmetadata', () => {
-      setDuration(audio.duration);
-    });
-
-    audio.addEventListener('ended', () => {
-      handleNext();
-    });
-
-    audio.addEventListener('error', (e) => {
-      console.error('Audio error:', e);
-    });
-
-    return () => {
-      audio.pause();
-      audio.src = '';
-    };
-  }, []);
-
-  // Load track when track changes
-  useEffect(() => {
-    if (audioRef.current && currentTrack) {
-      const wasPlaying = isPlaying;
-      audioRef.current.src = currentTrack.url;
-      audioRef.current.load();
-      
-      if (wasPlaying) {
-        audioRef.current.play().catch(console.error);
-      }
-    }
-  }, [currentTrackIndex]);
-
-  // Update volume
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : volume;
-    }
-  }, [volume, isMuted]);
-
-  const handlePlayPause = () => {
-    if (!audioRef.current || !hasMusic) return;
-    
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.play().then(() => {
-        setIsPlaying(true);
-      }).catch(console.error);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (!hasMusic) return;
-    if (currentTime > 3) {
-      // Restart current track if more than 3 seconds in
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-      }
-    } else {
-      setCurrentTrackIndex((prev) => 
-        prev === 0 ? UPLOADED_TRACKS.length - 1 : prev - 1
-      );
-    }
-  };
-
-  const handleNext = () => {
-    if (!hasMusic) return;
-    if (isShuffleOn) {
-      // Pick a random track that's different from current
-      let randomIndex;
-      do {
-        randomIndex = Math.floor(Math.random() * UPLOADED_TRACKS.length);
-      } while (randomIndex === currentTrackIndex && UPLOADED_TRACKS.length > 1);
-      setCurrentTrackIndex(randomIndex);
-    } else {
-      setCurrentTrackIndex((prev) => 
-        prev === UPLOADED_TRACKS.length - 1 ? 0 : prev + 1
-      );
-    }
-  };
-
-  const handleSeek = (value: number[]) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = value[0];
-      setCurrentTime(value[0]);
-    }
-  };
-
-  const handleVolumeChange = (value: number[]) => {
-    setVolume(value[0]);
-    setIsMuted(false);
-  };
-
-
   return (
     <div className="min-h-screen pb-8 md:pb-16 relative">
       {/* Background Image */}
@@ -232,141 +140,40 @@ export default function Shop() {
           </div>
         </div>
 
-        {/* Audio Player */}
+        {/* Curated Music Genres */}
         <div className="mb-8 bg-[hsl(220,18%,8%)/0.9] backdrop-blur-md border border-[hsl(220,15%,25%)] rounded-lg overflow-hidden">
-          {/* Player Header */}
           <div className="p-4 md:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-lg bg-gradient-to-br from-[hsl(var(--racing-orange))] to-[hsl(var(--racing-orange)/0.6)] flex items-center justify-center ${isPlaying ? 'animate-pulse' : ''}`}>
-                  <Music2 className="w-6 h-6 text-black" />
-                </div>
-                <div>
-                  {hasMusic && currentTrack ? (
-                    <>
-                      <h3 className="font-medium text-foreground">{currentTrack.title}</h3>
-                      <p className="text-xs text-muted-foreground">{currentTrack.artist}</p>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="font-medium text-muted-foreground">No music uploaded</h3>
-                      <p className="text-xs text-muted-foreground">Upload songs to play</p>
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              {/* Track count */}
-              <div className="text-xs text-muted-foreground">
-                {hasMusic ? `${UPLOADED_TRACKS.length} track${UPLOADED_TRACKS.length > 1 ? 's' : ''}` : 'No tracks'}
-              </div>
-            </div>
-
-            {/* Progress Bar */}
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-xs text-muted-foreground w-10 text-right">
-                {formatTime(currentTime)}
-              </span>
-              <Slider
-                value={[currentTime]}
-                max={duration || 100}
-                step={1}
-                onValueChange={handleSeek}
-                className="flex-1"
-              />
-              <span className="text-xs text-muted-foreground w-10">
-                {formatTime(duration)}
-              </span>
-            </div>
-
-            {/* Controls */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-9 w-9 hover:bg-[hsl(220,15%,15%)] ${isShuffleOn ? 'text-[hsl(var(--racing-orange))]' : ''}`}
-                  onClick={() => setIsShuffleOn(!isShuffleOn)}
-                  title={isShuffleOn ? 'Shuffle: On' : 'Shuffle: Off'}
-                >
-                  <Shuffle className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 hover:bg-[hsl(220,15%,15%)]"
-                  onClick={handlePrevious}
-                >
-                  <SkipBack className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  className={`h-11 w-11 ${isPlaying ? 'bg-green-500 hover:bg-green-600' : 'bg-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.8)]'} text-black`}
-                  onClick={handlePlayPause}
-                >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 hover:bg-[hsl(220,15%,15%)]"
-                  onClick={handleNext}
-                >
-                  <SkipForward className="w-4 h-4" />
-                </Button>
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[hsl(var(--racing-orange))] to-[hsl(var(--racing-orange)/0.6)] flex items-center justify-center">
+                <Music2 className="w-5 h-5 text-black" />
               </div>
-
-              {/* Volume Control */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 hover:bg-[hsl(220,15%,15%)]"
-                  onClick={() => setIsMuted(!isMuted)}
-                >
-                  {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                </Button>
-                <Slider
-                  value={[isMuted ? 0 : volume]}
-                  max={1}
-                  step={0.01}
-                  onValueChange={handleVolumeChange}
-                  className="w-20"
-                />
+              <div>
+                <h3 className="font-display text-sm uppercase tracking-wide text-foreground">Car Scene Vibes</h3>
+                <p className="text-xs text-muted-foreground">Curated playlists for your drive</p>
               </div>
             </div>
-
-            {/* Track List */}
-            {hasMusic ? (
-              <div className="mt-4 pt-4 border-t border-[hsl(220,15%,20%)]">
-                <div className="flex flex-wrap gap-2">
-                  {UPLOADED_TRACKS.map((track, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setCurrentTrackIndex(index);
-                        if (audioRef.current) {
-                          setTimeout(() => {
-                            audioRef.current?.play().then(() => setIsPlaying(true)).catch(console.error);
-                          }, 100);
-                        }
-                      }}
-                      className={`px-3 py-1.5 rounded-full text-xs transition-colors ${
-                        currentTrackIndex === index
-                          ? 'bg-[hsl(var(--racing-orange))] text-black font-medium'
-                          : 'bg-[hsl(220,15%,15%)] text-muted-foreground hover:bg-[hsl(220,15%,20%)]'
-                      }`}
-                    >
-                      {track.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 pt-4 border-t border-[hsl(220,15%,20%)] text-center text-sm text-muted-foreground">
-                Upload your own music files to enable playback
-              </div>
-            )}
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {MUSIC_GENRES.map((genre) => (
+                <a
+                  key={genre.name}
+                  href={genre.spotifyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative overflow-hidden rounded-lg p-4 transition-all hover:scale-105"
+                  style={{
+                    background: `linear-gradient(135deg, hsl(220, 18%, 12%), hsl(220, 18%, 8%))`,
+                  }}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${genre.color} opacity-20 group-hover:opacity-40 transition-opacity`} />
+                  <div className="relative z-10">
+                    <h4 className="font-medium text-sm text-foreground group-hover:text-white transition-colors">{genre.name}</h4>
+                    <p className="text-xs text-muted-foreground mt-1">{genre.description}</p>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 
