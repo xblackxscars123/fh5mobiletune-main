@@ -1,14 +1,90 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
-// Generate random flicker patterns for windows
-const generateWindowPattern = () => {
-  return Array.from({ length: 50 }, () => ({
-    x: Math.random() * 100,
-    y: Math.random() * 60 + 20,
-    delay: Math.random() * 5,
-    duration: 2 + Math.random() * 4,
-    opacity: 0.3 + Math.random() * 0.7,
-  }));
+// Generate a zooming building
+interface ZoomBuilding {
+  id: number;
+  x: number; // -50 to 150 (can be off-screen)
+  width: number;
+  height: number;
+  color: string;
+  windowColor: string;
+  speed: number;
+  lane: 'left' | 'right';
+}
+
+const neonColors = [
+  { building: 'hsl(220, 20%, 8%)', windows: '#ff6b35' },
+  { building: 'hsl(240, 20%, 10%)', windows: '#00d4ff' },
+  { building: 'hsl(260, 15%, 8%)', windows: '#ff3366' },
+  { building: 'hsl(200, 20%, 8%)', windows: '#00ff88' },
+  { building: 'hsl(280, 15%, 10%)', windows: '#ffcc00' },
+  { building: 'hsl(220, 25%, 6%)', windows: '#ff00ff' },
+];
+
+const generateBuilding = (id: number, lane: 'left' | 'right'): ZoomBuilding => {
+  const colorSet = neonColors[Math.floor(Math.random() * neonColors.length)];
+  return {
+    id,
+    x: lane === 'left' ? -10 + Math.random() * 30 : 60 + Math.random() * 30,
+    width: 8 + Math.random() * 15,
+    height: 20 + Math.random() * 50,
+    color: colorSet.building,
+    windowColor: colorSet.windows,
+    speed: 0.5 + Math.random() * 0.5,
+    lane,
+  };
+};
+
+// Zooming building component
+const ZoomingBuilding = ({ building, scale, opacity }: { building: ZoomBuilding; scale: number; opacity: number }) => {
+  const windowRows = Math.floor(building.height / 6);
+  const windowCols = Math.floor(building.width / 4);
+  
+  return (
+    <div
+      className="absolute bottom-0 origin-bottom"
+      style={{
+        left: `${building.x}%`,
+        width: `${building.width * scale}%`,
+        height: `${building.height * scale}%`,
+        transform: `scale(${scale})`,
+        opacity: opacity,
+        transition: 'none',
+      }}
+    >
+      {/* Building body */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: building.color,
+          boxShadow: `0 0 ${20 * scale}px ${building.windowColor}33`,
+          border: `1px solid ${building.windowColor}22`,
+        }}
+      />
+      {/* Windows grid */}
+      <div className="absolute inset-2 grid gap-1" style={{ gridTemplateColumns: `repeat(${windowCols}, 1fr)` }}>
+        {Array.from({ length: windowRows * windowCols }).map((_, i) => (
+          <div
+            key={i}
+            className="aspect-[2/3]"
+            style={{
+              background: Math.random() > 0.3 ? building.windowColor : 'transparent',
+              opacity: 0.4 + Math.random() * 0.6,
+              boxShadow: Math.random() > 0.5 ? `0 0 4px ${building.windowColor}` : 'none',
+            }}
+          />
+        ))}
+      </div>
+      {/* Neon accent line */}
+      <div
+        className="absolute top-0 left-0 right-0 h-1"
+        style={{
+          background: building.windowColor,
+          boxShadow: `0 0 10px ${building.windowColor}, 0 0 20px ${building.windowColor}`,
+        }}
+      />
+    </div>
+  );
 };
 
 // Traffic light component
@@ -84,150 +160,187 @@ const SpeedingCar = ({ y, delay, direction, color }: { y: number; delay: number;
   );
 };
 
-// Skyscraper component
-const Skyscraper = ({ x, width, height, windows }: { x: number; width: number; height: number; windows: ReturnType<typeof generateWindowPattern> }) => {
+// Road lane markers zooming toward viewer
+const RoadLines = () => {
   return (
-    <g transform={`translate(${x}, ${100 - height})`}>
-      {/* Building body */}
-      <rect
-        x="0"
-        y="0"
-        width={width}
-        height={height}
-        fill="hsl(220, 20%, 8%)"
-        stroke="hsl(220, 15%, 15%)"
-        strokeWidth="0.5"
+    <div className="absolute bottom-0 left-0 right-0 h-[25%] overflow-hidden" style={{ perspective: '500px' }}>
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(to bottom, transparent 0%, hsl(220, 15%, 8%) 30%)',
+        }}
       />
-      {/* Windows */}
-      {windows.slice(0, Math.floor(width * height / 30)).map((w, i) => (
-        <rect
+      {/* Center lane dividers rushing toward camera */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
           key={i}
-          x={(i % Math.floor(width / 4)) * 4 + 2}
-          y={Math.floor(i / Math.floor(width / 4)) * 5 + 3}
-          width="2"
-          height="3"
-          fill={`hsl(${40 + Math.random() * 20}, 100%, 70%)`}
-          opacity={w.opacity}
+          className="absolute left-1/2 -translate-x-1/2 bg-yellow-400/80"
           style={{
-            animation: `windowFlicker ${w.duration}s ease-in-out infinite`,
-            animationDelay: `${w.delay}s`,
+            width: '4px',
+            height: '30px',
+            bottom: `${i * 25}px`,
+            animation: 'roadLineZoom 1s linear infinite',
+            animationDelay: `${i * 0.125}s`,
+            boxShadow: '0 0 10px #ffcc00, 0 0 20px #ffcc00',
           }}
         />
       ))}
-      {/* Antenna/spire on tall buildings */}
-      {height > 50 && (
-        <line
-          x1={width / 2}
-          y1="-5"
-          x2={width / 2}
-          y2="0"
-          stroke="hsl(220, 15%, 25%)"
-          strokeWidth="1"
-        />
-      )}
-    </g>
+      {/* Side road lines */}
+      <div
+        className="absolute bottom-0 left-[15%] w-1 h-full bg-gradient-to-t from-white/40 to-transparent"
+        style={{ boxShadow: '0 0 5px white' }}
+      />
+      <div
+        className="absolute bottom-0 right-[15%] w-1 h-full bg-gradient-to-t from-white/40 to-transparent"
+        style={{ boxShadow: '0 0 5px white' }}
+      />
+    </div>
   );
 };
 
 export function CityScapeBackground() {
-  const [windows] = useState(() => generateWindowPattern());
+  const [buildings, setBuildings] = useState<ZoomBuilding[]>([]);
+  const [frame, setFrame] = useState(0);
 
-  const skyscrapers = [
-    { x: 0, width: 15, height: 45 },
-    { x: 12, width: 20, height: 65 },
-    { x: 28, width: 12, height: 35 },
-    { x: 38, width: 18, height: 55 },
-    { x: 52, width: 14, height: 70 },
-    { x: 63, width: 22, height: 50 },
-    { x: 80, width: 16, height: 60 },
-    { x: 92, width: 12, height: 40 },
-  ];
+  // Initialize buildings
+  useEffect(() => {
+    const initial: ZoomBuilding[] = [];
+    for (let i = 0; i < 12; i++) {
+      initial.push(generateBuilding(i, i % 2 === 0 ? 'left' : 'right'));
+    }
+    setBuildings(initial);
+  }, []);
 
-  const cars = [
+  // Animation loop - buildings zoom toward camera
+  useEffect(() => {
+    let animationId: number;
+    let lastTime = 0;
+    let buildingId = 12;
+
+    const animate = (time: number) => {
+      if (time - lastTime > 50) { // ~20fps for performance
+        lastTime = time;
+        setFrame(f => f + 1);
+        
+        setBuildings(prev => {
+          const updated = prev.map(b => ({
+            ...b,
+            // Move buildings outward from center as they "approach"
+            x: b.lane === 'left' 
+              ? b.x - (b.speed * 2) 
+              : b.x + (b.speed * 2),
+          }));
+
+          // Remove buildings that have passed by
+          const filtered = updated.filter(b => 
+            b.lane === 'left' ? b.x > -50 : b.x < 150
+          );
+
+          // Add new buildings if needed
+          while (filtered.length < 12) {
+            const lane = Math.random() > 0.5 ? 'left' : 'right';
+            filtered.push({
+              ...generateBuilding(buildingId++, lane),
+              x: lane === 'left' ? 35 + Math.random() * 10 : 55 + Math.random() * 10,
+            });
+          }
+
+          return filtered;
+        });
+      }
+
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animationId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationId);
+  }, []);
+
+  const cars = useMemo(() => [
     { y: 82, delay: 0, direction: 'left' as const, color: '#ff6b35' },
     { y: 85, delay: 1.5, direction: 'right' as const, color: '#00d4ff' },
     { y: 88, delay: 0.8, direction: 'left' as const, color: '#ffcc00' },
     { y: 91, delay: 2.2, direction: 'right' as const, color: '#ff3366' },
-    { y: 84, delay: 3, direction: 'left' as const, color: '#00ff88' },
-    { y: 87, delay: 1, direction: 'right' as const, color: '#ff6b35' },
-  ];
+  ], []);
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-      {/* Base gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[hsl(220,25%,4%)] via-[hsl(220,20%,6%)] to-[hsl(220,20%,10%)]" />
+      {/* Base gradient - dark sky */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[hsl(220,25%,2%)] via-[hsl(260,20%,4%)] to-[hsl(220,20%,8%)]" />
+
+      {/* Stars/distant lights */}
+      <div className="absolute inset-0">
+        {Array.from({ length: 30 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-0.5 h-0.5 rounded-full bg-white"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 40}%`,
+              opacity: 0.3 + Math.random() * 0.5,
+              animation: `pulse ${2 + Math.random() * 3}s ease-in-out infinite`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Zooming buildings container */}
+      <div 
+        className="absolute inset-0"
+        style={{ 
+          perspective: '1000px',
+          perspectiveOrigin: '50% 70%',
+        }}
+      >
+        {buildings.map(building => {
+          // Calculate scale based on distance from center (simulates depth)
+          const distanceFromCenter = Math.abs(building.x - 50);
+          const scale = 0.3 + (distanceFromCenter / 50) * 2;
+          const opacity = Math.min(1, scale * 0.8);
+          
+          return (
+            <ZoomingBuilding 
+              key={building.id} 
+              building={building} 
+              scale={scale}
+              opacity={opacity}
+            />
+          );
+        })}
+      </div>
+
+      {/* Road rushing toward camera */}
+      <RoadLines />
 
       {/* Ambient city glow */}
-      <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[hsl(var(--racing-orange)/0.1)] via-[hsl(var(--racing-orange)/0.05)] to-transparent" />
-
-      {/* Skyline SVG */}
-      <svg
-        className="absolute bottom-0 left-0 w-full h-[60%]"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMax slice"
-      >
-        {/* Distant glow behind buildings */}
-        <defs>
-          <linearGradient id="skyGlow" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="hsl(280, 60%, 20%)" stopOpacity="0.3" />
-            <stop offset="50%" stopColor="hsl(30, 100%, 50%)" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="transparent" />
-          </linearGradient>
-        </defs>
-        <rect x="0" y="20" width="100" height="80" fill="url(#skyGlow)" />
-
-        {/* Skyscrapers */}
-        {skyscrapers.map((s, i) => (
-          <Skyscraper key={i} {...s} windows={windows} />
-        ))}
-
-        {/* Road/ground */}
-        <rect x="0" y="80" width="100" height="20" fill="hsl(220, 15%, 8%)" />
-        <line x1="0" y1="81" x2="100" y2="81" stroke="hsl(220, 15%, 15%)" strokeWidth="0.3" />
-
-        {/* Traffic lights */}
-        <TrafficLight x={20} delay={0} />
-        <TrafficLight x={50} delay={1} />
-        <TrafficLight x={80} delay={2} />
-      </svg>
+      <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[hsl(var(--racing-orange)/0.15)] via-[hsl(var(--racing-orange)/0.05)] to-transparent" />
 
       {/* Speeding cars (blurred streaks) */}
       {cars.map((car, i) => (
         <SpeedingCar key={i} {...car} />
       ))}
 
-      {/* Neon reflections on ground */}
-      <div className="absolute bottom-0 left-0 right-0 h-20">
-        <div
-          className="absolute bottom-8 left-1/4 w-32 h-1 rounded-full opacity-30"
-          style={{
-            background: 'linear-gradient(90deg, transparent, #ff6b35, transparent)',
-            filter: 'blur(4px)',
-            animation: 'pulse 3s ease-in-out infinite',
-          }}
-        />
-        <div
-          className="absolute bottom-6 right-1/3 w-24 h-1 rounded-full opacity-30"
-          style={{
-            background: 'linear-gradient(90deg, transparent, #00d4ff, transparent)',
-            filter: 'blur(4px)',
-            animation: 'pulse 4s ease-in-out infinite',
-            animationDelay: '1s',
-          }}
-        />
-      </div>
+      {/* Horizon glow */}
+      <div 
+        className="absolute left-1/2 -translate-x-1/2 bottom-[25%] w-[200%] h-32 opacity-30"
+        style={{
+          background: 'radial-gradient(ellipse at center, hsl(var(--racing-orange)) 0%, transparent 70%)',
+          filter: 'blur(40px)',
+        }}
+      />
 
-      {/* Atmospheric particles */}
-      <div className="absolute inset-0 opacity-20">
-        {Array.from({ length: 15 }).map((_, i) => (
+      {/* Speed lines (motion blur effect) */}
+      <div className="absolute inset-0 opacity-10">
+        {Array.from({ length: 20 }).map((_, i) => (
           <div
             key={i}
-            className="absolute w-1 h-1 rounded-full bg-white/50"
+            className="absolute h-px bg-gradient-to-r from-transparent via-white to-transparent"
             style={{
               left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animation: `float ${5 + Math.random() * 5}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 5}s`,
+              top: `${30 + Math.random() * 50}%`,
+              width: `${50 + Math.random() * 100}px`,
+              animation: `speedLine ${0.5 + Math.random() * 0.5}s linear infinite`,
+              animationDelay: `${Math.random() * 2}s`,
             }}
           />
         ))}
