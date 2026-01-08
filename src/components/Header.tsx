@@ -21,7 +21,7 @@ export function Header() {
         
         <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold tracking-wider">
           <span className="text-gradient-racing">FH5</span>{' '}
-          <span className="text-foreground">TUNING</span>
+          <span className="text-foreground">PRO TUNE</span>
         </h1>
         
         <p className="font-display text-sm sm:text-base md:text-lg lg:text-xl text-racing-cyan uppercase tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.3em]">

@@ -8,6 +8,7 @@ import { ForzaTunePanel } from '@/components/ForzaTunePanel';
 import { SavedTunesManager } from '@/components/SavedTunesManager';
 import { ShopPromoPopup } from '@/components/ShopPromoPopup';
 import { JapaneseLofiBackground } from '@/components/JapaneseLofiBackground';
+import { TuningExpertChat } from '@/components/TuningExpertChat';
 import { Button } from '@/components/ui/button';
 import { CarSpecs, TuneType, calculateTune, UnitSystem } from '@/lib/tuningCalculator';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
@@ -191,6 +192,9 @@ export default function Index() {
         <footer className="mt-8 md:mt-16 text-center text-muted-foreground text-xs px-4">
           <p>Based on community tuning guides. Not affiliated with Playground Games.</p>
         </footer>
+        
+        {/* AI Tuning Expert Chat */}
+        <TuningExpertChat />
       </div>
     </div>
   );
