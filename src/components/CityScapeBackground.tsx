@@ -112,14 +112,15 @@ const ZoomingBuilding = ({ building, scale, opacity }: { building: ZoomBuilding;
   );
 };
 
-// Traffic light component
+// Traffic light component - EPILEPSY SAFE: Slow transitions (4+ seconds between changes)
 const TrafficLight = ({ x, delay }: { x: number; delay: number }) => {
   const [activeLight, setActiveLight] = useState(0);
 
   useEffect(() => {
+    // Changed to 4+ seconds between light changes (safe: less than 3 flashes per second)
     const interval = setInterval(() => {
       setActiveLight((prev) => (prev + 1) % 3);
-    }, 2000 + delay * 500);
+    }, 4000 + delay * 1000);
 
     return () => clearInterval(interval);
   }, [delay]);
@@ -130,37 +131,37 @@ const TrafficLight = ({ x, delay }: { x: number; delay: number }) => {
       <rect x="0" y="0" width="3" height="25" fill="hsl(220, 15%, 20%)" />
       {/* Housing */}
       <rect x="-5" y="-20" width="13" height="24" rx="2" fill="hsl(220, 15%, 15%)" />
-      {/* Red */}
+      {/* Red - smooth 1s transition */}
       <circle
         cx="1.5"
         cy="-14"
         r="3"
         fill={activeLight === 0 ? '#ff3333' : '#331111'}
         style={{
-          filter: activeLight === 0 ? 'drop-shadow(0 0 8px #ff3333)' : 'none',
-          transition: 'all 0.3s ease',
+          filter: activeLight === 0 ? 'drop-shadow(0 0 6px #ff3333)' : 'none',
+          transition: 'all 1s ease',
         }}
       />
-      {/* Yellow */}
+      {/* Yellow - smooth 1s transition */}
       <circle
         cx="1.5"
         cy="-8"
         r="3"
         fill={activeLight === 1 ? '#ffcc00' : '#332200'}
         style={{
-          filter: activeLight === 1 ? 'drop-shadow(0 0 8px #ffcc00)' : 'none',
-          transition: 'all 0.3s ease',
+          filter: activeLight === 1 ? 'drop-shadow(0 0 6px #ffcc00)' : 'none',
+          transition: 'all 1s ease',
         }}
       />
-      {/* Green */}
+      {/* Green - smooth 1s transition */}
       <circle
         cx="1.5"
         cy="-2"
         r="3"
         fill={activeLight === 2 ? '#00ff66' : '#003311'}
         style={{
-          filter: activeLight === 2 ? 'drop-shadow(0 0 8px #00ff66)' : 'none',
-          transition: 'all 0.3s ease',
+          filter: activeLight === 2 ? 'drop-shadow(0 0 6px #00ff66)' : 'none',
+          transition: 'all 1s ease',
         }}
       />
     </g>
@@ -195,18 +196,18 @@ const RoadLines = () => {
           background: 'linear-gradient(to bottom, transparent 0%, hsl(220, 15%, 8%) 30%)',
         }}
       />
-      {/* Center lane dividers rushing toward camera */}
-      {Array.from({ length: 8 }).map((_, i) => (
+      {/* Center lane dividers - EPILEPSY SAFE: Slower animation (2s cycle) */}
+      {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
-          className="absolute left-1/2 -translate-x-1/2 bg-yellow-400/80"
+          className="absolute left-1/2 -translate-x-1/2 bg-yellow-400/60"
           style={{
             width: '4px',
             height: '30px',
-            bottom: `${i * 25}px`,
-            animation: 'roadLineZoom 1s linear infinite',
-            animationDelay: `${i * 0.125}s`,
-            boxShadow: '0 0 10px #ffcc00, 0 0 20px #ffcc00',
+            bottom: `${i * 35}px`,
+            animation: 'roadLineZoom 2s linear infinite',
+            animationDelay: `${i * 0.33}s`,
+            boxShadow: '0 0 8px #ffcc0066',
           }}
         />
       ))}
@@ -481,9 +482,9 @@ export function CityScapeBackground() {
         }}
       />
 
-      {/* Speed lines (motion blur effect) - reduced */}
-      <div className="absolute inset-0 opacity-5">
-        {Array.from({ length: 12 }).map((_, i) => (
+      {/* Speed lines - EPILEPSY SAFE: Fewer, slower, dimmer */}
+      <div className="absolute inset-0 opacity-[0.03]">
+        {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
             className="absolute h-px bg-gradient-to-r from-transparent via-white to-transparent"
@@ -491,8 +492,8 @@ export function CityScapeBackground() {
               left: `${Math.random() * 100}%`,
               top: `${30 + Math.random() * 50}%`,
               width: `${50 + Math.random() * 100}px`,
-              animation: `speedLine ${0.8 + Math.random() * 0.7}s linear infinite`,
-              animationDelay: `${Math.random() * 3}s`,
+              animation: `speedLine ${2 + Math.random() * 1}s linear infinite`,
+              animationDelay: `${Math.random() * 4}s`,
             }}
           />
         ))}
