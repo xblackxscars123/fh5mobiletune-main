@@ -7,6 +7,7 @@ import { CarSelector } from '@/components/CarSelector';
 import { ForzaTunePanel } from '@/components/ForzaTunePanel';
 import { SavedTunesManager } from '@/components/SavedTunesManager';
 import { ShopPromoPopup } from '@/components/ShopPromoPopup';
+import { CityScapeBackground } from '@/components/CityScapeBackground';
 import { Button } from '@/components/ui/button';
 import { CarSpecs, TuneType, calculateTune, UnitSystem } from '@/lib/tuningCalculator';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
@@ -68,9 +69,10 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen pb-8 md:pb-16">
+    <div className="min-h-screen pb-8 md:pb-16 relative">
+      <CityScapeBackground />
       <ShopPromoPopup />
-      <div className="container max-w-7xl mx-auto px-3 sm:px-4 md:px-6">
+      <div className="container max-w-7xl mx-auto px-3 sm:px-4 md:px-6 relative z-10">
         <Header />
         
         {/* Development Help Banner */}
