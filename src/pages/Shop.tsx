@@ -4,48 +4,8 @@ import { ShopifyProduct, fetchProducts } from '@/lib/shopify';
 import { ProductCard } from '@/components/shop/ProductCard';
 import { CartDrawer } from '@/components/shop/CartDrawer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ShoppingCart, Car, Loader2, Music2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Car, Loader2 } from 'lucide-react';
 import shopHeroBg from '@/assets/shop-hero-bg.jpg';
-
-// Curated car scene music genres with Spotify playlist links
-const MUSIC_GENRES = [
-  { 
-    name: 'Synthwave', 
-    description: 'Retro-futuristic vibes', 
-    color: 'from-purple-500 to-pink-500',
-    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DXdLEN7aqioXM'
-  },
-  { 
-    name: 'Drum & Bass', 
-    description: 'High-energy racing beats', 
-    color: 'from-orange-500 to-red-500',
-    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX8tZsk68tuDw'
-  },
-  { 
-    name: 'Lo-Fi Beats', 
-    description: 'Chill cruising sessions', 
-    color: 'from-cyan-500 to-blue-500',
-    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DWWQRwui0ExPn'
-  },
-  { 
-    name: 'EDM', 
-    description: 'Festival-ready car audio', 
-    color: 'from-yellow-500 to-orange-500',
-    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX4dyzvuaRJ0n'
-  },
-  { 
-    name: 'Hip-Hop', 
-    description: 'Street scene classics', 
-    color: 'from-green-500 to-emerald-500',
-    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd'
-  },
-  { 
-    name: 'Phonk', 
-    description: 'Drift-ready underground', 
-    color: 'from-red-600 to-purple-600',
-    spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DWWY64wDtewQt'
-  },
-];
 
 export default function Shop() {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
@@ -140,42 +100,6 @@ export default function Shop() {
           </div>
         </div>
 
-        {/* Curated Music Genres */}
-        <div className="mb-8 bg-[hsl(220,18%,8%)/0.9] backdrop-blur-md border border-[hsl(220,15%,25%)] rounded-lg overflow-hidden">
-          <div className="p-4 md:p-5">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[hsl(var(--racing-orange))] to-[hsl(var(--racing-orange)/0.6)] flex items-center justify-center">
-                <Music2 className="w-5 h-5 text-black" />
-              </div>
-              <div>
-                <h3 className="font-display text-sm uppercase tracking-wide text-foreground">Car Scene Vibes</h3>
-                <p className="text-xs text-muted-foreground">Curated playlists for your drive</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              {MUSIC_GENRES.map((genre) => (
-                <a
-                  key={genre.name}
-                  href={genre.spotifyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative overflow-hidden rounded-lg p-4 transition-all hover:scale-105"
-                  style={{
-                    background: `linear-gradient(135deg, hsl(220, 18%, 12%), hsl(220, 18%, 8%))`,
-                  }}
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${genre.color} opacity-20 group-hover:opacity-40 transition-opacity`} />
-                  <div className="relative z-10">
-                    <h4 className="font-medium text-sm text-foreground group-hover:text-white transition-colors">{genre.name}</h4>
-                    <p className="text-xs text-muted-foreground mt-1">{genre.description}</p>
-                    <ExternalLink className="w-3 h-3 text-muted-foreground mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
 
         {/* Featured + Filters */}
         {!loading && !error && products.length > 0 && (
