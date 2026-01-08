@@ -307,26 +307,134 @@ export function CityScapeBackground() {
     { y: 91, delay: 2.2, direction: 'right' as const, color: '#ff3366' },
   ], []);
 
+  // Generate stable star positions
+  const stars = useMemo(() => 
+    Array.from({ length: 40 }).map((_, i) => ({
+      left: Math.random() * 100,
+      top: Math.random() * 35,
+      size: 0.5 + Math.random() * 1,
+      twinkleDuration: 4 + Math.random() * 6, // Slower twinkle (4-10s)
+      delay: Math.random() * 5,
+    })), []
+  );
+
+  // Horizon silhouettes data
+  const horizonBuildings = useMemo(() => [
+    { x: 0, width: 8, height: 12 },
+    { x: 6, width: 5, height: 18 },
+    { x: 10, width: 10, height: 14 },
+    { x: 18, width: 6, height: 22 },
+    { x: 23, width: 12, height: 16 },
+    { x: 32, width: 4, height: 25 },
+    { x: 35, width: 8, height: 20 },
+    { x: 42, width: 6, height: 15 },
+    { x: 47, width: 10, height: 28 },
+    { x: 55, width: 5, height: 18 },
+    { x: 59, width: 8, height: 22 },
+    { x: 66, width: 12, height: 14 },
+    { x: 75, width: 6, height: 20 },
+    { x: 80, width: 10, height: 16 },
+    { x: 88, width: 5, height: 24 },
+    { x: 92, width: 8, height: 18 },
+  ], []);
+
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
       {/* Base gradient - dark sky */}
       <div className="absolute inset-0 bg-gradient-to-b from-[hsl(220,25%,2%)] via-[hsl(260,20%,4%)] to-[hsl(220,20%,8%)]" />
 
-      {/* Stars/distant lights */}
+      {/* Stars with slow twinkling */}
       <div className="absolute inset-0">
-        {Array.from({ length: 30 }).map((_, i) => (
+        {stars.map((star, i) => (
           <div
             key={i}
-            className="absolute w-0.5 h-0.5 rounded-full bg-white"
+            className="absolute rounded-full bg-white"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 40}%`,
-              opacity: 0.3 + Math.random() * 0.5,
-              animation: `pulse ${2 + Math.random() * 3}s ease-in-out infinite`,
+              left: `${star.left}%`,
+              top: `${star.top}%`,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              animation: `starTwinkle ${star.twinkleDuration}s ease-in-out infinite`,
+              animationDelay: `${star.delay}s`,
             }}
           />
         ))}
       </div>
+
+      {/* Distant horizon silhouettes */}
+      <div className="absolute bottom-[28%] left-0 right-0 h-[15%]">
+        <svg
+          className="absolute bottom-0 left-0 w-full h-full"
+          viewBox="0 0 100 30"
+          preserveAspectRatio="xMidYMax slice"
+        >
+          {horizonBuildings.map((b, i) => (
+            <rect
+              key={i}
+              x={b.x}
+              y={30 - b.height}
+              width={b.width}
+              height={b.height}
+              fill="hsl(220, 20%, 5%)"
+              opacity="0.8"
+            />
+          ))}
+          {/* Tiny distant window lights */}
+          {horizonBuildings.map((b, i) => (
+            Array.from({ length: 3 }).map((_, j) => (
+              <rect
+                key={`${i}-${j}`}
+                x={b.x + 1 + (j * 2)}
+                y={30 - b.height + 2 + (Math.floor(Math.random() * 3) * 3)}
+                width="0.8"
+                height="1"
+                fill={Math.random() > 0.5 ? '#ffcc66' : '#ff8844'}
+                opacity="0.4"
+                style={{
+                  animation: `starTwinkle ${6 + Math.random() * 4}s ease-in-out infinite`,
+                  animationDelay: `${Math.random() * 5}s`,
+                }}
+              />
+            ))
+          ))}
+        </svg>
+      </div>
+
+      {/* Fog/haze layer 1 - bottom horizon */}
+      <div 
+        className="absolute bottom-[20%] left-0 right-0 h-[20%]"
+        style={{
+          background: 'linear-gradient(to top, hsl(220, 20%, 8%) 0%, hsl(240, 15%, 10% / 0.6) 40%, transparent 100%)',
+          filter: 'blur(8px)',
+        }}
+      />
+
+      {/* Fog/haze layer 2 - mid atmospheric */}
+      <div 
+        className="absolute bottom-[25%] left-0 right-0 h-[30%] opacity-40"
+        style={{
+          background: 'linear-gradient(to top, hsl(260, 20%, 15% / 0.5) 0%, hsl(240, 15%, 12% / 0.3) 50%, transparent 100%)',
+          filter: 'blur(20px)',
+        }}
+      />
+
+      {/* Fog/haze layer 3 - drifting mist */}
+      <div 
+        className="absolute bottom-[22%] left-0 right-0 h-[15%] opacity-30"
+        style={{
+          background: 'radial-gradient(ellipse 80% 40% at 30% 80%, hsl(200, 20%, 20% / 0.5) 0%, transparent 70%)',
+          filter: 'blur(15px)',
+          animation: 'fogDrift 20s ease-in-out infinite',
+        }}
+      />
+      <div 
+        className="absolute bottom-[24%] left-0 right-0 h-[12%] opacity-25"
+        style={{
+          background: 'radial-gradient(ellipse 60% 30% at 70% 70%, hsl(280, 15%, 18% / 0.4) 0%, transparent 70%)',
+          filter: 'blur(12px)',
+          animation: 'fogDrift 25s ease-in-out infinite reverse',
+        }}
+      />
 
       {/* Zooming buildings container */}
       <div 
@@ -356,26 +464,26 @@ export function CityScapeBackground() {
       {/* Road rushing toward camera */}
       <RoadLines />
 
-      {/* Ambient city glow */}
-      <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[hsl(var(--racing-orange)/0.15)] via-[hsl(var(--racing-orange)/0.05)] to-transparent" />
+      {/* Ambient city glow through fog */}
+      <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[hsl(var(--racing-orange)/0.12)] via-[hsl(var(--racing-orange)/0.04)] to-transparent" />
 
       {/* Speeding cars (blurred streaks) */}
       {cars.map((car, i) => (
         <SpeedingCar key={i} {...car} />
       ))}
 
-      {/* Horizon glow */}
+      {/* Horizon glow - dimmed */}
       <div 
-        className="absolute left-1/2 -translate-x-1/2 bottom-[25%] w-[200%] h-32 opacity-30"
+        className="absolute left-1/2 -translate-x-1/2 bottom-[25%] w-[200%] h-32 opacity-20"
         style={{
           background: 'radial-gradient(ellipse at center, hsl(var(--racing-orange)) 0%, transparent 70%)',
-          filter: 'blur(40px)',
+          filter: 'blur(50px)',
         }}
       />
 
-      {/* Speed lines (motion blur effect) */}
-      <div className="absolute inset-0 opacity-10">
-        {Array.from({ length: 20 }).map((_, i) => (
+      {/* Speed lines (motion blur effect) - reduced */}
+      <div className="absolute inset-0 opacity-5">
+        {Array.from({ length: 12 }).map((_, i) => (
           <div
             key={i}
             className="absolute h-px bg-gradient-to-r from-transparent via-white to-transparent"
@@ -383,8 +491,8 @@ export function CityScapeBackground() {
               left: `${Math.random() * 100}%`,
               top: `${30 + Math.random() * 50}%`,
               width: `${50 + Math.random() * 100}px`,
-              animation: `speedLine ${0.5 + Math.random() * 0.5}s linear infinite`,
-              animationDelay: `${Math.random() * 2}s`,
+              animation: `speedLine ${0.8 + Math.random() * 0.7}s linear infinite`,
+              animationDelay: `${Math.random() * 3}s`,
             }}
           />
         ))}
