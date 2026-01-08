@@ -22,7 +22,7 @@ export const fh5Cars: FH5Car[] = [
   
   // ALFA ROMEO
   { id: 'alfa-8c-2007', make: 'Alfa Romeo', model: '8C Competizione', year: 2007, weight: 3594, weightDistribution: 49, driveType: 'RWD', defaultPI: 759, category: 'euro' },
-  { id: 'alfa-33-1992', make: 'Alfa Romeo', model: '33 Stradale', year: 1992, weight: 1543, weightDistribution: 46, driveType: 'RWD', defaultPI: 556, category: 'classic' },
+  { id: 'alfa-33-1967', make: 'Alfa Romeo', model: '33 Stradale', year: 1967, weight: 1543, weightDistribution: 46, driveType: 'RWD', defaultPI: 556, category: 'classic' },
   { id: 'alfa-4c-2014', make: 'Alfa Romeo', model: '4C', year: 2014, weight: 2315, weightDistribution: 40, driveType: 'RWD', defaultPI: 696, category: 'euro' },
   { id: 'alfa-giulia-2017', make: 'Alfa Romeo', model: 'Giulia Quadrifoglio', year: 2017, weight: 3571, weightDistribution: 52, driveType: 'RWD', defaultPI: 788, category: 'modern' },
   { id: 'alfa-giulia-tz2-1965', make: 'Alfa Romeo', model: 'Giulia TZ2', year: 1965, weight: 1433, weightDistribution: 50, driveType: 'RWD', defaultPI: 497, category: 'classic' },
@@ -627,7 +627,7 @@ export const fh5Cars: FH5Car[] = [
   { id: 'renault-clio-2003', make: 'Renault', model: 'Clio V6', year: 2003, weight: 2888, weightDistribution: 38, driveType: 'RWD', defaultPI: 607, category: 'euro' },
   { id: 'renault-clio-rs-2007', make: 'Renault', model: 'Clio RS 197', year: 2007, weight: 2657, weightDistribution: 63, driveType: 'FWD', defaultPI: 503, category: 'euro' },
   { id: 'renault-clio-rs-2013', make: 'Renault', model: 'Clio R.S. 200', year: 2013, weight: 2668, weightDistribution: 62, driveType: 'FWD', defaultPI: 517, category: 'euro' },
-  { id: 'renault-megane-2008', make: 'Renault', model: 'Megane R.S. 250', year: 2008, weight: 3042, weightDistribution: 64, driveType: 'FWD', defaultPI: 594, category: 'euro' },
+  { id: 'renault-megane-2010', make: 'Renault', model: 'Megane R.S. 250', year: 2010, weight: 3042, weightDistribution: 64, driveType: 'FWD', defaultPI: 594, category: 'euro' },
   { id: 'renault-megane-2018', make: 'Renault', model: 'Megane R.S.', year: 2018, weight: 3175, weightDistribution: 63, driveType: 'FWD', defaultPI: 622, category: 'euro' },
   
   // RIMAC
@@ -642,7 +642,7 @@ export const fh5Cars: FH5Car[] = [
   // SHELBY
   { id: 'shelby-cobra-1965', make: 'Shelby', model: 'Cobra 427 S/C', year: 1965, weight: 2381, weightDistribution: 49, driveType: 'RWD', defaultPI: 655, category: 'classic' },
   { id: 'shelby-cobra-daytona-1964', make: 'Shelby', model: 'Cobra Daytona Coupe', year: 1964, weight: 2337, weightDistribution: 46, driveType: 'RWD', defaultPI: 660, category: 'classic' },
-  { id: 'shelby-monaco-1967', make: 'Shelby', model: 'Super Snake', year: 2017, weight: 3990, weightDistribution: 54, driveType: 'RWD', defaultPI: 835, category: 'muscle' },
+  { id: 'shelby-super-snake-2017', make: 'Shelby', model: 'Super Snake', year: 2017, weight: 3990, weightDistribution: 54, driveType: 'RWD', defaultPI: 835, category: 'muscle' },
   
   // SUBARU
   { id: 'subaru-22b-1998', make: 'Subaru', model: 'Impreza 22B STi', year: 1998, weight: 2888, weightDistribution: 59, driveType: 'AWD', defaultPI: 662, category: 'rally' },
@@ -690,7 +690,7 @@ export const fh5Cars: FH5Car[] = [
   { id: 'vauxhall-corsa-2004', make: 'Vauxhall', model: 'Corsa VXR', year: 2004, weight: 2513, weightDistribution: 62, driveType: 'FWD', defaultPI: 427, category: 'euro' },
   { id: 'vauxhall-corsa-2016', make: 'Vauxhall', model: 'Corsa VXR', year: 2016, weight: 2679, weightDistribution: 63, driveType: 'FWD', defaultPI: 524, category: 'euro' },
   { id: 'vauxhall-vxr8-2013', make: 'Vauxhall', model: 'VXR8 GTS', year: 2013, weight: 4035, weightDistribution: 53, driveType: 'RWD', defaultPI: 692, category: 'modern' },
-  { id: 'vauxhall-lotus-1973', make: 'Vauxhall', model: 'Lotus Carlton', year: 1990, weight: 3638, weightDistribution: 53, driveType: 'RWD', defaultPI: 591, category: 'retro' },
+  { id: 'vauxhall-lotus-carlton-1990', make: 'Vauxhall', model: 'Lotus Carlton', year: 1990, weight: 3638, weightDistribution: 53, driveType: 'RWD', defaultPI: 591, category: 'retro' },
   { id: 'vauxhall-astra-2005', make: 'Vauxhall', model: 'Astra VXR', year: 2005, weight: 3086, weightDistribution: 62, driveType: 'FWD', defaultPI: 547, category: 'euro' },
   { id: 'vauxhall-monaro-2005', make: 'Vauxhall', model: 'Monaro VXR', year: 2005, weight: 3715, weightDistribution: 54, driveType: 'RWD', defaultPI: 580, category: 'muscle' },
   

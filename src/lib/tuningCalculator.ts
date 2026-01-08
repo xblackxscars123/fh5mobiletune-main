@@ -231,6 +231,8 @@ export const unitConversions = {
   kgMmToLbIn: (kgMm: number) => Math.round(kgMm / 0.017858),
   lbsToN: (lbs: number) => Math.round(lbs * 4.44822),
   nToLbs: (n: number) => Math.round(n / 4.44822),
+  hpToKw: (hp: number) => Math.round(hp * 0.7457),
+  kwToHp: (kw: number) => Math.round(kw / 0.7457),
 };
 
 export function convertTuneToUnits(tune: TuneSettings, toSystem: UnitSystem): TuneSettings {
@@ -256,12 +258,14 @@ export function getUnitLabels(system: UnitSystem) {
     rideHeight: 'IN',
     aero: 'LB',
     weight: 'lbs',
+    power: 'HP',
   } : {
     pressure: 'BAR',
     springs: 'KG/MM',
     rideHeight: 'CM',
     aero: 'N',
     weight: 'kg',
+    power: 'kW',
   };
 }
 
@@ -320,22 +324,44 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   }
   
   // ==========================================
-  // ANTI-ROLL BARS - Weight Proportional
-  // Formula: (64 * Weight%) + offset
+  // ANTI-ROLL BARS - Drive Type & Weight Proportional
+  // Key principle: STIFFER end = MORE grip on that end
+  // To reduce understeer: soften front OR stiffen rear
+  // FWD: naturally understeers, needs softer front ARB
+  // RWD: naturally oversteers, needs stiffer front ARB
+  // AWD: balanced approach based on center diff bias
   // ==========================================
-  let arbFront = Math.round((64 * frontWeightPct) + 1.0);
-  let arbRear = Math.round((64 * rearWeightPct) + 0.5);
+  let arbFront: number;
+  let arbRear: number;
+  
+  if (driveType === 'FWD') {
+    // FWD cars understeer naturally - soften front, stiffen rear to induce rotation
+    arbFront = Math.round((64 * rearWeightPct) * 0.7);  // Inverted & reduced
+    arbRear = Math.round((64 * frontWeightPct) * 1.1);  // Stiffer rear for rotation
+  } else if (driveType === 'RWD') {
+    // RWD cars can oversteer - stiffen front for stability
+    arbFront = Math.round((64 * frontWeightPct) + 2.0);
+    arbRear = Math.round((64 * rearWeightPct) - 1.0);
+  } else {
+    // AWD - balanced approach
+    arbFront = Math.round((64 * frontWeightPct));
+    arbRear = Math.round((64 * rearWeightPct));
+  }
   
   // Tune type modifiers
   if (tuneType === 'drift') {
-    arbFront = Math.round(arbFront * 0.4);  // Very soft front
-    arbRear = Math.round(arbRear * 1.3);    // Stiff rear
+    arbFront = Math.round(arbFront * 0.4);  // Very soft front for FWD pull
+    arbRear = Math.round(arbRear * 1.3);    // Stiff rear for slide control
   } else if (tuneType === 'offroad' || tuneType === 'rally') {
     arbFront = Math.round(arbFront * 0.6);  // Softer for wheel independence
     arbRear = Math.round(arbRear * 0.6);
   } else if (tuneType === 'drag') {
     arbFront = Math.round(arbFront * 1.2);  // Stiffer for stability
     arbRear = Math.round(arbRear * 1.2);
+  } else if (tuneType === 'grip' && driveType === 'FWD') {
+    // FWD grip racing: even softer front for turn-in
+    arbFront = Math.round(arbFront * 0.8);
+    arbRear = Math.round(arbRear * 1.15);
   }
   
   arbFront = Math.max(1, Math.min(65, arbFront));
@@ -415,27 +441,54 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   bumpRear = Math.max(1, Math.min(20, bumpRear));
   
   // ==========================================
-  // AERO - Weight Distribution Balance
+  // AERO - Calculated Based on Weight, Speed Needs, and Balance
+  // Does NOT just echo user input - calculates optimal values
+  // User's input is the RANGE (min/max available), we calculate optimal within it
   // ==========================================
   let aeroFront = 0;
   let aeroRear = 0;
   
   if (hasAero) {
-    const aeroPresets: Record<TuneType, { front: number; rear: number }> = {
-      grip: { front: 200, rear: 250 },    // High downforce
-      street: { front: 120, rear: 160 },
-      drift: { front: 40, rear: 80 },     // Low for speed
-      offroad: { front: 80, rear: 100 },
-      rally: { front: 100, rear: 140 },
-      drag: { front: 0, rear: 0 },        // Minimum drag
+    // Base downforce targets by tune type (as percentage of max)
+    const aeroTargets: Record<TuneType, { frontPct: number; rearPct: number }> = {
+      grip: { frontPct: 0.65, rearPct: 0.75 },     // High downforce for corners
+      street: { frontPct: 0.40, rearPct: 0.50 },   // Moderate for mixed use
+      drift: { frontPct: 0.15, rearPct: 0.30 },    // Low for speed, some rear for stability
+      offroad: { frontPct: 0.25, rearPct: 0.35 },  // Low-moderate
+      rally: { frontPct: 0.35, rearPct: 0.45 },    // Moderate
+      drag: { frontPct: 0.0, rearPct: 0.0 },       // Minimum drag
     };
-    aeroFront = frontDownforce || aeroPresets[tuneType].front;
-    aeroRear = rearDownforce || aeroPresets[tuneType].rear;
     
-    // Balance for front-heavy cars
-    if (weightDistribution > 52) {
-      aeroRear += 20;
+    const targets = aeroTargets[tuneType];
+    
+    // Assume standard aero range is 0-400 lbs if user didn't specify
+    const maxFrontAero = frontDownforce > 0 ? frontDownforce : 400;
+    const maxRearAero = rearDownforce > 0 ? rearDownforce : 400;
+    
+    // Calculate optimal aero based on weight distribution and drive type
+    let frontAdjust = 0;
+    let rearAdjust = 0;
+    
+    // FWD: needs more rear downforce to help rotate
+    // RWD: needs balanced aero, slightly more rear for traction
+    // AWD: balanced approach
+    if (driveType === 'FWD') {
+      frontAdjust = -0.10;  // Less front downforce
+      rearAdjust = 0.15;    // More rear for rotation
+    } else if (driveType === 'RWD') {
+      rearAdjust = 0.10;    // More rear for traction
     }
+    
+    // Heavy front bias needs more rear aero
+    if (weightDistribution > 55) {
+      rearAdjust += 0.10;
+    } else if (weightDistribution < 45) {
+      frontAdjust += 0.10;
+    }
+    
+    // Calculate final values
+    aeroFront = Math.round(maxFrontAero * Math.max(0, Math.min(1, targets.frontPct + frontAdjust)));
+    aeroRear = Math.round(maxRearAero * Math.max(0, Math.min(1, targets.rearPct + rearAdjust)));
   }
   
   // ==========================================
