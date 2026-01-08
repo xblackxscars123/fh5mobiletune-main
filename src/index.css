@@ -225,4 +225,38 @@
     from { opacity: 1; transform: scale(1) translateY(0); }
     to { opacity: 0; transform: scale(0.9) translateY(20px); }
   }
+  
+  /* Cityscape animations */
+  @keyframes speedCarLeft {
+    from { left: -80px; opacity: 0; }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.6; }
+    to { left: 110%; opacity: 0; }
+  }
+  
+  @keyframes speedCarRight {
+    from { right: -80px; opacity: 0; }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.6; }
+    to { right: 110%; opacity: 0; }
+  }
+  
+  @keyframes windowFlicker {
+    0%, 100% { opacity: 0.3; }
+    20% { opacity: 0.8; }
+    40% { opacity: 0.5; }
+    60% { opacity: 0.9; }
+    80% { opacity: 0.4; }
+  }
+  
+  @keyframes float {
+    0%, 100% { 
+      transform: translateY(0) translateX(0); 
+      opacity: 0.2;
+    }
+    50% { 
+      transform: translateY(-20px) translateX(10px); 
+      opacity: 0.5;
+    }
+  }
 }
