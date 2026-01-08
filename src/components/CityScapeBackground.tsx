@@ -1,6 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 
-// Generate a zooming building
+// Depth layers for parallax effect
+type DepthLayer = 'far' | 'mid' | 'near';
+
+// Generate a zooming building with depth layer
 interface ZoomBuilding {
   id: number;
   x: number; // -50 to 150 (can be off-screen)
@@ -10,6 +13,8 @@ interface ZoomBuilding {
   windowColor: string;
   speed: number;
   lane: 'left' | 'right';
+  depth: DepthLayer; // Depth layer for parallax
+  zIndex: number;
 }
 
 const neonColors = [
@@ -21,34 +26,54 @@ const neonColors = [
   { building: 'hsl(220, 25%, 6%)', windows: '#ff00ff' },
 ];
 
-const generateBuilding = (id: number, lane: 'left' | 'right'): ZoomBuilding => {
+// Depth layer configurations - closer = faster, larger, more opaque
+const depthConfig = {
+  far: { speedMultiplier: 0.3, scaleBase: 0.2, scaleMultiplier: 0.8, opacityBase: 0.3, blur: 2, zIndex: 1 },
+  mid: { speedMultiplier: 0.7, scaleBase: 0.4, scaleMultiplier: 1.2, opacityBase: 0.6, blur: 0.5, zIndex: 2 },
+  near: { speedMultiplier: 1.5, scaleBase: 0.6, scaleMultiplier: 2.5, opacityBase: 0.9, blur: 0, zIndex: 3 },
+};
+
+const generateBuilding = (id: number, lane: 'left' | 'right', depth?: DepthLayer): ZoomBuilding => {
   const colorSet = neonColors[Math.floor(Math.random() * neonColors.length)];
+  const assignedDepth = depth || (['far', 'mid', 'near'] as DepthLayer[])[Math.floor(Math.random() * 3)];
+  const config = depthConfig[assignedDepth];
+  
   return {
     id,
     x: lane === 'left' ? -10 + Math.random() * 30 : 60 + Math.random() * 30,
-    width: 8 + Math.random() * 15,
-    height: 20 + Math.random() * 50,
+    width: assignedDepth === 'near' ? 12 + Math.random() * 18 : assignedDepth === 'mid' ? 8 + Math.random() * 12 : 5 + Math.random() * 8,
+    height: assignedDepth === 'near' ? 30 + Math.random() * 55 : assignedDepth === 'mid' ? 20 + Math.random() * 40 : 15 + Math.random() * 25,
     color: colorSet.building,
     windowColor: colorSet.windows,
-    speed: 0.5 + Math.random() * 0.5,
+    speed: (0.5 + Math.random() * 0.5) * config.speedMultiplier,
     lane,
+    depth: assignedDepth,
+    zIndex: config.zIndex,
   };
 };
 
-// Zooming building component
+// Zooming building component with parallax depth
 const ZoomingBuilding = ({ building, scale, opacity }: { building: ZoomBuilding; scale: number; opacity: number }) => {
+  const config = depthConfig[building.depth];
   const windowRows = Math.floor(building.height / 6);
   const windowCols = Math.floor(building.width / 4);
+  
+  // Apply depth-based adjustments
+  const finalScale = config.scaleBase + (scale * config.scaleMultiplier);
+  const finalOpacity = Math.min(1, opacity * config.opacityBase);
+  const blur = config.blur;
   
   return (
     <div
       className="absolute bottom-0 origin-bottom"
       style={{
         left: `${building.x}%`,
-        width: `${building.width * scale}%`,
-        height: `${building.height * scale}%`,
-        transform: `scale(${scale})`,
-        opacity: opacity,
+        width: `${building.width * finalScale}%`,
+        height: `${building.height * finalScale}%`,
+        transform: `scale(${finalScale})`,
+        opacity: finalOpacity,
+        filter: blur > 0 ? `blur(${blur}px)` : 'none',
+        zIndex: building.zIndex,
         transition: 'none',
       }}
     >
@@ -57,7 +82,7 @@ const ZoomingBuilding = ({ building, scale, opacity }: { building: ZoomBuilding;
         className="absolute inset-0"
         style={{
           background: building.color,
-          boxShadow: `0 0 ${20 * scale}px ${building.windowColor}33`,
+          boxShadow: `0 0 ${20 * finalScale}px ${building.windowColor}33`,
           border: `1px solid ${building.windowColor}22`,
         }}
       />
@@ -202,16 +227,17 @@ export function CityScapeBackground() {
   const [buildings, setBuildings] = useState<ZoomBuilding[]>([]);
   const [frame, setFrame] = useState(0);
 
-  // Initialize buildings
+  // Initialize buildings with varied depths
   useEffect(() => {
     const initial: ZoomBuilding[] = [];
+    const depths: DepthLayer[] = ['far', 'far', 'far', 'far', 'mid', 'mid', 'mid', 'mid', 'near', 'near', 'near', 'near'];
     for (let i = 0; i < 12; i++) {
-      initial.push(generateBuilding(i, i % 2 === 0 ? 'left' : 'right'));
+      initial.push(generateBuilding(i, i % 2 === 0 ? 'left' : 'right', depths[i]));
     }
     setBuildings(initial);
   }, []);
 
-  // Animation loop - buildings zoom toward camera
+  // Animation loop - buildings zoom toward camera with parallax speeds
   useEffect(() => {
     let animationId: number;
     let lastTime = 0;
@@ -223,25 +249,43 @@ export function CityScapeBackground() {
         setFrame(f => f + 1);
         
         setBuildings(prev => {
-          const updated = prev.map(b => ({
-            ...b,
-            // Move buildings outward from center as they "approach"
-            x: b.lane === 'left' 
-              ? b.x - (b.speed * 2) 
-              : b.x + (b.speed * 2),
-          }));
+          const updated = prev.map(b => {
+            // Apply depth-based speed multiplier for parallax effect
+            const config = depthConfig[b.depth];
+            const parallaxSpeed = b.speed * config.speedMultiplier * 3;
+            
+            return {
+              ...b,
+              // Move buildings outward from center as they "approach"
+              x: b.lane === 'left' 
+                ? b.x - parallaxSpeed 
+                : b.x + parallaxSpeed,
+            };
+          });
 
           // Remove buildings that have passed by
           const filtered = updated.filter(b => 
-            b.lane === 'left' ? b.x > -50 : b.x < 150
+            b.lane === 'left' ? b.x > -60 : b.x < 160
           );
 
-          // Add new buildings if needed
-          while (filtered.length < 12) {
+          // Add new buildings if needed - ensure balanced depth distribution
+          const depthCounts = { far: 0, mid: 0, near: 0 };
+          filtered.forEach(b => depthCounts[b.depth]++);
+          
+          while (filtered.length < 15) {
             const lane = Math.random() > 0.5 ? 'left' : 'right';
+            // Prioritize depths that are under-represented
+            let depth: DepthLayer = 'mid';
+            if (depthCounts.far < 4) depth = 'far';
+            else if (depthCounts.near < 4) depth = 'near';
+            else if (depthCounts.mid < 5) depth = 'mid';
+            else depth = (['far', 'mid', 'near'] as DepthLayer[])[Math.floor(Math.random() * 3)];
+            
+            depthCounts[depth]++;
+            
             filtered.push({
-              ...generateBuilding(buildingId++, lane),
-              x: lane === 'left' ? 35 + Math.random() * 10 : 55 + Math.random() * 10,
+              ...generateBuilding(buildingId++, lane, depth),
+              x: lane === 'left' ? 38 + Math.random() * 8 : 54 + Math.random() * 8,
             });
           }
 
