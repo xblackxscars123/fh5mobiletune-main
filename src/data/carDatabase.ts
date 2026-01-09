@@ -532,6 +532,7 @@ export const fh5Cars: FH5Car[] = [
   { id: 'nissan-silvia-2000', make: 'Nissan', model: 'Silvia Spec-R Aero', year: 2000, weight: 2789, weightDistribution: 54, driveType: 'RWD', defaultPI: 537, category: 'jdm' },
   { id: 'nissan-pulsar-1991', make: 'Nissan', model: 'Pulsar GTI-R', year: 1991, weight: 2602, weightDistribution: 62, driveType: 'AWD', defaultPI: 520, category: 'jdm' },
   { id: 'nissan-sentra-2004', make: 'Nissan', model: 'Sentra SE-R Spec V', year: 2004, weight: 2954, weightDistribution: 62, driveType: 'FWD', defaultPI: 437, category: 'jdm' },
+  { id: 'nissan-sentra-nismo-2018', make: 'Nissan', model: 'Sentra NISMO', year: 2018, weight: 3047, weightDistribution: 61, driveType: 'FWD', defaultPI: 485, category: 'jdm' },
   { id: 'nissan-titan-2016', make: 'Nissan', model: 'Titan Warrior Concept', year: 2016, weight: 6700, weightDistribution: 55, driveType: 'AWD', defaultPI: 555, category: 'offroad' },
   { id: 'nissan-patrol-1987', make: 'Nissan', model: 'Safari', year: 1987, weight: 4585, weightDistribution: 56, driveType: 'AWD', defaultPI: 331, category: 'offroad' },
   { id: 'nissan-juke-2016', make: 'Nissan', model: 'JUKE NISMO RS', year: 2016, weight: 3164, weightDistribution: 61, driveType: 'AWD', defaultPI: 547, category: 'modern' },
