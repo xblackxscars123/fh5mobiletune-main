@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { TuneSettings, DriveType, TuneType, tuneTypeDescriptions, UnitSystem, convertTuneToUnits, getUnitLabels } from '@/lib/tuningCalculator';
+import { TuningTooltip } from '@/components/TuningTooltip';
+import { outputExplanations } from '@/data/tuningGuide';
 import { cn } from '@/lib/utils';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 
@@ -32,7 +34,8 @@ function ForzaSlider({
   unit = '',
   leftLabel,
   rightLabel,
-  isHighlighted = false 
+  isHighlighted = false,
+  explanationKey,
 }: { 
   label: string; 
   value: number; 
@@ -42,10 +45,12 @@ function ForzaSlider({
   leftLabel?: string;
   rightLabel?: string;
   isHighlighted?: boolean;
+  explanationKey?: string;
 }) {
   const percentage = ((value - min) / (max - min)) * 100;
+  const explanation = explanationKey ? outputExplanations[explanationKey] : null;
   
-  return (
+  const sliderContent = (
     <div className="py-1.5 sm:py-2">
       <div className="flex items-center justify-between mb-1">
         <span className={cn(
@@ -85,6 +90,16 @@ function ForzaSlider({
       </div>
     </div>
   );
+
+  if (explanation) {
+    return (
+      <TuningTooltip explanation={explanation}>
+        {sliderContent}
+      </TuningTooltip>
+    );
+  }
+
+  return sliderContent;
 }
 
 function ForzaValueRow({ label, value, unit = '' }: { label: string; value: string | number; unit?: string }) {
@@ -133,8 +148,8 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
         return (
           <div className="space-y-1">
             <h3 className="text-sm text-muted-foreground uppercase mb-4">Tire Pressure</h3>
-            <ForzaSlider label="FRONT" value={displayTune.tirePressureFront} min={unitSystem === 'imperial' ? 14 : 0.96} max={unitSystem === 'imperial' ? 35 : 2.41} unit={` ${units.pressure}`} leftLabel="LOW" rightLabel="HIGH" />
-            <ForzaSlider label="REAR" value={displayTune.tirePressureRear} min={unitSystem === 'imperial' ? 14 : 0.96} max={unitSystem === 'imperial' ? 35 : 2.41} unit={` ${units.pressure}`} leftLabel="LOW" rightLabel="HIGH" />
+            <ForzaSlider label="FRONT" value={displayTune.tirePressureFront} min={unitSystem === 'imperial' ? 14 : 0.96} max={unitSystem === 'imperial' ? 35 : 2.41} unit={` ${units.pressure}`} leftLabel="LOW" rightLabel="HIGH" explanationKey="tirePressureFront" />
+            <ForzaSlider label="REAR" value={displayTune.tirePressureRear} min={unitSystem === 'imperial' ? 14 : 0.96} max={unitSystem === 'imperial' ? 35 : 2.41} unit={` ${units.pressure}`} leftLabel="LOW" rightLabel="HIGH" explanationKey="tirePressureRear" />
             
             <div className="mt-6 p-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
               <p className="text-xs text-[hsl(var(--racing-yellow))]">
@@ -153,21 +168,23 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
         return (
           <div className="space-y-1">
             <h3 className="text-xs sm:text-sm text-muted-foreground uppercase mb-3 sm:mb-4">Final Drive</h3>
-            <ForzaSlider label="FINAL DRIVE" value={tune.finalDrive} min={2.0} max={6.0} unit="" isHighlighted />
+            <ForzaSlider label="FINAL DRIVE" value={tune.finalDrive} min={2.0} max={6.0} unit="" isHighlighted explanationKey="finalDrive" />
             
             <h3 className="text-xs sm:text-sm text-muted-foreground uppercase mt-4 sm:mt-6 mb-3 sm:mb-4">Individual Gear Ratios</h3>
-            <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-1.5 sm:gap-2">
-              {tune.gearRatios.map((ratio, index) => (
-                <div key={index} className="flex justify-between items-center py-1.5 sm:py-2 px-2 sm:px-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
-                  <span className="text-xs sm:text-sm text-foreground uppercase font-display">
-                    {index === 0 ? '1st' : index === 1 ? '2nd' : index === 2 ? '3rd' : `${index + 1}th`}
-                  </span>
-                  <span className="font-display text-xs sm:text-sm text-[hsl(var(--racing-cyan))]">
-                    {ratio.toFixed(2)}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <TuningTooltip explanation={outputExplanations.gearRatios}>
+              <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-1.5 sm:gap-2">
+                {tune.gearRatios.map((ratio, index) => (
+                  <div key={index} className="flex justify-between items-center py-1.5 sm:py-2 px-2 sm:px-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
+                    <span className="text-xs sm:text-sm text-foreground uppercase font-display">
+                      {index === 0 ? '1st' : index === 1 ? '2nd' : index === 2 ? '3rd' : `${index + 1}th`}
+                    </span>
+                    <span className="font-display text-xs sm:text-sm text-[hsl(var(--racing-cyan))]">
+                      {ratio.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </TuningTooltip>
             
             <div className="mt-4 sm:mt-6 p-2 sm:p-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
               <p className="text-xs sm:text-sm text-muted-foreground">{tune.gearingNote}</p>
@@ -179,15 +196,15 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
         return (
           <div className="space-y-1">
             <h3 className="text-sm text-muted-foreground uppercase mb-4">Camber</h3>
-            <ForzaSlider label="FRONT" value={tune.camberFront} min={-5} max={0} unit="°" leftLabel="NEGATIVE" rightLabel="POSITIVE" />
-            <ForzaSlider label="REAR" value={tune.camberRear} min={-3} max={0} unit="°" leftLabel="NEGATIVE" rightLabel="POSITIVE" />
+            <ForzaSlider label="FRONT" value={tune.camberFront} min={-5} max={0} unit="°" leftLabel="NEGATIVE" rightLabel="POSITIVE" explanationKey="camberFront" />
+            <ForzaSlider label="REAR" value={tune.camberRear} min={-3} max={0} unit="°" leftLabel="NEGATIVE" rightLabel="POSITIVE" explanationKey="camberRear" />
             
             <h3 className="text-sm text-muted-foreground uppercase mt-6 mb-4">Toe</h3>
-            <ForzaSlider label="FRONT" value={tune.toeFront} min={-1} max={1} unit="°" leftLabel="IN" rightLabel="OUT" />
-            <ForzaSlider label="REAR" value={tune.toeRear} min={-1} max={1} unit="°" leftLabel="IN" rightLabel="OUT" />
+            <ForzaSlider label="FRONT" value={tune.toeFront} min={-1} max={1} unit="°" leftLabel="IN" rightLabel="OUT" explanationKey="toeFront" />
+            <ForzaSlider label="REAR" value={tune.toeRear} min={-1} max={1} unit="°" leftLabel="IN" rightLabel="OUT" explanationKey="toeRear" />
             
             <h3 className="text-sm text-muted-foreground uppercase mt-6 mb-4">Front Caster</h3>
-            <ForzaSlider label="ANGLE" value={tune.caster} min={3} max={7} unit="°" leftLabel="LOW" rightLabel="HIGH" isHighlighted />
+            <ForzaSlider label="ANGLE" value={tune.caster} min={3} max={7} unit="°" leftLabel="LOW" rightLabel="HIGH" isHighlighted explanationKey="caster" />
           </div>
         );
 
@@ -195,8 +212,8 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
         return (
           <div className="space-y-1">
             <h3 className="text-sm text-muted-foreground uppercase mb-4">Antiroll Bars</h3>
-            <ForzaSlider label="FRONT" value={tune.arbFront} min={1} max={65} unit="" leftLabel="SOFT" rightLabel="STIFF" />
-            <ForzaSlider label="REAR" value={tune.arbRear} min={1} max={65} unit="" leftLabel="SOFT" rightLabel="STIFF" />
+            <ForzaSlider label="FRONT" value={tune.arbFront} min={1} max={65} unit="" leftLabel="SOFT" rightLabel="STIFF" explanationKey="arbFront" />
+            <ForzaSlider label="REAR" value={tune.arbRear} min={1} max={65} unit="" leftLabel="SOFT" rightLabel="STIFF" explanationKey="arbRear" />
             
             <div className="mt-6 p-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
               <p className="text-xs text-[hsl(var(--racing-green))]">
@@ -213,12 +230,12 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
         return (
           <div className="space-y-1">
             <h3 className="text-sm text-muted-foreground uppercase mb-4">Springs</h3>
-            <ForzaSlider label="FRONT" value={displayTune.springsFront} min={unitSystem === 'imperial' ? 100 : 1.79} max={unitSystem === 'imperial' ? 1000 : 17.86} unit={` ${units.springs}`} leftLabel="SOFT" rightLabel="STIFF" />
-            <ForzaSlider label="REAR" value={displayTune.springsRear} min={unitSystem === 'imperial' ? 100 : 1.79} max={unitSystem === 'imperial' ? 1000 : 17.86} unit={` ${units.springs}`} leftLabel="SOFT" rightLabel="STIFF" />
+            <ForzaSlider label="FRONT" value={displayTune.springsFront} min={unitSystem === 'imperial' ? 100 : 1.79} max={unitSystem === 'imperial' ? 1000 : 17.86} unit={` ${units.springs}`} leftLabel="SOFT" rightLabel="STIFF" explanationKey="springsFront" />
+            <ForzaSlider label="REAR" value={displayTune.springsRear} min={unitSystem === 'imperial' ? 100 : 1.79} max={unitSystem === 'imperial' ? 1000 : 17.86} unit={` ${units.springs}`} leftLabel="SOFT" rightLabel="STIFF" explanationKey="springsRear" />
             
             <h3 className="text-sm text-muted-foreground uppercase mt-6 mb-4">Ride Height</h3>
-            <ForzaSlider label="FRONT" value={displayTune.rideHeightFront} min={unitSystem === 'imperial' ? 3 : 7.6} max={unitSystem === 'imperial' ? 10 : 25.4} unit={` ${units.rideHeight}`} leftLabel="LOW" rightLabel="HIGH" />
-            <ForzaSlider label="REAR" value={displayTune.rideHeightRear} min={unitSystem === 'imperial' ? 3 : 7.6} max={unitSystem === 'imperial' ? 10 : 25.4} unit={` ${units.rideHeight}`} leftLabel="LOW" rightLabel="HIGH" />
+            <ForzaSlider label="FRONT" value={displayTune.rideHeightFront} min={unitSystem === 'imperial' ? 3 : 7.6} max={unitSystem === 'imperial' ? 10 : 25.4} unit={` ${units.rideHeight}`} leftLabel="LOW" rightLabel="HIGH" explanationKey="rideHeightFront" />
+            <ForzaSlider label="REAR" value={displayTune.rideHeightRear} min={unitSystem === 'imperial' ? 3 : 7.6} max={unitSystem === 'imperial' ? 10 : 25.4} unit={` ${units.rideHeight}`} leftLabel="LOW" rightLabel="HIGH" explanationKey="rideHeightRear" />
             
             <div className="mt-6 p-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
               <p className="text-xs text-[hsl(var(--racing-purple))]">
@@ -232,12 +249,12 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
         return (
           <div className="space-y-1">
             <h3 className="text-sm text-muted-foreground uppercase mb-4">Rebound Stiffness</h3>
-            <ForzaSlider label="FRONT" value={tune.reboundFront} min={1} max={20} unit="" leftLabel="SOFT" rightLabel="STIFF" />
-            <ForzaSlider label="REAR" value={tune.reboundRear} min={1} max={20} unit="" leftLabel="SOFT" rightLabel="STIFF" />
+            <ForzaSlider label="FRONT" value={tune.reboundFront} min={1} max={20} unit="" leftLabel="SOFT" rightLabel="STIFF" explanationKey="reboundFront" />
+            <ForzaSlider label="REAR" value={tune.reboundRear} min={1} max={20} unit="" leftLabel="SOFT" rightLabel="STIFF" explanationKey="reboundRear" />
             
             <h3 className="text-sm text-muted-foreground uppercase mt-6 mb-4">Bump Stiffness</h3>
-            <ForzaSlider label="FRONT" value={tune.bumpFront} min={1} max={20} unit="" leftLabel="SOFT" rightLabel="STIFF" />
-            <ForzaSlider label="REAR" value={tune.bumpRear} min={1} max={20} unit="" leftLabel="SOFT" rightLabel="STIFF" />
+            <ForzaSlider label="FRONT" value={tune.bumpFront} min={1} max={20} unit="" leftLabel="SOFT" rightLabel="STIFF" explanationKey="bumpFront" />
+            <ForzaSlider label="REAR" value={tune.bumpRear} min={1} max={20} unit="" leftLabel="SOFT" rightLabel="STIFF" explanationKey="bumpRear" />
             
             <div className="mt-6 p-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
               <p className="text-xs text-muted-foreground">
@@ -251,8 +268,8 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
         return (
           <div className="space-y-1">
             <h3 className="text-sm text-muted-foreground uppercase mb-4">Downforce</h3>
-            <ForzaSlider label="FRONT" value={displayTune.aeroFront} min={0} max={unitSystem === 'imperial' ? 400 : 1779} unit={` ${units.aero}`} leftLabel="LOW" rightLabel="HIGH" />
-            <ForzaSlider label="REAR" value={displayTune.aeroRear} min={0} max={unitSystem === 'imperial' ? 400 : 1779} unit={` ${units.aero}`} leftLabel="LOW" rightLabel="HIGH" />
+            <ForzaSlider label="FRONT" value={displayTune.aeroFront} min={0} max={unitSystem === 'imperial' ? 400 : 1779} unit={` ${units.aero}`} leftLabel="LOW" rightLabel="HIGH" explanationKey="aeroFront" />
+            <ForzaSlider label="REAR" value={displayTune.aeroRear} min={0} max={unitSystem === 'imperial' ? 400 : 1779} unit={` ${units.aero}`} leftLabel="LOW" rightLabel="HIGH" explanationKey="aeroRear" />
           </div>
         );
 
@@ -260,8 +277,8 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
         return (
           <div className="space-y-1">
             <h3 className="text-sm text-muted-foreground uppercase mb-4">Braking Force</h3>
-            <ForzaSlider label="BALANCE (SLIDER)" value={tune.brakeBalance} min={30} max={70} unit="%" leftLabel="FRONT" rightLabel="REAR" isHighlighted />
-            <ForzaSlider label="PRESSURE" value={tune.brakePressure} min={50} max={200} unit="%" leftLabel="LOW" rightLabel="HIGH" />
+            <ForzaSlider label="BALANCE (SLIDER)" value={tune.brakeBalance} min={30} max={70} unit="%" leftLabel="FRONT" rightLabel="REAR" isHighlighted explanationKey="brakeBalance" />
+            <ForzaSlider label="PRESSURE" value={tune.brakePressure} min={50} max={200} unit="%" leftLabel="LOW" rightLabel="HIGH" explanationKey="brakePressure" />
             
             <div className="mt-6 p-3 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,20%)]">
               <p className="text-xs text-[hsl(var(--racing-yellow))] font-bold mb-2">
@@ -283,23 +300,23 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
             {driveType === 'AWD' && (
               <>
                 <h3 className="text-sm text-muted-foreground uppercase mb-4">Centre</h3>
-                <ForzaSlider label="BALANCE" value={tune.centerBalance || 50} min={0} max={100} unit="%" leftLabel="FRONT" rightLabel="REAR" isHighlighted />
+                <ForzaSlider label="BALANCE" value={tune.centerBalance || 50} min={0} max={100} unit="%" leftLabel="FRONT" rightLabel="REAR" isHighlighted explanationKey="centerBalance" />
               </>
             )}
             
             {(driveType === 'AWD' || driveType === 'FWD') && tune.diffAccelFront !== undefined && (
               <>
                 <h3 className="text-sm text-muted-foreground uppercase mt-4 mb-4">Front</h3>
-                <ForzaSlider label="ACCELERATION" value={tune.diffAccelFront} min={0} max={100} unit="%" leftLabel="LOW" rightLabel="HIGH" />
-                <ForzaSlider label="DECELERATION" value={tune.diffDecelFront || 0} min={0} max={100} unit="%" leftLabel="LOW" rightLabel="HIGH" />
+                <ForzaSlider label="ACCELERATION" value={tune.diffAccelFront} min={0} max={100} unit="%" leftLabel="LOW" rightLabel="HIGH" explanationKey="diffAccelFront" />
+                <ForzaSlider label="DECELERATION" value={tune.diffDecelFront || 0} min={0} max={100} unit="%" leftLabel="LOW" rightLabel="HIGH" explanationKey="diffDecelFront" />
               </>
             )}
             
             {(driveType === 'AWD' || driveType === 'RWD') && (
               <>
                 <h3 className="text-sm text-muted-foreground uppercase mt-4 mb-4">Rear</h3>
-                <ForzaSlider label="ACCELERATION" value={tune.diffAccelRear} min={0} max={100} unit="%" leftLabel="LOW" rightLabel="HIGH" />
-                <ForzaSlider label="DECELERATION" value={tune.diffDecelRear} min={0} max={100} unit="%" leftLabel="LOW" rightLabel="HIGH" />
+                <ForzaSlider label="ACCELERATION" value={tune.diffAccelRear} min={0} max={100} unit="%" leftLabel="LOW" rightLabel="HIGH" explanationKey="diffAccelRear" />
+                <ForzaSlider label="DECELERATION" value={tune.diffDecelRear} min={0} max={100} unit="%" leftLabel="LOW" rightLabel="HIGH" explanationKey="diffDecelRear" />
               </>
             )}
             
@@ -319,10 +336,15 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem }: ForzaT
   return (
     <div className="bg-[hsl(220,18%,8%)] rounded-lg overflow-hidden border border-[hsl(220,15%,18%)]">
       {/* Header */}
-      <div className="bg-[hsl(220,18%,6%)] px-3 sm:px-4 py-2 flex items-center gap-2 border-b border-[hsl(220,15%,18%)]">
-        <span className="text-lg sm:text-xl">{tuneInfo.icon}</span>
-        <span className="font-display text-xs sm:text-sm text-foreground uppercase tracking-wider">TUNE</span>
-        <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">— {tuneInfo.title}</span>
+      <div className="bg-[hsl(220,18%,6%)] px-3 sm:px-4 py-2 flex items-center justify-between border-b border-[hsl(220,15%,18%)]">
+        <div className="flex items-center gap-2">
+          <span className="text-lg sm:text-xl">{tuneInfo.icon}</span>
+          <span className="font-display text-xs sm:text-sm text-foreground uppercase tracking-wider">TUNE</span>
+          <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">— {tuneInfo.title}</span>
+        </div>
+        <div className="text-[10px] text-muted-foreground hidden sm:block">
+          💡 Hover 1.5s on any value for explanation
+        </div>
       </div>
       
       {/* Tab Navigation - Scrollable on mobile */}
