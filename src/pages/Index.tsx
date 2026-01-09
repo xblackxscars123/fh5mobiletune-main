@@ -14,7 +14,8 @@ import { Button } from '@/components/ui/button';
 import { CarSpecs, TuneType, calculateTune, UnitSystem } from '@/lib/tuningCalculator';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
 import { SavedTune } from '@/hooks/useSavedTunes';
-import { Calculator, RotateCcw, ShoppingBag } from 'lucide-react';
+import { quickStartTips } from '@/data/tuningGuide';
+import { Calculator, RotateCcw, ShoppingBag, X, Lightbulb } from 'lucide-react';
 import { toast } from 'sonner';
 
 const defaultSpecs: CarSpecs = {
@@ -34,6 +35,7 @@ export default function Index() {
   const [showResults, setShowResults] = useState(false);
   const [selectedCar, setSelectedCar] = useState<FH5Car | null>(null);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
+  const [showQuickStart, setShowQuickStart] = useState(true);
 
   const tuneSettings = useMemo(() => calculateTune(specs, tuneType), [specs, tuneType]);
   
