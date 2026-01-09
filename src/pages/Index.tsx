@@ -73,7 +73,7 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen pb-8 md:pb-16 relative">
+    <div className="min-h-screen pb-8 md:pb-16 relative overflow-x-hidden">
       <JDMStickerBombBackground />
       <ShopPromoPopup />
       <div className="container max-w-7xl mx-auto px-3 sm:px-4 md:px-6 relative z-10">
