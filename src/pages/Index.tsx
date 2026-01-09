@@ -9,7 +9,7 @@ import { SavedTunesManager } from '@/components/SavedTunesManager';
 import { ShopPromoPopup } from '@/components/ShopPromoPopup';
 import { JDMStickerBombBackground } from '@/components/JDMStickerBombBackground';
 import { TuningExpertChat } from '@/components/TuningExpertChat';
-import { YouTubeMusicPlayer } from '@/components/YouTubeMusicPlayer';
+
 import { Button } from '@/components/ui/button';
 import { CarSpecs, TuneType, calculateTune, UnitSystem } from '@/lib/tuningCalculator';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
@@ -76,7 +76,6 @@ export default function Index() {
     <div className="min-h-screen pb-8 md:pb-16 relative">
       <JDMStickerBombBackground />
       <ShopPromoPopup />
-      <YouTubeMusicPlayer />
       <div className="container max-w-7xl mx-auto px-3 sm:px-4 md:px-6 relative z-10">
         <Header />
         
