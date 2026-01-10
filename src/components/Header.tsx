@@ -1,4 +1,5 @@
 import { Gauge, Zap } from 'lucide-react';
+import japanPlateBg from '@/assets/japan-plate-bg.png';
 
 export function Header() {
   return (
@@ -19,10 +20,23 @@ export function Header() {
           </div>
         </div>
         
-        <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold tracking-wider">
-          <span className="text-gradient-racing">FH5</span>{' '}
-          <span className="text-foreground">PRO TUNE</span>
-        </h1>
+        {/* Title with Japanese License Plate background */}
+        <div className="relative inline-block">
+          <div 
+            className="absolute inset-0 -inset-x-4 sm:-inset-x-8 -inset-y-2 sm:-inset-y-4 rounded-lg opacity-90"
+            style={{
+              backgroundImage: `url(${japanPlateBg})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          />
+          <h1 className="relative font-display text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold tracking-wider px-4 sm:px-8 py-2 sm:py-4">
+            <span className="text-[#1a5c1a] drop-shadow-sm">FH5</span>{' '}
+            <span className="text-[#1a5c1a] drop-shadow-sm">
+              P<span className="relative"><span className="line-through decoration-[#8b0000] decoration-2">R</span></span>OO TUNE
+            </span>
+          </h1>
+        </div>
         
         <p className="font-display text-sm sm:text-base md:text-lg lg:text-xl text-racing-cyan uppercase tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.3em]">
           Calculator
