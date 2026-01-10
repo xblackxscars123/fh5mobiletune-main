@@ -1,5 +1,5 @@
 import { Gauge, Zap } from 'lucide-react';
-import japanPlateBg from '@/assets/japan-plate-bg.png';
+import japanPlateBg from '@/assets/japan-plate-clean.png';
 
 export function Header() {
   return (
@@ -22,34 +22,41 @@ export function Header() {
         
         {/* Title with Japanese License Plate background */}
         <div className="relative inline-block">
-          <div 
-            className="absolute -inset-x-6 sm:-inset-x-10 md:-inset-x-14 -inset-y-3 sm:-inset-y-5 md:-inset-y-6 rounded-xl overflow-hidden border-4 border-[#2d5a2d] shadow-lg"
-            style={{
-              backgroundImage: `url(${japanPlateBg})`,
-              backgroundSize: '120% 140%',
-              backgroundPosition: 'center',
-            }}
+          {/* License plate image as background */}
+          <img 
+            src={japanPlateBg} 
+            alt="" 
+            className="w-full h-full absolute inset-0 object-cover rounded-lg"
+            style={{ minWidth: '280px', minHeight: '80px' }}
           />
-          <h1 className="relative font-display text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold tracking-wider px-6 sm:px-10 md:px-14 py-3 sm:py-5 md:py-6">
-            <span className="text-[#1a5c1a] drop-shadow-sm">FH5</span>{' '}
-            <span className="text-[#1a5c1a] drop-shadow-sm">
-              P<span className="relative inline-block">
-                <span className="text-[#1a5c1a]/30">R</span>
-                {/* Rusty scratch marks */}
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <span 
-                    className="absolute w-full h-[3px] sm:h-[4px] bg-gradient-to-r from-[#8b4513] via-[#a0522d] to-[#cd853f] rotate-[-20deg] rounded-full shadow-sm"
-                    style={{ 
-                      boxShadow: '0 1px 2px rgba(139, 69, 19, 0.5), inset 0 -1px 1px rgba(205, 133, 63, 0.3)',
-                    }}
-                  />
-                  <span 
-                    className="absolute w-[90%] h-[2px] sm:h-[3px] bg-gradient-to-r from-[#a0522d] via-[#cd853f] to-[#8b4513] rotate-[-15deg] translate-y-[2px] rounded-full opacity-70"
-                  />
-                </span>
-              </span>OO TUNE
-            </span>
-          </h1>
+          <div className="relative px-6 sm:px-10 md:px-16 py-4 sm:py-6 md:py-8">
+            <h1 
+              className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-wide"
+              style={{
+                color: '#1a5a1a',
+                textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.1), 2px 2px 2px rgba(0,0,0,0.15)',
+                letterSpacing: '0.05em',
+                fontStretch: 'condensed',
+              }}
+            >
+              <span>FH5</span>
+              <span className="mx-2 sm:mx-3">·</span>
+              <span>P</span>
+              <span className="relative inline-block">
+                <span className="opacity-40">R</span>
+                {/* Rusty scratch through the R */}
+                <span 
+                  className="absolute left-0 right-0 top-1/2 h-[3px] sm:h-[4px] -translate-y-1/2 rotate-[-15deg]"
+                  style={{
+                    background: 'linear-gradient(90deg, #8b4513, #a0522d, #cd853f, #a0522d, #8b4513)',
+                    borderRadius: '2px',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,200,150,0.3)',
+                  }}
+                />
+              </span>
+              <span>OO TUNE</span>
+            </h1>
+          </div>
         </div>
         
         <p className="font-display text-sm sm:text-base md:text-lg lg:text-xl text-racing-cyan uppercase tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.3em]">
