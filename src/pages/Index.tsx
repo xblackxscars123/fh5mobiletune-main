@@ -188,6 +188,7 @@ export default function Index() {
               driveType={specs.driveType} 
               tuneType={tuneType}
               unitSystem={unitSystem}
+              carName={carName}
             />
           </div>
         </div>
