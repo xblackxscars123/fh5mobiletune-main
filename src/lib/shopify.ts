@@ -1,10 +1,29 @@
 // Shopify Storefront API configuration
+// Note: Shopify Storefront tokens are publishable keys designed for client-side use
+// They provide read-only access to published products and are safe to expose
 const SHOPIFY_API_VERSION = '2025-07';
 const SHOPIFY_STORE_PERMANENT_DOMAIN = 'fh5mobiletune-siinu.myshopify.com';
 const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
 const SHOPIFY_STOREFRONT_TOKEN = '006c973923a8de18704c87dc215c9234';
 
 import { toast } from 'sonner';
+import { z } from 'zod';
+
+// Input validation schemas for GraphQL query parameters
+const productHandleSchema = z.string()
+  .min(1, 'Product handle cannot be empty')
+  .max(255, 'Product handle too long')
+  .regex(/^[a-z0-9-]+$/, 'Invalid product handle format');
+
+const searchQuerySchema = z.string()
+  .max(255, 'Search query too long')
+  .optional()
+  .transform(val => val?.trim());
+
+const paginationSchema = z.number()
+  .int()
+  .min(1, 'Must fetch at least 1 product')
+  .max(250, 'Cannot fetch more than 250 products');
 
 export interface ShopifyProduct {
   node: {
@@ -231,18 +250,45 @@ const PRODUCT_BY_HANDLE_QUERY = `
   }
 `;
 
-// Fetch products
+// Fetch products with validated inputs
 export async function fetchProducts(first: number = 20, query?: string): Promise<ShopifyProduct[]> {
-  const data = await storefrontApiRequest(STOREFRONT_QUERY, { first, query });
-  if (!data) return [];
-  return data.data.products.edges;
+  try {
+    // Validate pagination parameter
+    const validatedFirst = paginationSchema.parse(first);
+    // Validate and sanitize search query
+    const validatedQuery = searchQuerySchema.parse(query);
+    
+    const data = await storefrontApiRequest(STOREFRONT_QUERY, { 
+      first: validatedFirst, 
+      query: validatedQuery 
+    });
+    if (!data) return [];
+    return data.data.products.edges;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      console.warn('Invalid input parameters for fetchProducts');
+      return [];
+    }
+    throw error;
+  }
 }
 
-// Fetch single product by handle
+// Fetch single product by handle with validated input
 export async function fetchProductByHandle(handle: string): Promise<ShopifyProduct['node'] | null> {
-  const data = await storefrontApiRequest(PRODUCT_BY_HANDLE_QUERY, { handle });
-  if (!data) return null;
-  return data.data.productByHandle;
+  try {
+    // Validate product handle format
+    const validatedHandle = productHandleSchema.parse(handle);
+    
+    const data = await storefrontApiRequest(PRODUCT_BY_HANDLE_QUERY, { handle: validatedHandle });
+    if (!data) return null;
+    return data.data.productByHandle;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      console.warn('Invalid product handle format');
+      return null;
+    }
+    throw error;
+  }
 }
 
 // Create checkout
