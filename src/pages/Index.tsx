@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TuneTypeSelector } from '@/components/TuneTypeSelector';
 import { CarSpecsForm } from '@/components/CarSpecsForm';
+import { SimpleModeForm } from '@/components/SimpleModeForm';
 import { CarSelector } from '@/components/CarSelector';
 import { ForzaTunePanel } from '@/components/ForzaTunePanel';
 import { SavedTunesManager } from '@/components/SavedTunesManager';
@@ -15,7 +16,7 @@ import { CarSpecs, TuneType, calculateTune, UnitSystem } from '@/lib/tuningCalcu
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
 import { SavedTune } from '@/hooks/useSavedTunes';
 import { quickStartTips } from '@/data/tuningGuide';
-import { Calculator, RotateCcw, ShoppingBag, X, Lightbulb } from 'lucide-react';
+import { Calculator, RotateCcw, ShoppingBag, Zap, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 
 const defaultSpecs: CarSpecs = {
@@ -35,7 +36,7 @@ export default function Index() {
   const [showResults, setShowResults] = useState(false);
   const [selectedCar, setSelectedCar] = useState<FH5Car | null>(null);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
-  const [showQuickStart, setShowQuickStart] = useState(true);
+  const [isSimpleMode, setIsSimpleMode] = useState(true); // Default to simple mode
 
   const tuneSettings = useMemo(() => calculateTune(specs, tuneType), [specs, tuneType]);
   
@@ -127,6 +128,26 @@ export default function Index() {
           </div>
         </div>
         
+        {/* Mode Toggle */}
+        <div className="mb-4 flex items-center justify-center gap-2">
+          <Button
+            variant={isSimpleMode ? 'tuneTypeActive' : 'tuneType'}
+            onClick={() => setIsSimpleMode(true)}
+            className="text-xs sm:text-sm"
+          >
+            <Zap className="w-4 h-4 mr-1" />
+            Simple Mode
+          </Button>
+          <Button
+            variant={!isSimpleMode ? 'tuneTypeActive' : 'tuneType'}
+            onClick={() => setIsSimpleMode(false)}
+            className="text-xs sm:text-sm"
+          >
+            <Settings className="w-4 h-4 mr-1" />
+            Advanced Mode
+          </Button>
+        </div>
+        
         {/* Mobile: Stack vertically, Desktop: Side by side */}
         <div className="flex flex-col lg:grid lg:grid-cols-[minmax(320px,400px)_1fr] gap-4 md:gap-6">
           {/* Left Panel - Setup */}
@@ -136,22 +157,40 @@ export default function Index() {
               <TuneTypeSelector selected={tuneType} onChange={setTuneType} />
             </div>
             
-            {/* Car Selector */}
-            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
-              <CarSelector onSelect={handleCarSelect} selectedCar={selectedCar} />
-            </div>
+            {/* Car Selector - Only in Advanced Mode */}
+            {!isSimpleMode && (
+              <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
+                <CarSelector onSelect={handleCarSelect} selectedCar={selectedCar} />
+              </div>
+            )}
             
             {/* Car Specs */}
             <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
-              <h3 className="font-display text-sm text-[hsl(var(--racing-yellow))] mb-3 md:mb-4 uppercase tracking-wider">
-                Car Specifications
+              <h3 className="font-display text-sm text-[hsl(var(--racing-yellow))] mb-3 md:mb-4 uppercase tracking-wider flex items-center gap-2">
+                {isSimpleMode ? (
+                  <>
+                    <Zap className="w-4 h-4" />
+                    Quick Setup (HokiHoshi Method)
+                  </>
+                ) : (
+                  'Car Specifications'
+                )}
               </h3>
-              <CarSpecsForm 
-                specs={specs} 
-                onChange={setSpecs} 
-                unitSystem={unitSystem}
-                onUnitSystemChange={setUnitSystem}
-              />
+              {isSimpleMode ? (
+                <SimpleModeForm 
+                  specs={specs} 
+                  onChange={setSpecs} 
+                  unitSystem={unitSystem}
+                  onUnitSystemChange={setUnitSystem}
+                />
+              ) : (
+                <CarSpecsForm 
+                  specs={specs} 
+                  onChange={setSpecs} 
+                  unitSystem={unitSystem}
+                  onUnitSystemChange={setUnitSystem}
+                />
+              )}
             </div>
 
             {/* Actions */}

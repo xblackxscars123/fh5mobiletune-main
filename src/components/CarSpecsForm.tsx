@@ -36,6 +36,32 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
 
   return (
     <div className="space-y-5 md:space-y-6">
+      {/* Unit System Toggle - TOP */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between p-2 sm:p-3 rounded-lg border border-[hsl(var(--racing-cyan)/0.3)] bg-[hsl(var(--racing-cyan)/0.05)]">
+        <Label className="flex items-center gap-2 text-sm md:text-base font-display">
+          <Settings2 className="w-4 h-4 md:w-5 md:h-5 text-[hsl(var(--racing-cyan))]" />
+          Units
+        </Label>
+        <div className="flex gap-1.5 sm:gap-2">
+          <Button
+            variant={unitSystem === 'imperial' ? 'tuneTypeActive' : 'tuneType'}
+            onClick={() => onUnitSystemChange('imperial')}
+            size="sm"
+            className="flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-3"
+          >
+            lbs / HP / PSI
+          </Button>
+          <Button
+            variant={unitSystem === 'metric' ? 'tuneTypeActive' : 'tuneType'}
+            onClick={() => onUnitSystemChange('metric')}
+            size="sm"
+            className="flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-3"
+          >
+            kg / kW / bar
+          </Button>
+        </div>
+      </div>
+
       {/* Essential Settings Section */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-xs text-[hsl(var(--racing-yellow))] uppercase tracking-wide">
@@ -110,6 +136,24 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
               Weight Distribution (Front %) ⭐ MOST IMPORTANT
             </Label>
           </TuningTooltip>
+          
+          {/* Direct Input - Primary */}
+          <div className="flex items-center gap-3">
+            <Input
+              type="number"
+              value={specs.weightDistribution}
+              onChange={(e) => updateSpec('weightDistribution', Math.max(35, Math.min(65, Number(e.target.value))))}
+              className="w-20 text-center text-lg font-bold bg-background border-[hsl(var(--racing-yellow)/0.5)]"
+              min={35}
+              max={65}
+            />
+            <span className="text-sm text-muted-foreground">% Front</span>
+            <span className="text-sm text-muted-foreground mx-1">|</span>
+            <span className="text-lg font-bold text-[hsl(var(--racing-cyan))]">{100 - specs.weightDistribution}%</span>
+            <span className="text-sm text-muted-foreground">Rear</span>
+          </div>
+          
+          {/* Slider - Secondary */}
           <div className="flex items-center gap-2 sm:gap-4">
             <span className="text-xs sm:text-sm text-muted-foreground w-10 sm:w-16">Front</span>
             <Slider
@@ -121,10 +165,6 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
               className="flex-1"
             />
             <span className="text-xs sm:text-sm text-muted-foreground w-10 sm:w-16 text-right">Rear</span>
-          </div>
-          <div className="flex justify-between text-base md:text-lg font-display">
-            <span className="text-[hsl(var(--racing-yellow))]">{specs.weightDistribution}%</span>
-            <span className="text-[hsl(var(--racing-cyan))]">{100 - specs.weightDistribution}%</span>
           </div>
           <p className="text-xs text-muted-foreground">
             📊 Find this in your car's stats screen. This determines springs, ARBs, and damping!
@@ -203,34 +243,6 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
             <span>Advanced Settings</span>
           </div>
 
-          {/* Unit System Toggle */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between p-2 sm:p-3 rounded-lg border border-border bg-muted/30">
-            <Label className="flex items-center gap-2 text-sm md:text-base font-display">
-              <Settings2 className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-              Unit System
-            </Label>
-            <div className="flex gap-1.5 sm:gap-2">
-              <Button
-                variant={unitSystem === 'imperial' ? 'tuneTypeActive' : 'tuneType'}
-                onClick={() => onUnitSystemChange('imperial')}
-                size="sm"
-                className="flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-3"
-              >
-                <span className="hidden sm:inline">Imperial (lbs, PSI, in)</span>
-                <span className="sm:hidden">Imperial</span>
-              </Button>
-              <Button
-                variant={unitSystem === 'metric' ? 'tuneTypeActive' : 'tuneType'}
-                onClick={() => onUnitSystemChange('metric')}
-                size="sm"
-                className="flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-3"
-              >
-                <span className="hidden sm:inline">Metric (kg, bar, cm)</span>
-                <span className="sm:hidden">Metric</span>
-              </Button>
-            </div>
-          </div>
-
           {/* Power Input */}
           <div className="space-y-2 md:space-y-3">
             <TuningTooltip explanation={inputExplanations.horsepower} showIcon>
@@ -250,6 +262,7 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
               className="bg-muted border-border focus:border-primary text-base md:text-lg font-body h-10 md:h-12"
               min={unitSystem === 'imperial' ? 50 : 37}
               max={unitSystem === 'imperial' ? 3000 : 2237}
+              placeholder={unitSystem === 'imperial' ? "e.g. 400" : "e.g. 298"}
             />
             <Slider
               value={[displayPower]}
