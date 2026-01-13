@@ -168,29 +168,24 @@ const brakePresets: Record<TuneType, { pressure: number; targetFrontBias: number
 };
 
 // ==========================================
-// SPRING FREQUENCY TARGETS (Hz)
-// ==========================================
-// Off-Road: 1.0-1.5 Hz (very soft)
-// Circuit: 2.0-3.0 Hz
-// Higher Hz = stiffer response
-
-const springFrequencyTargets: Record<TuneType, { front: number; rear: number }> = {
-  grip: { front: 2.5, rear: 2.3 },
-  street: { front: 2.0, rear: 1.8 },
-  drift: { front: 1.8, rear: 2.2 },      // Softer front for weight transfer
-  offroad: { front: 1.2, rear: 1.3 },    // 1.0-1.5 Hz per flotation physics
-  rally: { front: 1.5, rear: 1.6 },
-  drag: { front: 2.8, rear: 2.5 },       // Stiff for stability
-};
-
-// ==========================================
-// SLIDER MATH FORMULA
-// Value = (Max - Min) * Weight% + Min
+// HOKIHOSHI SLIDER MATH FORMULA
+// Pure weight-based: Value = (Max - Min) * Weight% + Min
+// No frequency physics - simple and effective
 // ==========================================
 
 function sliderMath(min: number, max: number, weightPercent: number): number {
   return (max - min) * (weightPercent / 100) + min;
 }
+
+// Spring ranges by tune type (HokiHoshi baseline)
+const springRanges: Record<TuneType, { min: number; max: number }> = {
+  grip: { min: 200, max: 800 },      // Firm for track
+  street: { min: 150, max: 600 },    // Balanced
+  drift: { min: 150, max: 500 },     // Softer for weight transfer
+  offroad: { min: 100, max: 300 },   // Very soft for absorption
+  rally: { min: 120, max: 400 },     // Medium-soft
+  drag: { min: 300, max: 1000 },     // Stiff for stability
+};
 
 // ==========================================
 // GEOMETRIC GEARING FORMULA
@@ -324,73 +319,60 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   }
   
   // ==========================================
-  // ANTI-ROLL BARS - Drive Type & Weight Proportional
-  // Key principle: STIFFER end = MORE grip on that end
-  // To reduce understeer: soften front OR stiffen rear
-  // FWD: naturally understeers, needs softer front ARB
-  // RWD: naturally oversteers, needs stiffer front ARB
-  // AWD: balanced approach based on center diff bias
+  // ANTI-ROLL BARS - HokiHoshi Weight-Based
+  // Simple formula: (65 - 1) * weight% + 1
+  // Then offset for drive type balance
   // ==========================================
-  let arbFront: number;
-  let arbRear: number;
+  const arbMin = 1;
+  const arbMax = 65;
   
+  // Base calculation from weight distribution
+  let arbFront = Math.round(sliderMath(arbMin, arbMax, weightDistribution));
+  let arbRear = Math.round(sliderMath(arbMin, arbMax, 100 - weightDistribution));
+  
+  // Drive type balance offsets (HokiHoshi method)
   if (driveType === 'FWD') {
-    // FWD cars understeer naturally - soften front, stiffen rear to induce rotation
-    arbFront = Math.round((64 * rearWeightPct) * 0.7);  // Inverted & reduced
-    arbRear = Math.round((64 * frontWeightPct) * 1.1);  // Stiffer rear for rotation
+    // FWD understeers: soften front, stiffen rear
+    arbFront = Math.round(arbFront * 0.75);
+    arbRear = Math.round(arbRear * 1.15);
   } else if (driveType === 'RWD') {
-    // RWD cars can oversteer - stiffen front for stability
-    arbFront = Math.round((64 * frontWeightPct) + 2.0);
-    arbRear = Math.round((64 * rearWeightPct) - 1.0);
-  } else {
-    // AWD - balanced approach
-    arbFront = Math.round((64 * frontWeightPct));
-    arbRear = Math.round((64 * rearWeightPct));
+    // RWD oversteers: stiffen front slightly
+    arbFront = Math.round(arbFront * 1.05);
+    arbRear = Math.round(arbRear * 0.95);
   }
+  // AWD: keep balanced
   
   // Tune type modifiers
   if (tuneType === 'drift') {
-    arbFront = Math.round(arbFront * 0.4);  // Very soft front for FWD pull
-    arbRear = Math.round(arbRear * 1.3);    // Stiff rear for slide control
-  } else if (tuneType === 'offroad' || tuneType === 'rally') {
-    arbFront = Math.round(arbFront * 0.6);  // Softer for wheel independence
-    arbRear = Math.round(arbRear * 0.6);
-  } else if (tuneType === 'drag') {
-    arbFront = Math.round(arbFront * 1.2);  // Stiffer for stability
+    arbFront = Math.round(arbFront * 0.5);
     arbRear = Math.round(arbRear * 1.2);
-  } else if (tuneType === 'grip' && driveType === 'FWD') {
-    // FWD grip racing: even softer front for turn-in
-    arbFront = Math.round(arbFront * 0.8);
-    arbRear = Math.round(arbRear * 1.15);
+  } else if (tuneType === 'offroad' || tuneType === 'rally') {
+    arbFront = Math.round(arbFront * 0.6);
+    arbRear = Math.round(arbRear * 0.6);
   }
   
   arbFront = Math.max(1, Math.min(65, arbFront));
   arbRear = Math.max(1, Math.min(65, arbRear));
   
   // ==========================================
-  // SPRINGS - Slider Math Formula
+  // SPRINGS - Pure HokiHoshi Slider Math
   // Value = (Max - Min) * Weight% + Min
+  // Simple, predictable, proven effective
   // ==========================================
-  const springMin = tuneType === 'offroad' ? 100 : 150;
-  const springMax = tuneType === 'offroad' ? 400 : tuneType === 'drag' ? 1400 : 1000;
+  const springRange = springRanges[tuneType];
   
-  let springsFront = Math.round(sliderMath(springMin, springMax, weightDistribution));
-  let springsRear = Math.round(sliderMath(springMin, springMax, 100 - weightDistribution));
+  // Pure weight-based calculation - no frequency physics
+  let springsFront = Math.round(sliderMath(springRange.min, springRange.max, weightDistribution));
+  let springsRear = Math.round(sliderMath(springRange.min, springRange.max, 100 - weightDistribution));
   
-  // Apply frequency-based adjustments
-  const freqTargets = springFrequencyTargets[tuneType];
-  const baseFreq = 2.0;
-  springsFront = Math.round(springsFront * (freqTargets.front / baseFreq));
-  springsRear = Math.round(springsRear * (freqTargets.rear / baseFreq));
-  
-  // Aero adjustment
-  if (hasAero) {
-    springsFront += Math.round(frontDownforce * 0.25);
-    springsRear += Math.round(rearDownforce * 0.2);
+  // Minimal aero adjustment (only if significant downforce)
+  if (hasAero && frontDownforce > 100) {
+    springsFront += Math.round(frontDownforce * 0.1);
+    springsRear += Math.round(rearDownforce * 0.1);
   }
   
-  springsFront = Math.max(springMin, Math.min(springMax, springsFront));
-  springsRear = Math.max(springMin, Math.min(springMax, springsRear));
+  springsFront = Math.max(springRange.min, Math.min(springRange.max, springsFront));
+  springsRear = Math.max(springRange.min, Math.min(springRange.max, springsRear));
   
   // Ride height
   const rideHeightPresets: Record<TuneType, { front: number; rear: number }> = {
@@ -411,31 +393,30 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   }
   
   // ==========================================
-  // DAMPING - Weight Proportional Formulas
-  // Rebound Front: (19 * FrontWeight%) + 0.5
-  // Rebound Rear: (19 * RearWeight%) + 1.0
-  // Bump: Rebound * 0.6 (range 50-75%)
+  // DAMPING - HokiHoshi Weight-Based
+  // Rebound: (19 * Weight%) + offset
+  // Bump: 50-65% of Rebound
+  // Simple and effective
   // ==========================================
-  let reboundFront = (19 * frontWeightPct) + 0.5;
-  let reboundRear = (19 * rearWeightPct) + 1.0;
+  let reboundFront = Math.round((19 * frontWeightPct) + 1);
+  let reboundRear = Math.round((19 * rearWeightPct) + 1);
   
   // Tune type adjustments
   if (tuneType === 'offroad' || tuneType === 'rally') {
-    // High rebound for jump landings ("stick" the landing)
-    reboundFront *= 1.15;
-    reboundRear *= 1.20;
+    reboundFront = Math.round(reboundFront * 1.1);
+    reboundRear = Math.round(reboundRear * 1.1);
   } else if (tuneType === 'drift') {
-    reboundFront *= 0.85;  // Softer front for weight transfer
-    reboundRear *= 1.1;    // Stiffer rear for control
+    reboundFront = Math.round(reboundFront * 0.9);
+    reboundRear = Math.round(reboundRear * 1.05);
   }
   
-  reboundFront = Math.max(1, Math.min(20, Math.round(reboundFront * 10) / 10));
-  reboundRear = Math.max(1, Math.min(20, Math.round(reboundRear * 10) / 10));
+  reboundFront = Math.max(1, Math.min(20, reboundFront));
+  reboundRear = Math.max(1, Math.min(20, reboundRear));
   
-  // Bump is 60% of rebound (range 50-75%)
-  const bumpRatio = tuneType === 'offroad' ? 0.50 : tuneType === 'drift' ? 0.55 : 0.60;
-  let bumpFront = Math.round((reboundFront * bumpRatio) * 10) / 10;
-  let bumpRear = Math.round((reboundRear * bumpRatio) * 10) / 10;
+  // Bump is 55-60% of rebound (HokiHoshi standard)
+  const bumpRatio = tuneType === 'offroad' ? 0.55 : 0.60;
+  let bumpFront = Math.round(reboundFront * bumpRatio);
+  let bumpRear = Math.round(reboundRear * bumpRatio);
   
   bumpFront = Math.max(1, Math.min(20, bumpFront));
   bumpRear = Math.max(1, Math.min(20, bumpRear));
