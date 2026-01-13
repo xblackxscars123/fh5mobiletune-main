@@ -4,52 +4,40 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap");
-
 @layer base {
   :root {
     /* Racing dark theme - inspired by FH5 UI */
-    --background: 0 0% 96%;
-    --foreground: 0 0% 9%;
+    --background: 220 20% 6%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 98%;
-    --card-foreground: 0 0% 9%;
+    --card: 220 18% 10%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 89%;
-    --popover-foreground: 0 0% 9%;
+    --popover: 220 18% 10%;
+    --popover-foreground: 210 40% 98%;
 
     /* Electric orange - FH5 primary accent */
-    --primary: 20 90% 48%;
-    --primary-foreground: 33 100% 96%;
+    --primary: 28 100% 50%;
+    --primary-foreground: 220 20% 6%;
 
     /* Cyan accent for secondary elements */
-    --secondary: 0 0% 32%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 190 95% 45%;
+    --secondary-foreground: 220 20% 6%;
 
-    --muted: 0 0% 63%;
-    --muted-foreground: 0 0% 9%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 47 100% 96%;
-    --accent-foreground: 37 92% 50%;
+    --accent: 190 95% 45%;
+    --accent-foreground: 220 20% 6%;
 
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 85% 97%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 83%;
-    --input: 0 0% 83%;
-    --ring: 20 90% 48%;
+    --border: 220 15% 20%;
+    --input: 220 15% 18%;
+    --ring: 28 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     /* Custom racing colors */
     --racing-orange: 28 100% 50%;
@@ -58,86 +46,25 @@
     --racing-green: 145 80% 45%;
     --racing-red: 0 85% 55%;
     --racing-yellow: 45 100% 55%;
-
+    
     /* Gradients */
     --gradient-racing: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--racing-red)) 100%);
     --gradient-cyber: linear-gradient(135deg, hsl(var(--racing-cyan)) 0%, hsl(var(--racing-purple)) 100%);
     --gradient-glow: linear-gradient(180deg, hsl(var(--primary) / 0.2) 0%, transparent 100%);
-
+    
     /* Shadows */
     --shadow-glow-orange: 0 0 30px hsl(var(--primary) / 0.5);
     --shadow-glow-cyan: 0 0 30px hsl(var(--racing-cyan) / 0.5);
-
+    
     /* Sidebar */
     --sidebar-background: 220 18% 8%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 20 90% 48%;
-    --sidebar-primary-foreground: 33 100% 96%;
-    --sidebar-accent: 0 0% 32%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 83%;
-    --sidebar-ring: 20 90% 48%;
-    --chart-1: 27 95% 60%;
-    --chart-2: 43 96% 56%;
-    --chart-3: 47 95% 53%;
-    --chart-4: 24 94% 53%;
-    --chart-5: 0 0% 45%;
-    --sidebar: 0 0% 98%;
-    --font-sans: 'Roboto', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-    --font-serif: 'Libre Caslon Text', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
-    --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-    --tracking-normal: 0em;
-    --spacing: 0.25rem;
-  }
-  .dark {
-    --background: 0 0% 9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 14%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 25%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 27 95% 60%;
-    --primary-foreground: 12 81% 14%;
-    --secondary: 0 0% 45%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 45%;
-    --muted-foreground: 0 0% 98%;
-    --accent: 20 91% 14%;
-    --accent-foreground: 43 96% 56%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 85% 97%;
-    --border: 0 0% 32%;
-    --input: 0 0% 32%;
-    --ring: 27 95% 60%;
-    --chart-1: 30 97% 72%;
-    --chart-2: 45 96% 64%;
-    --chart-3: 48 96% 76%;
-    --chart-4: 27 95% 60%;
-    --chart-5: 0 0% 45%;
-    --sidebar: 0 0% 14%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 27 95% 60%;
-    --sidebar-primary-foreground: 12 81% 14%;
-    --sidebar-accent: 43 96% 56%;
-    --sidebar-accent-foreground: 20 91% 14%;
-    --sidebar-border: 0 0% 32%;
-    --sidebar-ring: 27 95% 60%;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 28 100% 50%;
+    --sidebar-primary-foreground: 220 20% 6%;
+    --sidebar-accent: 220 15% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 28 100% 50%;
   }
 }
 
@@ -156,7 +83,7 @@
   .animate-fade-in {
     animation: fadeIn 0.3s ease-out forwards;
   }
-
+  
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -186,44 +113,44 @@
   .font-display {
     font-family: 'Orbitron', sans-serif;
   }
-
+  
   .font-body {
     font-family: 'Rajdhani', sans-serif;
   }
-
+  
   .text-gradient-racing {
     background: var(--gradient-racing);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-
+  
   .text-gradient-cyber {
     background: var(--gradient-cyber);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-
+  
   .glow-orange {
     box-shadow: var(--shadow-glow-orange);
   }
-
+  
   .glow-cyan {
     box-shadow: var(--shadow-glow-cyan);
   }
-
+  
   .border-glow {
     border: 1px solid hsl(var(--primary) / 0.5);
     box-shadow: inset 0 0 20px hsl(var(--primary) / 0.1);
   }
-
+  
   .card-racing {
     background: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(220 18% 8%) 100%);
     border: 1px solid hsl(var(--border));
     position: relative;
   }
-
+  
   .card-racing::before {
     content: '';
     position: absolute;
@@ -234,35 +161,35 @@
     background: var(--gradient-racing);
     border-radius: var(--radius) var(--radius) 0 0;
   }
-
+  
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
   }
-
+  
   @keyframes pulse-glow {
     0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
     50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.6); }
   }
-
+  
   .animate-scan {
     animation: scan 3s linear infinite;
   }
-
+  
   @keyframes scan {
     0% { background-position: 0% 0%; }
     100% { background-position: 200% 0%; }
   }
-
+  
   /* Hide scrollbar utility for tabs */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-
+  
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-
+  
   /* Line clamp utilities */
   .line-clamp-2 {
     display: -webkit-box;
@@ -270,35 +197,35 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-
+  
   /* Popup animations */
   .animate-fade-out {
     animation: fadeOut 0.3s ease-out forwards;
   }
-
+  
   @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
   }
-
+  
   .animate-scale-in {
     animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
-
+  
   @keyframes scaleIn {
     from { opacity: 0; transform: scale(0.9) translateY(20px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
   }
-
+  
   .animate-scale-out {
     animation: scaleOut 0.3s ease-out forwards;
   }
-
+  
   @keyframes scaleOut {
     from { opacity: 1; transform: scale(1) translateY(0); }
     to { opacity: 0; transform: scale(0.9) translateY(20px); }
   }
-
+  
   /* Cityscape animations */
   @keyframes speedCarLeft {
     from { left: -80px; opacity: 0; }
@@ -306,20 +233,20 @@
     90% { opacity: 0.6; }
     to { left: 110%; opacity: 0; }
   }
-
+  
   @keyframes speedCarRight {
     from { right: -80px; opacity: 0; }
     10% { opacity: 0.6; }
     90% { opacity: 0.6; }
     to { right: 110%; opacity: 0; }
   }
-
+  
   /* Window glow - EPILEPSY SAFE: Very slow, gentle transitions */
   @keyframes windowFlicker {
     0%, 100% { opacity: 0.4; }
     50% { opacity: 0.7; }
   }
-
+  
   @keyframes float {
     0%, 100% { 
       transform: translateY(0) translateX(0); 
@@ -330,7 +257,7 @@
       opacity: 0.4;
     }
   }
-
+  
   /* Road lines - EPILEPSY SAFE: Smooth motion, no flashing */
   @keyframes roadLineZoom {
     0% { 
