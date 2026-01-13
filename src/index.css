@@ -4,6 +4,12 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
+@import url("https://fonts.googleapis.com/css2?family=Roboto&display=swap");
+
+@import url("https://fonts.googleapis.com/css2?family=Merriweather&display=swap");
+
+@import url("https://fonts.googleapis.com/css2?family=Inconsolata&display=swap");
+
 @layer base {
   :root {
     /* Racing dark theme - inspired by FH5 UI */
@@ -17,17 +23,17 @@
     --popover-foreground: 210 40% 98%;
 
     /* Electric orange - FH5 primary accent */
-    --primary: 28 100% 50%;
-    --primary-foreground: 220 20% 6%;
+    --primary: 240 3.8298% 46.0784%;
+    --primary-foreground: 80 89.0909% 89.2157%;
 
     /* Cyan accent for secondary elements */
-    --secondary: 190 95% 45%;
-    --secondary-foreground: 220 20% 6%;
+    --secondary: 215 20.2247% 65.098%;
+    --secondary-foreground: 48 100% 96.0784%;
 
     --muted: 220 15% 15%;
     --muted-foreground: 215 20% 55%;
 
-    --accent: 190 95% 45%;
+    --accent: 176 69.3694% 21.7647%;
     --accent-foreground: 220 20% 6%;
 
     --destructive: 0 84% 60%;
@@ -46,16 +52,16 @@
     --racing-green: 145 80% 45%;
     --racing-red: 0 85% 55%;
     --racing-yellow: 45 100% 55%;
-    
+
     /* Gradients */
     --gradient-racing: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--racing-red)) 100%);
     --gradient-cyber: linear-gradient(135deg, hsl(var(--racing-cyan)) 0%, hsl(var(--racing-purple)) 100%);
     --gradient-glow: linear-gradient(180deg, hsl(var(--primary) / 0.2) 0%, transparent 100%);
-    
+
     /* Shadows */
     --shadow-glow-orange: 0 0 30px hsl(var(--primary) / 0.5);
     --shadow-glow-cyan: 0 0 30px hsl(var(--racing-cyan) / 0.5);
-    
+
     /* Sidebar */
     --sidebar-background: 220 18% 8%;
     --sidebar-foreground: 210 40% 98%;
@@ -65,6 +71,14 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 220 15% 18%;
     --sidebar-ring: 28 100% 50%;
+    --font-sans: Roboto, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+    --font-serif: Merriweather, ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
+    --font-mono: Inconsolata, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+  }
+  .dark {
+    --font-sans: Roboto, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+    --font-serif: Merriweather, ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
+    --font-mono: Inconsolata, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   }
 }
 
@@ -83,7 +97,7 @@
   .animate-fade-in {
     animation: fadeIn 0.3s ease-out forwards;
   }
-  
+
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -113,44 +127,44 @@
   .font-display {
     font-family: 'Orbitron', sans-serif;
   }
-  
+
   .font-body {
     font-family: 'Rajdhani', sans-serif;
   }
-  
+
   .text-gradient-racing {
     background: var(--gradient-racing);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   .text-gradient-cyber {
     background: var(--gradient-cyber);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   .glow-orange {
     box-shadow: var(--shadow-glow-orange);
   }
-  
+
   .glow-cyan {
     box-shadow: var(--shadow-glow-cyan);
   }
-  
+
   .border-glow {
     border: 1px solid hsl(var(--primary) / 0.5);
     box-shadow: inset 0 0 20px hsl(var(--primary) / 0.1);
   }
-  
+
   .card-racing {
     background: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(220 18% 8%) 100%);
     border: 1px solid hsl(var(--border));
     position: relative;
   }
-  
+
   .card-racing::before {
     content: '';
     position: absolute;
@@ -161,35 +175,35 @@
     background: var(--gradient-racing);
     border-radius: var(--radius) var(--radius) 0 0;
   }
-  
+
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
   }
-  
+
   @keyframes pulse-glow {
     0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
     50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.6); }
   }
-  
+
   .animate-scan {
     animation: scan 3s linear infinite;
   }
-  
+
   @keyframes scan {
     0% { background-position: 0% 0%; }
     100% { background-position: 200% 0%; }
   }
-  
+
   /* Hide scrollbar utility for tabs */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  
+
   /* Line clamp utilities */
   .line-clamp-2 {
     display: -webkit-box;
@@ -197,35 +211,35 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
+
   /* Popup animations */
   .animate-fade-out {
     animation: fadeOut 0.3s ease-out forwards;
   }
-  
+
   @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
   }
-  
+
   .animate-scale-in {
     animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
-  
+
   @keyframes scaleIn {
     from { opacity: 0; transform: scale(0.9) translateY(20px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
   }
-  
+
   .animate-scale-out {
     animation: scaleOut 0.3s ease-out forwards;
   }
-  
+
   @keyframes scaleOut {
     from { opacity: 1; transform: scale(1) translateY(0); }
     to { opacity: 0; transform: scale(0.9) translateY(20px); }
   }
-  
+
   /* Cityscape animations */
   @keyframes speedCarLeft {
     from { left: -80px; opacity: 0; }
@@ -233,20 +247,20 @@
     90% { opacity: 0.6; }
     to { left: 110%; opacity: 0; }
   }
-  
+
   @keyframes speedCarRight {
     from { right: -80px; opacity: 0; }
     10% { opacity: 0.6; }
     90% { opacity: 0.6; }
     to { right: 110%; opacity: 0; }
   }
-  
+
   /* Window glow - EPILEPSY SAFE: Very slow, gentle transitions */
   @keyframes windowFlicker {
     0%, 100% { opacity: 0.4; }
     50% { opacity: 0.7; }
   }
-  
+
   @keyframes float {
     0%, 100% { 
       transform: translateY(0) translateX(0); 
@@ -257,7 +271,7 @@
       opacity: 0.4;
     }
   }
-  
+
   /* Road lines - EPILEPSY SAFE: Smooth motion, no flashing */
   @keyframes roadLineZoom {
     0% { 
