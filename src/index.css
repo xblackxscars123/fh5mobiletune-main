@@ -43,7 +43,7 @@
     --input: 220 15% 18%;
     --ring: 28 100% 50%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
     /* Custom racing colors */
     --racing-orange: 28 100% 50%;
@@ -79,6 +79,7 @@
     --font-sans: Roboto, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
     --font-serif: Merriweather, ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
     --font-mono: Inconsolata, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+    --radius: 0.625rem;
   }
 }
 
