@@ -1,12 +1,12 @@
 // Forza Horizon 5 Tuning Calculator
-// Based on "Engineering Dynamics and Algorithmic Tuning Protocols in Forza Horizon 5"
-// Implements Zero-Balance tuning with weight-proportionality principles
+// Enhanced with power-to-weight scaling, tire compound modifiers, PI class awareness, 
+// dynamic gearing, and driving style adjustments
 
 export type DriveType = 'RWD' | 'FWD' | 'AWD';
 export type TuneType = 'grip' | 'drift' | 'offroad' | 'drag' | 'rally' | 'street';
 
 export interface CarSpecs {
-  weight: number; // in lbs
+  weight: number; // in lbs or kg depending on unitSystem
   weightDistribution: number; // front weight percentage (0-100)
   driveType: DriveType;
   piClass: string;
@@ -16,6 +16,7 @@ export interface CarSpecs {
   tireCompound: 'street' | 'sport' | 'semi-slick' | 'slick' | 'rally' | 'offroad' | 'drag';
   horsepower?: number;
   gearCount?: number; // 4-10 gears
+  drivingStyle?: number; // -2 (stable/understeer) to +2 (loose/oversteer)
 }
 
 export type UnitSystem = 'imperial' | 'metric';
@@ -67,31 +68,63 @@ export interface TuneSettings {
   // Brakes
   brakePressure: number;
   brakeBalance: number;
-  brakeBalanceNote: string; // Note about FH5 slider inversion
+  brakeBalanceNote: string;
+  
+  // Calculation breakdown for transparency
+  modifiers?: TuneModifiers;
 }
+
+export interface TuneModifiers {
+  powerToWeight: { ratio: number; multiplier: number };
+  tireCompound: { name: string; pressureOffset: number; springMod: number };
+  piClass: { name: string; stiffnessMod: number; diffAggression: number };
+  drivingStyle: { value: number; description: string };
+  combinedStiffness: number;
+}
+
+// ==========================================
+// TIRE COMPOUND MODIFIERS
+// Affects pressure and suspension stiffness
+// ==========================================
+const tireCompoundModifiers: Record<string, { pressureOffset: number; springMod: number; name: string }> = {
+  street: { pressureOffset: 1.5, springMod: 0.90, name: 'Street' },
+  sport: { pressureOffset: 0, springMod: 1.00, name: 'Sport' },
+  'semi-slick': { pressureOffset: -0.5, springMod: 1.05, name: 'Semi-Slick' },
+  slick: { pressureOffset: -1.0, springMod: 1.10, name: 'Slick' },
+  rally: { pressureOffset: -3.0, springMod: 0.85, name: 'Rally' },
+  offroad: { pressureOffset: -4.0, springMod: 0.80, name: 'Offroad' },
+  drag: { pressureOffset: 2.0, springMod: 1.15, name: 'Drag' },
+};
+
+// ==========================================
+// PI CLASS MODIFIERS
+// Higher classes need stiffer, more aggressive setups
+// ==========================================
+const piClassModifiers: Record<string, { stiffnessMod: number; diffAggression: number; name: string }> = {
+  D: { stiffnessMod: 0.80, diffAggression: -0.15, name: 'D Class' },
+  C: { stiffnessMod: 0.85, diffAggression: -0.10, name: 'C Class' },
+  B: { stiffnessMod: 0.90, diffAggression: -0.05, name: 'B Class' },
+  A: { stiffnessMod: 1.00, diffAggression: 0, name: 'A Class' },
+  S1: { stiffnessMod: 1.10, diffAggression: 0.05, name: 'S1 Class' },
+  S2: { stiffnessMod: 1.20, diffAggression: 0.10, name: 'S2 Class' },
+  X: { stiffnessMod: 1.30, diffAggression: 0.15, name: 'X Class' },
+};
 
 // ==========================================
 // TIRE PRESSURE - Thermodynamics Model
 // ==========================================
-// Optimal Hot Pressure: 32-34 PSI for paved (2.2-2.3 Bar)
-// Cold Pressure: 27-28.5 PSI (anticipates 4-6 PSI thermal rise)
-// Flotation Physics: 15-19 PSI for off-road (1.0-1.3 Bar)
-
 const tirePressurePresets: Record<TuneType, { front: number; rear: number }> = {
-  grip: { front: 27.5, rear: 27.5 },     // Targets 32-34 PSI hot
-  street: { front: 28.0, rear: 28.0 },   // Slightly higher for mixed
-  drift: { front: 14.5, rear: 32.0 },    // Low front for friction, high rear for slip
-  offroad: { front: 17.0, rear: 17.0 },  // Flotation physics (15-19 PSI range)
-  rally: { front: 19.0, rear: 19.0 },    // Higher end of flotation for mixed
-  drag: { front: 55.0, rear: 15.0 },     // Max front stability, soft rear for squat
+  grip: { front: 27.5, rear: 27.5 },
+  street: { front: 28.0, rear: 28.0 },
+  drift: { front: 14.5, rear: 32.0 },
+  offroad: { front: 17.0, rear: 17.0 },
+  rally: { front: 19.0, rear: 19.0 },
+  drag: { front: 55.0, rear: 15.0 },
 };
 
 // ==========================================
 // ALIGNMENT PRESETS
 // ==========================================
-// Circuit: -1.5° to -1.0° negative camber
-// Drift: -5.0° front for extreme angle
-
 const alignmentPresets: Record<TuneType, { 
   camberF: number; 
   camberR: number; 
@@ -110,10 +143,6 @@ const alignmentPresets: Record<TuneType, {
 // ==========================================
 // DIFFERENTIAL MATRIX
 // ==========================================
-// From comprehensive discipline-specific guide
-// FWD/AWD front decel always 0
-// AWD center balance: Circuit 65-75% Rear, Drift 95% Rear
-
 const diffMatrix: Record<TuneType, Record<DriveType, { 
   accelF?: number; 
   decelF?: number; 
@@ -122,9 +151,9 @@ const diffMatrix: Record<TuneType, Record<DriveType, {
   center?: number 
 }>> = {
   grip: {
-    RWD: { accelR: 40, decelR: 20 },      // Low lock for corner exit traction
+    RWD: { accelR: 40, decelR: 20 },
     FWD: { accelF: 35, decelF: 0, accelR: 0, decelR: 0 },
-    AWD: { accelF: 25, decelF: 0, accelR: 50, decelR: 20, center: 70 }, // 70% rear
+    AWD: { accelF: 25, decelF: 0, accelR: 50, decelR: 20, center: 70 },
   },
   street: {
     RWD: { accelR: 35, decelR: 15 },
@@ -132,22 +161,22 @@ const diffMatrix: Record<TuneType, Record<DriveType, {
     AWD: { accelF: 22, decelF: 0, accelR: 40, decelR: 15, center: 60 },
   },
   drift: {
-    RWD: { accelR: 100, decelR: 100 },    // Locked diff for consistent slides
+    RWD: { accelR: 100, decelR: 100 },
     FWD: { accelF: 100, decelF: 0, accelR: 0, decelR: 0 },
-    AWD: { accelF: 20, decelF: 0, accelR: 100, decelR: 100, center: 95 }, // Nearly full rear
+    AWD: { accelF: 20, decelF: 0, accelR: 100, decelR: 100, center: 95 },
   },
   offroad: {
     RWD: { accelR: 35, decelR: 10 },
     FWD: { accelF: 28, decelF: 0, accelR: 0, decelR: 0 },
-    AWD: { accelF: 18, decelF: 0, accelR: 40, decelR: 15, center: 50 }, // Balanced for traction
+    AWD: { accelF: 18, decelF: 0, accelR: 40, decelR: 15, center: 50 },
   },
   rally: {
     RWD: { accelR: 45, decelR: 20 },
     FWD: { accelF: 35, decelF: 0, accelR: 0, decelR: 0 },
-    AWD: { accelF: 26, decelF: 0, accelR: 50, decelR: 20, center: 55 }, // +26% front bias
+    AWD: { accelF: 26, decelF: 0, accelR: 50, decelR: 20, center: 55 },
   },
   drag: {
-    RWD: { accelR: 100, decelR: 0 },      // Max accel lock, no decel
+    RWD: { accelR: 100, decelR: 0 },
     FWD: { accelF: 100, decelF: 0, accelR: 0, decelR: 0 },
     AWD: { accelF: 80, decelF: 0, accelR: 100, decelR: 0, center: 70 },
   },
@@ -156,12 +185,10 @@ const diffMatrix: Record<TuneType, Record<DriveType, {
 // ==========================================
 // BRAKE PRESETS
 // ==========================================
-// Note: FH5 slider is INVERTED - 60% front requires setting slider to 40%
-
 const brakePresets: Record<TuneType, { pressure: number; targetFrontBias: number }> = {
-  grip: { pressure: 100, targetFrontBias: 60 },   // 60% front = set slider to 40%
+  grip: { pressure: 100, targetFrontBias: 60 },
   street: { pressure: 95, targetFrontBias: 58 },
-  drift: { pressure: 85, targetFrontBias: 50 },   // More rear for rotation
+  drift: { pressure: 85, targetFrontBias: 50 },
   offroad: { pressure: 90, targetFrontBias: 55 },
   rally: { pressure: 95, targetFrontBias: 55 },
   drag: { pressure: 100, targetFrontBias: 55 },
@@ -169,29 +196,65 @@ const brakePresets: Record<TuneType, { pressure: number; targetFrontBias: number
 
 // ==========================================
 // HOKIHOSHI SLIDER MATH FORMULA
-// Pure weight-based: Value = (Max - Min) * Weight% + Min
-// No frequency physics - simple and effective
+// Value = (Max - Min) * Weight% + Min
 // ==========================================
-
 function sliderMath(min: number, max: number, weightPercent: number): number {
   return (max - min) * (weightPercent / 100) + min;
 }
 
-// Spring ranges by tune type (HokiHoshi baseline)
+// Spring ranges by tune type
 const springRanges: Record<TuneType, { min: number; max: number }> = {
-  grip: { min: 200, max: 800 },      // Firm for track
-  street: { min: 150, max: 600 },    // Balanced
-  drift: { min: 150, max: 500 },     // Softer for weight transfer
-  offroad: { min: 100, max: 300 },   // Very soft for absorption
-  rally: { min: 120, max: 400 },     // Medium-soft
-  drag: { min: 300, max: 1000 },     // Stiff for stability
+  grip: { min: 200, max: 800 },
+  street: { min: 150, max: 600 },
+  drift: { min: 150, max: 500 },
+  offroad: { min: 100, max: 300 },
+  rally: { min: 120, max: 400 },
+  drag: { min: 300, max: 1000 },
 };
 
 // ==========================================
-// GEOMETRIC GEARING FORMULA
-// Ratio_n = Ratio_1 * (Ratio_Final / Ratio_1) ^ ((n-1) / (TotalGears-1))
+// POWER-TO-WEIGHT CALCULATION
+// Higher power = stiffer suspension to handle g-forces
 // ==========================================
+function getPowerToWeightMultiplier(horsepower: number, weightLbs: number): { ratio: number; multiplier: number } {
+  // Power to weight in HP per 1000 lbs
+  const ratio = horsepower / (weightLbs / 1000);
+  
+  // Scale from 0.80 (low power) to 1.35 (very high power)
+  // ~200 hp/1000lbs = 1.0 baseline
+  // ~100 hp/1000lbs = 0.80
+  // ~400 hp/1000lbs = 1.35
+  const multiplier = 0.80 + (ratio / 500) * 0.55;
+  
+  return {
+    ratio: Math.round(ratio),
+    multiplier: Math.max(0.75, Math.min(1.40, multiplier))
+  };
+}
 
+// ==========================================
+// DYNAMIC FINAL DRIVE CALCULATION
+// Higher HP = longer (lower) final drive
+// ==========================================
+function calculateDynamicFinalDrive(baseFD: number, horsepower: number, tuneType: TuneType): number {
+  // 400 HP is our baseline
+  const hpDiff = 400 - horsepower;
+  let offset = hpDiff / 600; // About 0.67 adjustment per 400hp difference
+  
+  // Clamp the offset
+  offset = Math.max(-0.6, Math.min(0.6, offset));
+  
+  let finalDrive = baseFD + offset;
+  
+  // Tune type has its own modifier already in baseFD
+  // Just need minor power adjustments
+  
+  return Math.max(2.5, Math.min(5.5, finalDrive));
+}
+
+// ==========================================
+// GEOMETRIC GEARING FORMULA
+// ==========================================
 function calculateGearRatios(firstGear: number, lastGear: number, gearCount: number): number[] {
   const ratios: number[] = [];
   for (let n = 1; n <= gearCount; n++) {
@@ -205,16 +268,15 @@ function calculateGearRatios(firstGear: number, lastGear: number, gearCount: num
 const gearingPresets: Record<TuneType, { first: number; last: number; finalDrive: number }> = {
   grip: { first: 3.40, last: 0.72, finalDrive: 3.80 },
   street: { first: 3.30, last: 0.68, finalDrive: 3.50 },
-  drift: { first: 3.80, last: 0.85, finalDrive: 4.20 },  // Short for low-speed control
+  drift: { first: 3.80, last: 0.85, finalDrive: 4.20 },
   offroad: { first: 3.50, last: 0.78, finalDrive: 3.70 },
   rally: { first: 3.45, last: 0.75, finalDrive: 3.65 },
-  drag: { first: 2.90, last: 0.55, finalDrive: 2.90 },   // Long for top speed
+  drag: { first: 2.90, last: 0.55, finalDrive: 2.90 },
 };
 
 // ==========================================
 // UNIT CONVERSION UTILITIES
 // ==========================================
-
 export const unitConversions = {
   lbsToKg: (lbs: number) => Math.round(lbs * 0.453592),
   kgToLbs: (kg: number) => Math.round(kg * 2.20462),
@@ -265,10 +327,94 @@ export function getUnitLabels(system: UnitSystem) {
 }
 
 // ==========================================
-// MAIN CALCULATION FUNCTION
-// Implements Zero-Balance Tuning Protocol
+// DRIVING STYLE DESCRIPTIONS
 // ==========================================
+export function getDrivingStyleDescription(value: number): string {
+  if (value <= -2) return 'Very Stable (understeer bias)';
+  if (value === -1) return 'Stable';
+  if (value === 0) return 'Neutral';
+  if (value === 1) return 'Loose';
+  if (value >= 2) return 'Very Loose (oversteer bias)';
+  return 'Neutral';
+}
 
+// ==========================================
+// SIMPLE MODE DEFAULTS
+// Discipline-specific starting points
+// ==========================================
+export function getSimpleModeDefaults(tuneType: TuneType): {
+  weight: number;
+  horsepower: number;
+  weightDist: number;
+  driveType: DriveType;
+  piClass: string;
+  tireCompound: string;
+  description: string;
+} {
+  const defaults: Record<TuneType, ReturnType<typeof getSimpleModeDefaults>> = {
+    grip: {
+      weight: 3100,
+      horsepower: 500,
+      weightDist: 52,
+      driveType: 'RWD',
+      piClass: 'S1',
+      tireCompound: 'semi-slick',
+      description: 'Circuit racing - balanced power, RWD preferred for rotation'
+    },
+    drift: {
+      weight: 2900,
+      horsepower: 550,
+      weightDist: 52,
+      driveType: 'RWD',
+      piClass: 'S1',
+      tireCompound: 'sport',
+      description: 'Drift - mid-high power RWD, front-heavy aids initiation'
+    },
+    drag: {
+      weight: 2600,
+      horsepower: 1000,
+      weightDist: 45,
+      driveType: 'AWD',
+      piClass: 'X',
+      tireCompound: 'drag',
+      description: 'Drag - maximum power, AWD for launch, rear weight bias'
+    },
+    rally: {
+      weight: 3000,
+      horsepower: 400,
+      weightDist: 55,
+      driveType: 'AWD',
+      piClass: 'A',
+      tireCompound: 'rally',
+      description: 'Rally - moderate power AWD, slightly front-heavy'
+    },
+    offroad: {
+      weight: 3300,
+      horsepower: 350,
+      weightDist: 50,
+      driveType: 'AWD',
+      piClass: 'B',
+      tireCompound: 'offroad',
+      description: 'Offroad - lower power, balanced weight, AWD essential'
+    },
+    street: {
+      weight: 3100,
+      horsepower: 450,
+      weightDist: 52,
+      driveType: 'RWD',
+      piClass: 'A',
+      tireCompound: 'sport',
+      description: 'Street - versatile all-around setup'
+    }
+  };
+  
+  return defaults[tuneType];
+}
+
+// ==========================================
+// MAIN CALCULATION FUNCTION
+// Enhanced with all modifiers
+// ==========================================
 export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings {
   const { 
     weight, 
@@ -277,7 +423,10 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
     hasAero, 
     frontDownforce = 0, 
     rearDownforce = 0,
-    horsepower = 400 
+    horsepower = 400,
+    tireCompound = 'sport',
+    piClass = 'A',
+    drivingStyle = 0
   } = specs;
   
   // Weight distribution as decimals
@@ -285,11 +434,30 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   const rearWeightPct = 1 - frontWeightPct;
   
   // ==========================================
-  // TIRES - Thermal Delta Model
+  // GET ALL MODIFIERS
+  // ==========================================
+  const tireMod = tireCompoundModifiers[tireCompound] || tireCompoundModifiers['sport'];
+  const piMod = piClassModifiers[piClass] || piClassModifiers['A'];
+  const powerWeight = getPowerToWeightMultiplier(horsepower, weight);
+  
+  // Combined stiffness modifier
+  const combinedStiffness = powerWeight.multiplier * piMod.stiffnessMod * tireMod.springMod;
+  
+  // Build modifiers object for transparency
+  const modifiers: TuneModifiers = {
+    powerToWeight: powerWeight,
+    tireCompound: tireMod,
+    piClass: piMod,
+    drivingStyle: { value: drivingStyle, description: getDrivingStyleDescription(drivingStyle) },
+    combinedStiffness: Math.round(combinedStiffness * 100) / 100
+  };
+  
+  // ==========================================
+  // TIRES - With compound modifier
   // ==========================================
   const basePressures = tirePressurePresets[tuneType];
-  let tirePressureFront = basePressures.front;
-  let tirePressureRear = basePressures.rear;
+  let tirePressureFront = basePressures.front + tireMod.pressureOffset;
+  let tirePressureRear = basePressures.rear + tireMod.pressureOffset;
   
   // Adjust for weight distribution (heavier end needs slightly more pressure)
   if (tuneType !== 'drift' && tuneType !== 'drag') {
@@ -319,69 +487,77 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   }
   
   // ==========================================
-  // ANTI-ROLL BARS - HokiHoshi Weight-Based
-  // Simple formula: (65 - 1) * weight% + 1
-  // Then offset for drive type balance
+  // ANTI-ROLL BARS - Weight-based with modifiers
   // ==========================================
   const arbMin = 1;
   const arbMax = 65;
   
   // Base calculation from weight distribution
-  let arbFront = Math.round(sliderMath(arbMin, arbMax, weightDistribution));
-  let arbRear = Math.round(sliderMath(arbMin, arbMax, 100 - weightDistribution));
+  let arbFront = sliderMath(arbMin, arbMax, weightDistribution);
+  let arbRear = sliderMath(arbMin, arbMax, 100 - weightDistribution);
   
-  // Drive type balance offsets (HokiHoshi method)
+  // Drive type balance offsets
   if (driveType === 'FWD') {
-    // FWD understeers: soften front, stiffen rear
-    arbFront = Math.round(arbFront * 0.75);
-    arbRear = Math.round(arbRear * 1.15);
+    arbFront *= 0.75;
+    arbRear *= 1.15;
   } else if (driveType === 'RWD') {
-    // RWD oversteers: stiffen front slightly
-    arbFront = Math.round(arbFront * 1.05);
-    arbRear = Math.round(arbRear * 0.95);
+    arbFront *= 1.05;
+    arbRear *= 0.95;
   }
-  // AWD: keep balanced
   
   // Tune type modifiers
   if (tuneType === 'drift') {
-    arbFront = Math.round(arbFront * 0.5);
-    arbRear = Math.round(arbRear * 1.2);
+    arbFront *= 0.5;
+    arbRear *= 1.2;
   } else if (tuneType === 'offroad' || tuneType === 'rally') {
-    arbFront = Math.round(arbFront * 0.6);
-    arbRear = Math.round(arbRear * 0.6);
+    arbFront *= 0.6;
+    arbRear *= 0.6;
   }
+  
+  // Apply driving style: negative = more understeer (stiffer rear)
+  // positive = more oversteer (stiffer front)
+  arbFront += drivingStyle * 2;
+  arbRear -= drivingStyle * 2;
+  
+  // Apply combined stiffness modifier
+  arbFront = Math.round(arbFront * combinedStiffness);
+  arbRear = Math.round(arbRear * combinedStiffness);
   
   arbFront = Math.max(1, Math.min(65, arbFront));
   arbRear = Math.max(1, Math.min(65, arbRear));
   
   // ==========================================
-  // SPRINGS - Pure HokiHoshi Slider Math
-  // Value = (Max - Min) * Weight% + Min
-  // Simple, predictable, proven effective
+  // SPRINGS - With all modifiers applied
   // ==========================================
   const springRange = springRanges[tuneType];
   
-  // Pure weight-based calculation - no frequency physics
-  let springsFront = Math.round(sliderMath(springRange.min, springRange.max, weightDistribution));
-  let springsRear = Math.round(sliderMath(springRange.min, springRange.max, 100 - weightDistribution));
+  // Pure weight-based calculation
+  let springsFront = sliderMath(springRange.min, springRange.max, weightDistribution);
+  let springsRear = sliderMath(springRange.min, springRange.max, 100 - weightDistribution);
   
-  // Minimal aero adjustment (only if significant downforce)
+  // Apply combined stiffness modifier (power + PI + tire compound)
+  springsFront = Math.round(springsFront * combinedStiffness);
+  springsRear = Math.round(springsRear * combinedStiffness);
+  
+  // Aero adjustment
   if (hasAero && frontDownforce > 100) {
     springsFront += Math.round(frontDownforce * 0.1);
     springsRear += Math.round(rearDownforce * 0.1);
   }
   
-  springsFront = Math.max(springRange.min, Math.min(springRange.max, springsFront));
-  springsRear = Math.max(springRange.min, Math.min(springRange.max, springsRear));
+  // Clamp to expanded range for high-power builds
+  const maxSpring = Math.round(springRange.max * 1.4);
+  springsFront = Math.max(springRange.min, Math.min(maxSpring, springsFront));
+  springsRear = Math.max(springRange.min, Math.min(maxSpring, springsRear));
   
   // Ride height
   const rideHeightPresets: Record<TuneType, { front: number; rear: number }> = {
     grip: { front: 4.5, rear: 4.8 },
     street: { front: 5.5, rear: 5.8 },
     drift: { front: 5.5, rear: 5.0 },
-    offroad: { front: 9.0, rear: 9.5 },  // Max clearance
+    offroad: { front: 9.0, rear: 9.5 },
     rally: { front: 7.5, rear: 8.0 },
-    drag: { front: 4.0, rear: 4.5 },     // Low for stability
+    drag: { front: 4.0, rear: 4.5 },
   };
   
   let rideHeightFront = rideHeightPresets[tuneType].front;
@@ -393,13 +569,14 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   }
   
   // ==========================================
-  // DAMPING - HokiHoshi Weight-Based
-  // Rebound: (19 * Weight%) + offset
-  // Bump: 50-65% of Rebound
-  // Simple and effective
+  // DAMPING - Weight-based with modifiers
   // ==========================================
   let reboundFront = Math.round((19 * frontWeightPct) + 1);
   let reboundRear = Math.round((19 * rearWeightPct) + 1);
+  
+  // Scale with stiffness modifier
+  reboundFront = Math.round(reboundFront * (combinedStiffness * 0.9));
+  reboundRear = Math.round(reboundRear * (combinedStiffness * 0.9));
   
   // Tune type adjustments
   if (tuneType === 'offroad' || tuneType === 'rally') {
@@ -413,7 +590,7 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   reboundFront = Math.max(1, Math.min(20, reboundFront));
   reboundRear = Math.max(1, Math.min(20, reboundRear));
   
-  // Bump is 55-60% of rebound (HokiHoshi standard)
+  // Bump is 55-60% of rebound
   const bumpRatio = tuneType === 'offroad' ? 0.55 : 0.60;
   let bumpFront = Math.round(reboundFront * bumpRatio);
   let bumpRear = Math.round(reboundRear * bumpRatio);
@@ -422,102 +599,95 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   bumpRear = Math.max(1, Math.min(20, bumpRear));
   
   // ==========================================
-  // AERO - Calculated Based on Weight, Speed Needs, and Balance
-  // Does NOT just echo user input - calculates optimal values
-  // User's input is the RANGE (min/max available), we calculate optimal within it
+  // AERO
   // ==========================================
   let aeroFront = 0;
   let aeroRear = 0;
   
   if (hasAero) {
-    // Base downforce targets by tune type (as percentage of max)
     const aeroTargets: Record<TuneType, { frontPct: number; rearPct: number }> = {
-      grip: { frontPct: 0.65, rearPct: 0.75 },     // High downforce for corners
-      street: { frontPct: 0.40, rearPct: 0.50 },   // Moderate for mixed use
-      drift: { frontPct: 0.15, rearPct: 0.30 },    // Low for speed, some rear for stability
-      offroad: { frontPct: 0.25, rearPct: 0.35 },  // Low-moderate
-      rally: { frontPct: 0.35, rearPct: 0.45 },    // Moderate
-      drag: { frontPct: 0.0, rearPct: 0.0 },       // Minimum drag
+      grip: { frontPct: 0.65, rearPct: 0.75 },
+      street: { frontPct: 0.40, rearPct: 0.50 },
+      drift: { frontPct: 0.15, rearPct: 0.30 },
+      offroad: { frontPct: 0.25, rearPct: 0.35 },
+      rally: { frontPct: 0.35, rearPct: 0.45 },
+      drag: { frontPct: 0.0, rearPct: 0.0 },
     };
     
     const targets = aeroTargets[tuneType];
-    
-    // Assume standard aero range is 0-400 lbs if user didn't specify
     const maxFrontAero = frontDownforce > 0 ? frontDownforce : 400;
     const maxRearAero = rearDownforce > 0 ? rearDownforce : 400;
     
-    // Calculate optimal aero based on weight distribution and drive type
     let frontAdjust = 0;
     let rearAdjust = 0;
     
-    // FWD: needs more rear downforce to help rotate
-    // RWD: needs balanced aero, slightly more rear for traction
-    // AWD: balanced approach
     if (driveType === 'FWD') {
-      frontAdjust = -0.10;  // Less front downforce
-      rearAdjust = 0.15;    // More rear for rotation
+      frontAdjust = -0.10;
+      rearAdjust = 0.15;
     } else if (driveType === 'RWD') {
-      rearAdjust = 0.10;    // More rear for traction
+      rearAdjust = 0.10;
     }
     
-    // Heavy front bias needs more rear aero
     if (weightDistribution > 55) {
       rearAdjust += 0.10;
     } else if (weightDistribution < 45) {
       frontAdjust += 0.10;
     }
     
-    // Calculate final values
     aeroFront = Math.round(maxFrontAero * Math.max(0, Math.min(1, targets.frontPct + frontAdjust)));
     aeroRear = Math.round(maxRearAero * Math.max(0, Math.min(1, targets.rearPct + rearAdjust)));
   }
   
   // ==========================================
-  // DIFFERENTIAL - From Matrix
+  // DIFFERENTIAL - With PI class modifier
   // ==========================================
   const diff = diffMatrix[tuneType][driveType];
   
+  // Apply PI class aggression modifier
+  let diffAccelRear = Math.round((diff.accelR || 0) * (1 + piMod.diffAggression));
+  let diffDecelRear = Math.round((diff.decelR || 0) * (1 + piMod.diffAggression * 0.5));
+  let diffAccelFront = diff.accelF ? Math.round(diff.accelF * (1 + piMod.diffAggression)) : undefined;
+  let diffDecelFront = diff.decelF;
+  let centerBalance = diff.center;
+  
+  // Apply driving style: loose = more aggressive diff
+  diffAccelRear = Math.round(diffAccelRear + (drivingStyle * 5));
+  
+  // Clamp values
+  diffAccelRear = Math.max(0, Math.min(100, diffAccelRear));
+  diffDecelRear = Math.max(0, Math.min(100, diffDecelRear));
+  if (diffAccelFront !== undefined) {
+    diffAccelFront = Math.max(0, Math.min(100, diffAccelFront));
+  }
+  
   // ==========================================
-  // BRAKES - Inverted Slider Anomaly
-  // To get 60% front, set slider to 40%
+  // BRAKES
   // ==========================================
   const brakes = brakePresets[tuneType];
-  
-  // Calculate the inverted slider value
-  // targetFrontBias of 60% means set slider to 40%
   let targetFrontBias = brakes.targetFrontBias;
   
-  // Adjust for weight distribution
   const weightOffset = weightDistribution - 50;
   targetFrontBias += Math.round(weightOffset * 0.15);
   targetFrontBias = Math.max(45, Math.min(70, targetFrontBias));
   
-  // The actual slider value (inverted)
   const brakeBalance = 100 - targetFrontBias;
-  
-  // Generate note about the inversion
   const brakeBalanceNote = `Set slider to ${brakeBalance}% to achieve ${targetFrontBias}% front bias (FH5 slider is inverted)`;
   
   // ==========================================
-  // GEARING - Geometric Decay Function
+  // GEARING - Dynamic based on horsepower
   // ==========================================
   const gearing = gearingPresets[tuneType];
   const gearCount = specs.gearCount || 6;
   const gearRatios = calculateGearRatios(gearing.first, gearing.last, gearCount);
-  let finalDrive = gearing.finalDrive;
-  
-  // Adjust for high power
-  if (horsepower && horsepower >= 600) {
-    finalDrive += 0.15; // Shorter for more torque multiplication
-  }
+  const finalDrive = calculateDynamicFinalDrive(gearing.finalDrive, horsepower, tuneType);
   
   const gearingNotes: Record<TuneType, string> = {
-    grip: 'Balanced gearing for acceleration and corner exit',
-    street: 'Stock-like balanced gearing for mixed driving',
-    drift: 'Short gearing for precise low-speed angle control',
-    offroad: 'Medium gearing for torque on rough terrain',
-    rally: 'Balanced for mixed surface acceleration',
-    drag: 'Long gearing (low ratios) for maximum top speed',
+    grip: `Final drive ${finalDrive.toFixed(2)} calculated for ${horsepower}HP`,
+    street: `Balanced gearing for ${horsepower}HP`,
+    drift: `Short gearing for angle control at ${horsepower}HP`,
+    offroad: `Torque-focused gearing for ${horsepower}HP`,
+    rally: `Mixed surface gearing for ${horsepower}HP`,
+    drag: `Top speed gearing for ${horsepower}HP`,
   };
   
   // ==========================================
@@ -546,21 +716,21 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
     bumpRear,
     aeroFront,
     aeroRear,
-    diffAccelFront: diff.accelF,
-    diffDecelFront: diff.decelF,
-    diffAccelRear: diff.accelR,
-    diffDecelRear: diff.decelR,
-    centerBalance: diff.center,
+    diffAccelFront,
+    diffDecelFront,
+    diffAccelRear,
+    diffDecelRear,
+    centerBalance,
     brakePressure: brakes.pressure,
     brakeBalance,
     brakeBalanceNote,
+    modifiers,
   };
 }
 
 // ==========================================
 // TUNE TYPE DESCRIPTIONS
 // ==========================================
-
 export const tuneTypeDescriptions: Record<TuneType, { 
   title: string; 
   description: string; 
@@ -606,7 +776,7 @@ export const tuneTypeDescriptions: Record<TuneType, {
     icon: '🏔️',
     tips: [
       'Low tire pressure (15-19 PSI / 1.0-1.3 Bar) for flotation',
-      'Soft springs (1.0-1.5 Hz frequency) for terrain absorption',
+      'Soft springs for terrain absorption',
       'High rebound damping to "stick" jump landings',
       'Soft ARBs for maximum wheel independence',
     ],

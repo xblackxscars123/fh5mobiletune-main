@@ -243,6 +243,32 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
             <span>Advanced Settings</span>
           </div>
 
+          {/* Driving Style Slider */}
+          <div className="space-y-2 md:space-y-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+            <Label className="flex items-center gap-2 text-sm md:text-base font-display">
+              <Gauge className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+              Driving Style
+            </Label>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Stable</span>
+              <span className="font-medium text-primary">
+                {(specs.drivingStyle || 0) === 0 ? 'Neutral' : 
+                 (specs.drivingStyle || 0) < 0 ? 'Understeer bias' : 'Oversteer bias'}
+              </span>
+              <span className="text-muted-foreground">Loose</span>
+            </div>
+            <Slider
+              value={[specs.drivingStyle || 0]}
+              onValueChange={([v]) => updateSpec('drivingStyle', v)}
+              min={-2}
+              max={2}
+              step={1}
+            />
+            <p className="text-xs text-muted-foreground">
+              Adjusts ARBs & differential for your preferred handling feel
+            </p>
+          </div>
+
           {/* Power Input */}
           <div className="space-y-2 md:space-y-3">
             <TuningTooltip explanation={inputExplanations.horsepower} showIcon>
@@ -264,21 +290,11 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
               max={unitSystem === 'imperial' ? 3000 : 2237}
               placeholder={unitSystem === 'imperial' ? "e.g. 400" : "e.g. 298"}
             />
-            <Slider
-              value={[displayPower]}
-              onValueChange={([v]) => {
-                const hpValue = unitSystem === 'imperial' ? v : unitConversions.kwToHp(v);
-                updateSpec('horsepower', hpValue);
-              }}
-              min={unitSystem === 'imperial' ? 100 : 75}
-              max={unitSystem === 'imperial' ? 2000 : 1491}
-              step={unitSystem === 'imperial' ? 10 : 5}
-            />
             <p className="text-xs text-muted-foreground">
-              {(specs.horsepower || 400) >= 400 ? (
-                <span className="text-[hsl(var(--racing-yellow))]">⚡ High power mode: Springs & dampers adjusted</span>
+              {(specs.horsepower || 400) >= 600 ? (
+                <span className="text-[hsl(var(--racing-yellow))]">⚡ High power: +{Math.round(((specs.horsepower || 400) / 400 - 1) * 30)}% stiffness</span>
               ) : (
-                'Standard power settings'
+                'Power-to-weight scaling active'
               )}
             </p>
           </div>
@@ -331,6 +347,9 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
                 </Button>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Higher classes get stiffer suspension (+10-30%)
+            </p>
           </div>
 
           {/* Tire Compound */}
@@ -351,6 +370,9 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
                 </Button>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Affects tire pressure and grip expectations
+            </p>
           </div>
         </div>
       )}
