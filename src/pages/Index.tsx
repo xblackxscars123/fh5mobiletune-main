@@ -10,7 +10,6 @@ import { SavedTunesManager } from '@/components/SavedTunesManager';
 import { ShopPromoPopup } from '@/components/ShopPromoPopup';
 import { JDMStickerBombBackground } from '@/components/JDMStickerBombBackground';
 import { TuningExpertChat } from '@/components/TuningExpertChat';
-
 import { Button } from '@/components/ui/button';
 import { CarSpecs, TuneType, calculateTune, UnitSystem } from '@/lib/tuningCalculator';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
@@ -18,7 +17,6 @@ import { SavedTune } from '@/hooks/useSavedTunes';
 import { quickStartTips } from '@/data/tuningGuide';
 import { Calculator, RotateCcw, ShoppingBag, Zap, Settings } from 'lucide-react';
 import { toast } from 'sonner';
-
 const defaultSpecs: CarSpecs = {
   weight: 3000,
   weightDistribution: 52,
@@ -27,9 +25,8 @@ const defaultSpecs: CarSpecs = {
   hasAero: false,
   tireCompound: 'sport',
   horsepower: 400,
-  gearCount: 6,
+  gearCount: 6
 };
-
 export default function Index() {
   const [tuneType, setTuneType] = useState<TuneType>('grip');
   const [specs, setSpecs] = useState<CarSpecs>(defaultSpecs);
@@ -39,32 +36,27 @@ export default function Index() {
   const [isSimpleMode, setIsSimpleMode] = useState(true); // Default to simple mode
 
   const tuneSettings = useMemo(() => calculateTune(specs, tuneType), [specs, tuneType]);
-  
   const carName = selectedCar ? getCarDisplayName(selectedCar) : 'Custom Car';
-
   const handleCarSelect = (car: FH5Car) => {
     setSelectedCar(car);
     setSpecs({
       ...specs,
       weight: car.weight,
       weightDistribution: car.weightDistribution,
-      driveType: car.driveType,
+      driveType: car.driveType
     });
     toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
   };
-
   const handleCalculate = () => {
     setShowResults(true);
     toast.success('Tune calculated!');
   };
-
   const handleReset = () => {
     setSpecs(defaultSpecs);
     setTuneType('grip');
     setShowResults(false);
     setSelectedCar(null);
   };
-
   const handleLoadTune = (tune: SavedTune) => {
     setSpecs(tune.specs);
     setTuneType(tune.tuneType);
@@ -72,9 +64,7 @@ export default function Index() {
     // Try to find matching car
     setSelectedCar(null);
   };
-
-  return (
-    <div className="min-h-screen pb-8 md:pb-16 relative overflow-x-hidden">
+  return <div className="min-h-screen pb-8 md:pb-16 relative overflow-x-hidden">
       <JDMStickerBombBackground />
       <ShopPromoPopup />
       <div className="container max-w-7xl mx-auto px-3 sm:px-4 md:px-6 relative z-10">
@@ -82,46 +72,32 @@ export default function Index() {
         
         {/* Development Help Banner */}
         <div className="mb-4 md:mb-6 bg-gradient-to-r from-[hsl(var(--racing-yellow)/0.15)] via-[hsl(var(--racing-yellow)/0.1)] to-[hsl(var(--racing-yellow)/0.15)] border border-[hsl(var(--racing-yellow)/0.3)] rounded-lg p-3 md:p-4 text-center">
-          <p className="text-xs sm:text-sm text-[hsl(var(--racing-yellow))] font-medium">
-            🛠️ <span className="font-display uppercase tracking-wide">We'd love your help developing this app!</span> 🛠️
+          <p className="text-xs sm:text-sm text-[hsl(var(--racing-yellow))] font-medium">🛠️ WE'D LOVE YOUR HELP DEVELOPING THIS APP! 🛠️ ALSO CHECKOUT OUR COLORPALETTE APP HERE! 
+forzapalettepro.lovable.app<span className="font-display uppercase tracking-wide">We'd love your help developing this app!</span> 🛠️
           </p>
           <p className="text-xs text-muted-foreground mt-1 hidden sm:block">
             Got ideas, found bugs, or want to contribute? Drop a comment on the Reddit post!
           </p>
           {/* Desktop: Side by side buttons */}
           <div className="hidden sm:flex items-center justify-center gap-3 mt-2 md:mt-3">
-            <a 
-              href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-xs md:text-sm rounded-md transition-colors"
-            >
+            <a href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-xs md:text-sm rounded-md transition-colors">
               ☕ Support Development
             </a>
-            <Link 
-              to="/shop"
-              className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.8)] text-black font-medium text-xs md:text-sm rounded-md transition-colors shadow-[0_0_15px_hsl(var(--racing-orange)/0.5),0_0_30px_hsl(var(--racing-orange)/0.3)] hover:shadow-[0_0_20px_hsl(var(--racing-orange)/0.7),0_0_40px_hsl(var(--racing-orange)/0.4)] animate-pulse"
-              style={{ animationDuration: '2s' }}
-            >
+            <Link to="/shop" className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.8)] text-black font-medium text-xs md:text-sm rounded-md transition-colors shadow-[0_0_15px_hsl(var(--racing-orange)/0.5),0_0_30px_hsl(var(--racing-orange)/0.3)] hover:shadow-[0_0_20px_hsl(var(--racing-orange)/0.7),0_0_40px_hsl(var(--racing-orange)/0.4)] animate-pulse" style={{
+            animationDuration: '2s'
+          }}>
               <ShoppingBag className="w-4 h-4" />
               🔥 Garage Shop
             </Link>
           </div>
           {/* Mobile: Stack vertically */}
           <div className="flex sm:hidden flex-col items-center gap-2 mt-2">
-            <a 
-              href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-xs rounded-md transition-colors"
-            >
+            <a href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-xs rounded-md transition-colors">
               ☕ Support Development
             </a>
-            <Link 
-              to="/shop"
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.8)] text-black font-medium text-xs rounded-md transition-colors shadow-[0_0_15px_hsl(var(--racing-orange)/0.5),0_0_30px_hsl(var(--racing-orange)/0.3)] animate-pulse"
-              style={{ animationDuration: '2s' }}
-            >
+            <Link to="/shop" className="inline-flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.8)] text-black font-medium text-xs rounded-md transition-colors shadow-[0_0_15px_hsl(var(--racing-orange)/0.5),0_0_30px_hsl(var(--racing-orange)/0.3)] animate-pulse" style={{
+            animationDuration: '2s'
+          }}>
               <ShoppingBag className="w-3 h-3" />
               🔥 Garage Shop
             </Link>
@@ -130,19 +106,11 @@ export default function Index() {
         
         {/* Mode Toggle */}
         <div className="mb-4 flex items-center justify-center gap-2">
-          <Button
-            variant={isSimpleMode ? 'tuneTypeActive' : 'tuneType'}
-            onClick={() => setIsSimpleMode(true)}
-            className="text-xs sm:text-sm"
-          >
+          <Button variant={isSimpleMode ? 'tuneTypeActive' : 'tuneType'} onClick={() => setIsSimpleMode(true)} className="text-xs sm:text-sm">
             <Zap className="w-4 h-4 mr-1" />
             Simple Mode
           </Button>
-          <Button
-            variant={!isSimpleMode ? 'tuneTypeActive' : 'tuneType'}
-            onClick={() => setIsSimpleMode(false)}
-            className="text-xs sm:text-sm"
-          >
+          <Button variant={!isSimpleMode ? 'tuneTypeActive' : 'tuneType'} onClick={() => setIsSimpleMode(false)} className="text-xs sm:text-sm">
             <Settings className="w-4 h-4 mr-1" />
             Advanced Mode
           </Button>
@@ -158,77 +126,39 @@ export default function Index() {
             </div>
             
             {/* Car Selector - Only in Advanced Mode */}
-            {!isSimpleMode && (
-              <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
+            {!isSimpleMode && <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
                 <CarSelector onSelect={handleCarSelect} selectedCar={selectedCar} />
-              </div>
-            )}
+              </div>}
             
             {/* Car Specs */}
             <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
               <h3 className="font-display text-sm text-[hsl(var(--racing-yellow))] mb-3 md:mb-4 uppercase tracking-wider flex items-center gap-2">
-                {isSimpleMode ? (
-                  <>
+                {isSimpleMode ? <>
                     <Zap className="w-4 h-4" />
                     Quick Setup (HokiHoshi Method)
-                  </>
-                ) : (
-                  'Car Specifications'
-                )}
+                  </> : 'Car Specifications'}
               </h3>
-              {isSimpleMode ? (
-                <SimpleModeForm 
-                  specs={specs} 
-                  onChange={setSpecs} 
-                  unitSystem={unitSystem}
-                  onUnitSystemChange={setUnitSystem}
-                />
-              ) : (
-                <CarSpecsForm 
-                  specs={specs} 
-                  onChange={setSpecs} 
-                  unitSystem={unitSystem}
-                  onUnitSystemChange={setUnitSystem}
-                />
-              )}
+              {isSimpleMode ? <SimpleModeForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} /> : <CarSpecsForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} />}
             </div>
 
             {/* Actions */}
             <div className="flex gap-2 md:gap-3">
-              <Button 
-                onClick={handleCalculate} 
-                className="flex-1 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(45,100%,45%)] text-black font-display uppercase tracking-wider h-10 md:h-12 text-sm md:text-base"
-              >
+              <Button onClick={handleCalculate} className="flex-1 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(45,100%,45%)] text-black font-display uppercase tracking-wider h-10 md:h-12 text-sm md:text-base">
                 <Calculator className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                 Calculate Tune
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleReset}
-                className="h-10 md:h-12 px-3 md:px-4 border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,15%)]"
-              >
+              <Button variant="outline" onClick={handleReset} className="h-10 md:h-12 px-3 md:px-4 border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,15%)]">
                 <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
               </Button>
             </div>
             
             {/* Save/Load */}
-            <SavedTunesManager 
-              carName={carName}
-              tuneType={tuneType}
-              specs={specs}
-              onLoad={handleLoadTune}
-            />
+            <SavedTunesManager carName={carName} tuneType={tuneType} specs={specs} onLoad={handleLoadTune} />
           </div>
 
           {/* Right Panel - Tune Results (Forza Style) */}
           <div className={showResults ? 'animate-fade-in' : 'opacity-30 pointer-events-none'}>
-            <ForzaTunePanel 
-              tune={tuneSettings} 
-              driveType={specs.driveType} 
-              tuneType={tuneType}
-              unitSystem={unitSystem}
-              carName={carName}
-            />
+            <ForzaTunePanel tune={tuneSettings} driveType={specs.driveType} tuneType={tuneType} unitSystem={unitSystem} carName={carName} />
           </div>
         </div>
 
@@ -239,6 +169,5 @@ export default function Index() {
         {/* AI Tuning Expert Chat */}
         <TuningExpertChat />
       </div>
-    </div>
-  );
+    </div>;
 }
