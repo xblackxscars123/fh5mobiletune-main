@@ -72,7 +72,7 @@ export default function Index() {
         
         {/* Development Help Banner */}
         <div className="mb-4 md:mb-6 bg-gradient-to-r from-[hsl(var(--racing-yellow)/0.15)] via-[hsl(var(--racing-yellow)/0.1)] to-[hsl(var(--racing-yellow)/0.15)] border border-[hsl(var(--racing-yellow)/0.3)] rounded-lg p-3 md:p-4 text-center">
-          <p className="text-xs sm:text-sm text-[hsl(var(--racing-yellow))] font-medium">🛠️ WE'D LOVE YOUR HELP DEVELOPING THIS APP! 🛠️<span className="font-display uppercase tracking-wide">We'd love your help developing this app!</span> 🛠️
+          <p className="text-xs sm:text-sm text-[hsl(var(--racing-yellow))] font-medium"> 🛠️WE'D LOVE YOUR HELP DEVELOPING THIS APP! 🛠️<span className="font-display uppercase tracking-wide">We'd love your help developing this app!</span> 🛠️
           </p>
           <p className="text-xs text-muted-foreground mt-1 hidden sm:block">
             Got ideas, found bugs, or want to contribute? Drop a comment on the Reddit post!
