@@ -38,13 +38,13 @@
   :root {
     /* Racing dark theme - inspired by FH5 UI */
     --background: 0 0% 96%;
-    --foreground: 0 0% 9%;
+    --foreground: 210 40% 98.0392%;
 
     --card: 0 0% 98%;
-    --card-foreground: 0 0% 9%;
+    --card-foreground: 210 40% 98.0392%;
 
     --popover: 0 0% 89%;
-    --popover-foreground: 0 0% 9%;
+    --popover-foreground: 210 40% 98.0392%;
 
     /* Electric orange - FH5 primary accent */
     --primary: 210 40% 98.0392%;
@@ -55,7 +55,7 @@
     --secondary-foreground: 0 0% 98%;
 
     --muted: 0 0% 63%;
-    --muted-foreground: 0 0% 9%;
+    --muted-foreground: 210 40% 98.0392%;
 
     --accent: 250 100% 97%;
     --accent-foreground: 258 89% 66%;
