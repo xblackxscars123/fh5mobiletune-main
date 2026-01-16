@@ -28,6 +28,12 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap");
 
+@import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
+
+@import url("https://fonts.googleapis.com/css2?family=EB+Garamond&display=swap");
+
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
+
 @layer base {
   :root {
     /* Racing dark theme - inspired by FH5 UI */
@@ -41,11 +47,11 @@
     --popover-foreground: 0 0% 9%;
 
     /* Electric orange - FH5 primary accent */
-    --primary: 243 75% 58%;
+    --primary: 210 40% 98.0392%;
     --primary-foreground: 225 100% 96%;
 
     /* Cyan accent for secondary elements */
-    --secondary: 0 0% 32%;
+    --secondary: 210 40% 98.0392%;
     --secondary-foreground: 0 0% 98%;
 
     --muted: 0 0% 63%;
