@@ -38,10 +38,10 @@
   :root {
     /* Racing dark theme - inspired by FH5 UI */
     --background: 215 16.318% 46.8627%;
-    --foreground: 25 94.9791% 53.1373%;
+    --foreground: 210 40% 98.0392%;
 
     --card: 217 19.1176% 26.6667%;
-    --card-foreground: 210 40% 98.0392%;
+    --card-foreground: 25 94.9791% 53.1373%;
 
     --popover: 0 0% 89%;
     --popover-foreground: 38 92.126% 50.1961%;
