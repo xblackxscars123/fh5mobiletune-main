@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TuneTypeSelector } from '@/components/TuneTypeSelector';
 import { CarSpecsForm } from '@/components/CarSpecsForm';
@@ -10,13 +10,16 @@ import { SavedTunesManager } from '@/components/SavedTunesManager';
 import { ShopPromoPopup } from '@/components/ShopPromoPopup';
 import { JDMStickerBombBackground } from '@/components/JDMStickerBombBackground';
 import { TuningExpertChat } from '@/components/TuningExpertChat';
+import { TroubleshootingWizard } from '@/components/TroubleshootingWizard';
 import { Button } from '@/components/ui/button';
 import { CarSpecs, TuneType, calculateTune, UnitSystem } from '@/lib/tuningCalculator';
+import { parseTuneFromCurrentURL, copyShareURLToClipboard } from '@/lib/tuneShare';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
 import { SavedTune } from '@/hooks/useSavedTunes';
 import { quickStartTips } from '@/data/tuningGuide';
-import { Calculator, RotateCcw, ShoppingBag, Zap, Settings } from 'lucide-react';
+import { Calculator, RotateCcw, ShoppingBag, Zap, Settings, Wrench, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+
 const defaultSpecs: CarSpecs = {
   weight: 3000,
   weightDistribution: 52,
@@ -27,16 +30,50 @@ const defaultSpecs: CarSpecs = {
   horsepower: 400,
   gearCount: 6
 };
+
 export default function Index() {
+  const location = useLocation();
   const [tuneType, setTuneType] = useState<TuneType>('grip');
   const [specs, setSpecs] = useState<CarSpecs>(defaultSpecs);
   const [showResults, setShowResults] = useState(false);
   const [selectedCar, setSelectedCar] = useState<FH5Car | null>(null);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
-  const [isSimpleMode, setIsSimpleMode] = useState(true); // Default to simple mode
+  const [isSimpleMode, setIsSimpleMode] = useState(true);
+  const [showTroubleshooting, setShowTroubleshooting] = useState(false);
+
+  // Handle car selection from Cars page
+  useEffect(() => {
+    if (location.state?.selectedCar) {
+      const car = location.state.selectedCar as FH5Car;
+      setSelectedCar(car);
+      setSpecs(prev => ({
+        ...prev,
+        weight: car.weight,
+        weightDistribution: car.weightDistribution,
+        driveType: car.driveType
+      }));
+      toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
+      // Clear state to prevent re-loading on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  // Parse shared tune from URL on mount
+  useEffect(() => {
+    const sharedTune = parseTuneFromCurrentURL();
+    if (sharedTune) {
+      setSpecs(sharedTune.specs);
+      setTuneType(sharedTune.tuneType);
+      setShowResults(true);
+      toast.success('Loaded shared tune!');
+      // Clear URL params
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const tuneSettings = useMemo(() => calculateTune(specs, tuneType), [specs, tuneType]);
   const carName = selectedCar ? getCarDisplayName(selectedCar) : 'Custom Car';
+
   const handleCarSelect = (car: FH5Car) => {
     setSelectedCar(car);
     setSpecs({
@@ -47,22 +84,33 @@ export default function Index() {
     });
     toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
   };
+
   const handleCalculate = () => {
     setShowResults(true);
     toast.success('Tune calculated!');
   };
+
   const handleReset = () => {
     setSpecs(defaultSpecs);
     setTuneType('grip');
     setShowResults(false);
     setSelectedCar(null);
   };
+
   const handleLoadTune = (tune: SavedTune) => {
     setSpecs(tune.specs);
     setTuneType(tune.tuneType);
     setShowResults(true);
-    // Try to find matching car
     setSelectedCar(null);
+  };
+
+  const handleShare = async () => {
+    const success = await copyShareURLToClipboard({ specs, tuneType, carName });
+    if (success) {
+      toast.success('Share link copied to clipboard!');
+    } else {
+      toast.error('Failed to copy link');
+    }
   };
   return <div className="min-h-screen pb-8 md:pb-16 relative overflow-x-hidden">
       <JDMStickerBombBackground />
@@ -149,7 +197,27 @@ export default function Index() {
               <Button variant="outline" onClick={handleReset} className="h-10 md:h-12 px-3 md:px-4 border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,15%)]">
                 <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
               </Button>
+              {showResults && (
+                <Button variant="outline" onClick={handleShare} className="h-10 md:h-12 px-3 md:px-4 border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,15%)]" title="Share Tune">
+                  <Share2 className="w-4 h-4 md:w-5 md:h-5" />
+                </Button>
+              )}
             </div>
+
+            {/* Troubleshooting Toggle */}
+            <Button
+              variant="outline"
+              onClick={() => setShowTroubleshooting(!showTroubleshooting)}
+              className="w-full border-[hsl(var(--racing-orange)/0.5)] text-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.1)]"
+            >
+              <Wrench className="w-4 h-4 mr-2" />
+              {showTroubleshooting ? 'Hide' : 'Fix My Car'} - Troubleshoot Issues
+            </Button>
+
+            {/* Troubleshooting Wizard */}
+            {showTroubleshooting && (
+              <TroubleshootingWizard onClose={() => setShowTroubleshooting(false)} />
+            )}
             
             {/* Save/Load */}
             <SavedTunesManager carName={carName} tuneType={tuneType} specs={specs} onLoad={handleLoadTune} />

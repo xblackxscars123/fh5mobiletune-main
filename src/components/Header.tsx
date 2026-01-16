@@ -1,5 +1,7 @@
-import { Gauge, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Gauge, Zap, Car } from 'lucide-react';
 import japanPlateBg from '@/assets/japan-plate-clean.png';
+
 export function Header() {
   return <header className="relative py-4 sm:py-6 md:py-8 mb-4 sm:mb-6 md:mb-8 overflow-hidden">
       {/* Background glow effects - hidden on mobile for performance */}
@@ -49,6 +51,17 @@ export function Header() {
       </p>
         
         <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-sm md:text-base px-2 sm:px-4 hidden sm:block">AI tuning calculator for almost all 1000+ cars in Forza Horizon 5. Enter your car specs, select your tune type, and get optimized settings instantly.</p>
+        
+        {/* Navigation Links */}
+        <div className="flex items-center justify-center gap-4 pt-3">
+          <Link 
+            to="/cars" 
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-colors text-sm font-medium text-primary"
+          >
+            <Car className="w-4 h-4" />
+            Browse Cars
+          </Link>
+        </div>
         
         {/* Decorative line - simplified on mobile */}
         <div className="flex items-center justify-center gap-2 sm:gap-4 pt-2 sm:pt-3 md:pt-4">
