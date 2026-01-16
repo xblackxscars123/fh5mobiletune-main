@@ -40,8 +40,8 @@
     --background: 215 16.318% 46.8627%;
     --foreground: 25 94.9791% 53.1373%;
 
-    --card: 0 0% 98%;
-    --card-foreground: 210 40% 98.0392%;
+    --card: 215 20.2247% 65.098%;
+    --card-foreground: 25 94.9791% 53.1373%;
 
     --popover: 0 0% 89%;
     --popover-foreground: 38 92.126% 50.1961%;
@@ -52,7 +52,7 @@
 
     /* Cyan accent for secondary elements */
     --secondary: 25 94.9791% 53.1373%;
-    --secondary-foreground: 0 72.2222% 50.5882%;
+    --secondary-foreground: 210 40% 98.0392%;
 
     --muted: 0 0% 63%;
     --muted-foreground: 210 40% 98.0392%;
