@@ -11,11 +11,15 @@ import { ShopPromoPopup } from '@/components/ShopPromoPopup';
 import { JDMStickerBombBackground } from '@/components/JDMStickerBombBackground';
 import { TuningExpertChat } from '@/components/TuningExpertChat';
 import { TroubleshootingWizard } from '@/components/TroubleshootingWizard';
+import { TemplateSelector } from '@/components/TemplateSelector';
+import { BalanceStiffnessSliders, applyBalanceStiffness } from '@/components/BalanceStiffnessSliders';
+import { TuneCompare } from '@/components/TuneCompare';
+import { TuneTemplate } from '@/data/tuneTemplates';
 import { Button } from '@/components/ui/button';
-import { CarSpecs, TuneType, calculateTune, UnitSystem } from '@/lib/tuningCalculator';
+import { CarSpecs, TuneType, calculateTune, UnitSystem, TuneSettings } from '@/lib/tuningCalculator';
 import { parseTuneFromCurrentURL, copyShareURLToClipboard } from '@/lib/tuneShare';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
-import { SavedTune } from '@/hooks/useSavedTunes';
+import { SavedTune, useSavedTunes } from '@/hooks/useSavedTunes';
 import { quickStartTips } from '@/data/tuningGuide';
 import { Calculator, RotateCcw, ShoppingBag, Zap, Settings, Wrench, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -33,6 +37,7 @@ const defaultSpecs: CarSpecs = {
 
 export default function Index() {
   const location = useLocation();
+  const { savedTunes } = useSavedTunes();
   const [tuneType, setTuneType] = useState<TuneType>('grip');
   const [specs, setSpecs] = useState<CarSpecs>(defaultSpecs);
   const [showResults, setShowResults] = useState(false);
@@ -40,6 +45,8 @@ export default function Index() {
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
   const [isSimpleMode, setIsSimpleMode] = useState(true);
   const [showTroubleshooting, setShowTroubleshooting] = useState(false);
+  const [balance, setBalance] = useState(0);
+  const [stiffness, setStiffness] = useState(50);
 
   // Handle car selection from Cars page
   useEffect(() => {
