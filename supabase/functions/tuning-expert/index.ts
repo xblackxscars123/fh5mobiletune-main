@@ -6,13 +6,11 @@ const corsHeaders = {
 };
 
 // Simple in-memory rate limiter (per deployment instance)
-// For production with multiple instances, use Supabase/Redis
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute window
-const MAX_REQUESTS_PER_WINDOW = 10; // 10 requests per minute per IP
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MAX_REQUESTS_PER_WINDOW = 10;
 
 function getClientIP(req: Request): string {
-  // Check various headers for the real client IP
   const forwardedFor = req.headers.get("x-forwarded-for");
   if (forwardedFor) {
     return forwardedFor.split(",")[0].trim();
@@ -21,7 +19,6 @@ function getClientIP(req: Request): string {
   if (realIP) {
     return realIP;
   }
-  // Fallback to a hash of user-agent + accept-language as fingerprint
   const userAgent = req.headers.get("user-agent") || "unknown";
   const acceptLang = req.headers.get("accept-language") || "unknown";
   return `fingerprint:${userAgent.slice(0, 50)}:${acceptLang.slice(0, 20)}`;
@@ -31,7 +28,6 @@ function checkRateLimit(clientId: string): { allowed: boolean; remaining: number
   const now = Date.now();
   const clientData = rateLimitMap.get(clientId);
   
-  // Clean up old entries periodically
   if (rateLimitMap.size > 10000) {
     for (const [key, value] of rateLimitMap.entries()) {
       if (now > value.resetTime) {
@@ -41,7 +37,6 @@ function checkRateLimit(clientId: string): { allowed: boolean; remaining: number
   }
   
   if (!clientData || now > clientData.resetTime) {
-    // New window
     rateLimitMap.set(clientId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
     return { allowed: true, remaining: MAX_REQUESTS_PER_WINDOW - 1, resetInSeconds: Math.ceil(RATE_LIMIT_WINDOW_MS / 1000) };
   }
@@ -92,7 +87,14 @@ function validateMessages(messages: unknown): { valid: boolean; error?: string }
   return { valid: true };
 }
 
-const SYSTEM_PROMPT = `You are a professional Forza Horizon 5 tuning expert with deep knowledge of car physics, suspension geometry, and racing setups. Your expertise includes:
+// Build dynamic system prompt with tune context
+function buildSystemPrompt(tuneContext?: {
+  carName?: string;
+  tuneType?: string;
+  specs?: Record<string, unknown>;
+  currentTune?: Record<string, unknown>;
+}): string {
+  let basePrompt = `You are a professional Forza Horizon 5 tuning expert with deep knowledge of car physics, suspension geometry, and racing setups. Your expertise includes:
 
 - Tire pressure optimization for different driving styles (grip, drift, drag, rally)
 - Suspension tuning: springs, damping, anti-roll bars, and ride height
@@ -104,7 +106,60 @@ const SYSTEM_PROMPT = `You are a professional Forza Horizon 5 tuning expert with
 
 Be helpful, technical but accessible, and provide specific numbers when asked. Use racing terminology naturally. If someone asks about a specific car, give tailored advice based on typical characteristics of that vehicle class.
 
-Keep responses concise but informative. Use bullet points for tuning recommendations. Always explain WHY a setting helps, not just what to set it to.`;
+Keep responses concise but informative. Use bullet points for tuning recommendations. Always explain WHY a setting helps, not just what to set it to.
+
+IMPORTANT: When suggesting tune adjustments, format specific value changes like this:
+- For single values: "Try setting [SETTING_NAME] to [VALUE]"
+- Examples: "Try setting ARB Front to 28" or "Set your Tire Pressure Rear to 30 PSI"
+This helps the user apply your suggestions directly.`;
+
+  // Add tune context if available
+  if (tuneContext) {
+    basePrompt += `\n\n--- CURRENT TUNE CONTEXT ---`;
+    
+    if (tuneContext.carName) {
+      basePrompt += `\nCar: ${tuneContext.carName}`;
+    }
+    
+    if (tuneContext.tuneType) {
+      basePrompt += `\nTune Type: ${tuneContext.tuneType}`;
+    }
+    
+    if (tuneContext.specs) {
+      const specs = tuneContext.specs;
+      basePrompt += `\nCar Specs:`;
+      if (specs.weight) basePrompt += `\n  - Weight: ${specs.weight} lbs`;
+      if (specs.weightDistribution) basePrompt += `\n  - Weight Distribution: ${specs.weightDistribution}% front`;
+      if (specs.driveType) basePrompt += `\n  - Drive Type: ${specs.driveType}`;
+      if (specs.horsepower) basePrompt += `\n  - Horsepower: ${specs.horsepower} HP`;
+      if (specs.piClass) basePrompt += `\n  - PI Class: ${specs.piClass}`;
+      if (specs.tireCompound) basePrompt += `\n  - Tire Compound: ${specs.tireCompound}`;
+    }
+    
+    if (tuneContext.currentTune) {
+      const tune = tuneContext.currentTune;
+      basePrompt += `\nCurrent Tune Settings:`;
+      if (tune.tirePressureFront !== undefined) basePrompt += `\n  - Tire Pressure: F ${tune.tirePressureFront} / R ${tune.tirePressureRear} PSI`;
+      if (tune.camberFront !== undefined) basePrompt += `\n  - Camber: F ${tune.camberFront}° / R ${tune.camberRear}°`;
+      if (tune.toeFront !== undefined) basePrompt += `\n  - Toe: F ${tune.toeFront}° / R ${tune.toeRear}°`;
+      if (tune.caster !== undefined) basePrompt += `\n  - Caster: ${tune.caster}°`;
+      if (tune.arbFront !== undefined) basePrompt += `\n  - Anti-Roll Bars: F ${tune.arbFront} / R ${tune.arbRear}`;
+      if (tune.springsFront !== undefined) basePrompt += `\n  - Springs: F ${tune.springsFront} / R ${tune.springsRear} LB/IN`;
+      if (tune.rideHeightFront !== undefined) basePrompt += `\n  - Ride Height: F ${tune.rideHeightFront} / R ${tune.rideHeightRear} IN`;
+      if (tune.reboundFront !== undefined) basePrompt += `\n  - Rebound: F ${tune.reboundFront} / R ${tune.reboundRear}`;
+      if (tune.bumpFront !== undefined) basePrompt += `\n  - Bump: F ${tune.bumpFront} / R ${tune.bumpRear}`;
+      if (tune.diffAccelRear !== undefined) basePrompt += `\n  - Diff (Rear): Accel ${tune.diffAccelRear}% / Decel ${tune.diffDecelRear}%`;
+      if (tune.diffAccelFront !== undefined) basePrompt += `\n  - Diff (Front): Accel ${tune.diffAccelFront}% / Decel ${tune.diffDecelFront}%`;
+      if (tune.centerBalance !== undefined) basePrompt += `\n  - Center Diff: ${tune.centerBalance}% rear`;
+      if (tune.brakePressure !== undefined) basePrompt += `\n  - Brakes: ${tune.brakePressure}% pressure, ${tune.brakeBalance}% balance`;
+      if (tune.finalDrive !== undefined) basePrompt += `\n  - Final Drive: ${tune.finalDrive}`;
+    }
+    
+    basePrompt += `\n--- END CONTEXT ---\n\nUse this context to give specific, tailored advice. Reference the actual current values when suggesting changes.`;
+  }
+
+  return basePrompt;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -112,7 +167,6 @@ serve(async (req) => {
   }
 
   try {
-    // Rate limiting check
     const clientId = getClientIP(req);
     const rateLimitResult = checkRateLimit(clientId);
     
@@ -134,7 +188,6 @@ serve(async (req) => {
       );
     }
 
-    // Parse and validate request body
     let body: unknown;
     try {
       body = await req.json();
@@ -152,9 +205,16 @@ serve(async (req) => {
       });
     }
 
-    const { messages } = body as { messages: unknown };
+    const { messages, tuneContext } = body as { 
+      messages: unknown; 
+      tuneContext?: {
+        carName?: string;
+        tuneType?: string;
+        specs?: Record<string, unknown>;
+        currentTune?: Record<string, unknown>;
+      };
+    };
     
-    // Validate messages
     const validation = validateMessages(messages);
     if (!validation.valid) {
       return new Response(JSON.stringify({ error: validation.error }), {
@@ -169,6 +229,10 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // Build system prompt with tune context
+    const systemPrompt = buildSystemPrompt(tuneContext);
+    console.log("Tune context received:", tuneContext ? "yes" : "no");
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -178,7 +242,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           ...(messages as Array<{ role: string; content: string }>),
         ],
         stream: true,

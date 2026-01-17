@@ -14,7 +14,130 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_tunes: {
+        Row: {
+          car_name: string
+          created_at: string
+          id: string
+          is_public: boolean
+          name: string
+          notes: string | null
+          parent_tune_id: string | null
+          specs: Json
+          tags: string[] | null
+          tune_settings: Json
+          tune_type: string
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          car_name: string
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          name: string
+          notes?: string | null
+          parent_tune_id?: string | null
+          specs: Json
+          tags?: string[] | null
+          tune_settings: Json
+          tune_type: string
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          car_name?: string
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          name?: string
+          notes?: string | null
+          parent_tune_id?: string | null
+          specs?: Json
+          tags?: string[] | null
+          tune_settings?: Json
+          tune_type?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_tunes_parent_tune_id_fkey"
+            columns: ["parent_tune_id"]
+            isOneToOne: false
+            referencedRelation: "saved_tunes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tune_history: {
+        Row: {
+          change_note: string | null
+          created_at: string
+          id: string
+          specs: Json
+          tune_id: string
+          tune_settings: Json
+          version: number
+        }
+        Insert: {
+          change_note?: string | null
+          created_at?: string
+          id?: string
+          specs: Json
+          tune_id: string
+          tune_settings: Json
+          version: number
+        }
+        Update: {
+          change_note?: string | null
+          created_at?: string
+          id?: string
+          specs?: Json
+          tune_id?: string
+          tune_settings?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tune_history_tune_id_fkey"
+            columns: ["tune_id"]
+            isOneToOne: false
+            referencedRelation: "saved_tunes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
