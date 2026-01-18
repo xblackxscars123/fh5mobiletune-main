@@ -1,8 +1,16 @@
 import { Link } from 'react-router-dom';
-import { Gauge, Zap, Car } from 'lucide-react';
+import { Gauge, Zap, Car, User, LogOut } from 'lucide-react';
 import japanPlateBg from '@/assets/japan-plate-clean.png';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 
-export function Header() {
+interface HeaderProps {
+  onShowAuth?: () => void;
+}
+
+export function Header({ onShowAuth }: HeaderProps) {
+  const { user, signOut } = useAuth();
+
   return <header className="relative py-4 sm:py-6 md:py-8 mb-4 sm:mb-6 md:mb-8 overflow-hidden">
       {/* Background glow effects - hidden on mobile for performance */}
       <div className="absolute inset-0 pointer-events-none hidden sm:block">
@@ -61,6 +69,28 @@ export function Header() {
             <Car className="w-4 h-4" />
             Browse Cars
           </Link>
+          
+          {user ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={signOut}
+              className="gap-2 border-muted-foreground/30 hover:border-destructive/50 hover:text-destructive"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onShowAuth}
+              className="gap-2 border-racing-cyan/50 text-racing-cyan hover:bg-racing-cyan/10"
+            >
+              <User className="w-4 h-4" />
+              Sign In
+            </Button>
+          )}
         </div>
         
         {/* Decorative line - simplified on mobile */}

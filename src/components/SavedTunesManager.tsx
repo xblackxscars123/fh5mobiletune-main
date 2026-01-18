@@ -18,19 +18,17 @@ export function SavedTunesManager({ carName, tuneType, specs, onLoad }: SavedTun
   const [tuneName, setTuneName] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!tuneName.trim()) {
       toast.error('Please enter a tune name');
       return;
     }
-    saveTune(tuneName, carName, tuneType, specs);
+    await saveTune(tuneName, carName, tuneType, specs);
     setTuneName('');
-    toast.success(`Saved "${tuneName}"`);
   };
 
-  const handleDelete = (id: string, name: string) => {
-    deleteTune(id);
-    toast.success(`Deleted "${name}"`);
+  const handleDelete = async (id: string) => {
+    await deleteTune(id);
   };
 
   return (
@@ -96,7 +94,7 @@ export function SavedTunesManager({ carName, tuneType, specs, onLoad }: SavedTun
                   size="icon"
                   variant="ghost"
                   className="h-7 w-7 hover:bg-destructive/20 hover:text-destructive"
-                  onClick={() => handleDelete(tune.id, tune.name)}
+                  onClick={() => handleDelete(tune.id)}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
