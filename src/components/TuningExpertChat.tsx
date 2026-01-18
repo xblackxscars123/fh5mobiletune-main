@@ -6,7 +6,7 @@ import { CarSpecs, TuneType, TuneSettings } from '@/lib/tuningCalculator';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
-interface TuneContext {
+export interface TuneContext {
   carName?: string;
   tuneType?: TuneType;
   specs?: CarSpecs;
