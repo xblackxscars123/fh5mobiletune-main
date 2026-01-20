@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { MessageSquare, Send, X, Loader2, Bot, User, Minimize2, Maximize2, Sparkles } from 'lucide-react';
+import { MessageSquare, Send, X, Loader2, Bot, User, Minimize2, Maximize2, Sparkles, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { CarSpecs, TuneType, TuneSettings } from '@/lib/tuningCalculator';
+import { supabase } from '@/integrations/supabase/client';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
@@ -34,11 +35,18 @@ async function streamChat({
   onError: (error: string) => void;
 }) {
   try {
+    // Get the current user session for authentication
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      throw new Error("Please sign in to use the AI tuning expert");
+    }
+
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({ messages, tuneContext }),
     });
