@@ -1,33 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Simple in-memory rate limiter (per deployment instance)
+// Simple in-memory rate limiter (per deployment instance) - now user-based
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 10;
+const MAX_REQUESTS_PER_WINDOW = 20; // Higher limit for authenticated users
 
-function getClientIP(req: Request): string {
-  const forwardedFor = req.headers.get("x-forwarded-for");
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0].trim();
-  }
-  const realIP = req.headers.get("x-real-ip");
-  if (realIP) {
-    return realIP;
-  }
-  const userAgent = req.headers.get("user-agent") || "unknown";
-  const acceptLang = req.headers.get("accept-language") || "unknown";
-  return `fingerprint:${userAgent.slice(0, 50)}:${acceptLang.slice(0, 20)}`;
-}
-
-function checkRateLimit(clientId: string): { allowed: boolean; remaining: number; resetInSeconds: number } {
+function checkRateLimit(userId: string): { allowed: boolean; remaining: number; resetInSeconds: number } {
   const now = Date.now();
-  const clientData = rateLimitMap.get(clientId);
+  const clientData = rateLimitMap.get(userId);
   
+  // Clean up old entries
   if (rateLimitMap.size > 10000) {
     for (const [key, value] of rateLimitMap.entries()) {
       if (now > value.resetTime) {
@@ -37,7 +25,7 @@ function checkRateLimit(clientId: string): { allowed: boolean; remaining: number
   }
   
   if (!clientData || now > clientData.resetTime) {
-    rateLimitMap.set(clientId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    rateLimitMap.set(userId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
     return { allowed: true, remaining: MAX_REQUESTS_PER_WINDOW - 1, resetInSeconds: Math.ceil(RATE_LIMIT_WINDOW_MS / 1000) };
   }
   
@@ -267,11 +255,43 @@ serve(async (req) => {
   }
 
   try {
-    const clientId = getClientIP(req);
-    const rateLimitResult = checkRateLimit(clientId);
+    // Authentication check - require valid user session
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.warn("Missing or invalid authorization header");
+      return new Response(
+        JSON.stringify({ error: "Authentication required. Please sign in to use the AI tuning expert." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    
+    // Create Supabase client and verify the user's JWT
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.warn("Invalid authentication token:", claimsError?.message);
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired session. Please sign in again." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userId = claimsData.claims.sub as string;
+    console.log(`Authenticated request from user: ${userId.slice(0, 8)}...`);
+
+    // User-based rate limiting (more effective than IP-based)
+    const rateLimitResult = checkRateLimit(userId);
     
     if (!rateLimitResult.allowed) {
-      console.warn(`Rate limit exceeded for client: ${clientId}`);
+      console.warn(`Rate limit exceeded for user: ${userId.slice(0, 8)}...`);
       return new Response(
         JSON.stringify({ 
           error: `Rate limit exceeded. Please wait ${rateLimitResult.resetInSeconds} seconds before trying again.` 
