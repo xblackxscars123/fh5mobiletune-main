@@ -293,7 +293,7 @@ export default function Index() {
           </div>
         </div>
         
-        <TuningExpertChat context={tuneContext} onApplySuggestion={handleApplyAISuggestion} />
+        <TuningExpertChat tuneContext={tuneContext} onApplySuggestion={handleApplyAISuggestion} />
       </div>
     </div>
   );
