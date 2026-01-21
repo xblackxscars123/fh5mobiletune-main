@@ -749,4 +749,241 @@
     stroke-dasharray: 100;
     animation: circuitTrace 2s linear infinite;
   }
+
+  /* ==========================================
+     SLIDESHOW TRANSITION EFFECTS (10 types)
+     ========================================== */
+  
+  @keyframes transition-crossfade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .animate-transition-crossfade { animation: transition-crossfade 3s ease-in-out forwards; }
+
+  @keyframes transition-slideLeft {
+    from { transform: translateX(100%); opacity: 0.5; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .animate-transition-slideLeft { animation: transition-slideLeft 3s ease-out forwards; }
+
+  @keyframes transition-slideRight {
+    from { transform: translateX(-100%); opacity: 0.5; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .animate-transition-slideRight { animation: transition-slideRight 3s ease-out forwards; }
+
+  @keyframes transition-slideUp {
+    from { transform: translateY(100%); opacity: 0.5; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .animate-transition-slideUp { animation: transition-slideUp 3s ease-out forwards; }
+
+  @keyframes transition-slideDown {
+    from { transform: translateY(-100%); opacity: 0.5; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .animate-transition-slideDown { animation: transition-slideDown 3s ease-out forwards; }
+
+  @keyframes transition-zoomIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .animate-transition-zoomIn { animation: transition-zoomIn 3s ease-out forwards; }
+
+  @keyframes transition-zoomOut {
+    from { transform: scale(1.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .animate-transition-zoomOut { animation: transition-zoomOut 3s ease-out forwards; }
+
+  @keyframes transition-blur {
+    from { filter: blur(30px); opacity: 0; }
+    to { filter: blur(0); opacity: 1; }
+  }
+  .animate-transition-blur { animation: transition-blur 3s ease-out forwards; }
+
+  @keyframes transition-flip {
+    from { transform: perspective(1000px) rotateY(90deg); opacity: 0; }
+    to { transform: perspective(1000px) rotateY(0); opacity: 1; }
+  }
+  .animate-transition-flip { animation: transition-flip 3s ease-out forwards; }
+
+  @keyframes transition-swipe {
+    from { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); }
+    to { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+  }
+  .animate-transition-swipe { animation: transition-swipe 3s ease-out forwards; }
+
+  /* ==========================================
+     THEME ENHANCEMENT ANIMATIONS
+     ========================================== */
+
+  /* Vignette pulse */
+  @keyframes vignettePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.92; }
+  }
+  .animate-vignette-pulse { animation: vignettePulse 8s ease-in-out infinite; }
+
+  /* Light leak effect */
+  @keyframes lightLeak {
+    0%, 90%, 100% { opacity: 0; }
+    95% { opacity: 0.15; }
+  }
+  .animate-light-leak { animation: lightLeak 60s ease-in-out infinite; }
+
+  /* Color aberration */
+  @keyframes colorAberration {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(2px); }
+  }
+  .animate-color-aberration { animation: colorAberration 0.1s ease-in-out infinite; }
+
+  /* VHS grain effect */
+  .vhs-grain {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+
+  /* Star twinkling */
+  @keyframes starTwinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* Petal falling with sway */
+  @keyframes petalFall {
+    0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.7; }
+    90% { opacity: 0.7; }
+    100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+  }
+  @keyframes petalSway {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(30px); }
+  }
+  .animate-petal-fall { animation: petalFall 15s linear infinite; }
+
+  /* Rain effect */
+  @keyframes rainFall {
+    0% { transform: translateY(-100vh); }
+    100% { transform: translateY(100vh); }
+  }
+
+  /* Neon flicker */
+  @keyframes neonFlicker {
+    0%, 95%, 100% { opacity: 1; }
+    96%, 98% { opacity: 0.4; }
+  }
+  .animate-neon-flicker { animation: neonFlicker 5s ease-in-out infinite; }
+
+  /* Car idle breathing */
+  @keyframes carIdle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1px); }
+  }
+  .animate-car-idle { animation: carIdle 4s ease-in-out infinite; }
+
+  /* Headlight glow */
+  @keyframes headlight {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+  }
+  .animate-headlight { animation: headlight 2s ease-in-out infinite; }
+
+  /* Exhaust vapor */
+  @keyframes exhaust {
+    0% { opacity: 0.3; transform: translateX(0) scale(1); }
+    100% { opacity: 0; transform: translateX(20px) scale(1.5); }
+  }
+  .animate-exhaust { animation: exhaust 3s ease-out infinite; }
+
+  /* Smoke rising */
+  @keyframes smoke {
+    0% { transform: translateY(0) scale(1); opacity: 0.2; }
+    100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+  }
+  .animate-smoke { animation: smoke 8s ease-out infinite; }
+
+  /* Aircraft crossing */
+  @keyframes aircraft {
+    0% { left: -5%; opacity: 0; }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.6; }
+    100% { left: 105%; opacity: 0; }
+  }
+  .animate-aircraft { animation: aircraft 30s linear infinite; }
+
+  /* Blossom glow */
+  @keyframes blossomGlow {
+    0%, 100% { opacity: 0.4; filter: blur(0); }
+    50% { opacity: 0.6; filter: blur(1px); }
+  }
+  .animate-blossom-glow { animation: blossomGlow 4s ease-in-out infinite; }
+
+  /* Window flicker */
+  @keyframes flicker {
+    0%, 92%, 100% { opacity: 0.6; }
+    94%, 96% { opacity: 0.2; }
+  }
+  .animate-flicker { animation: flicker 8s ease-in-out infinite; }
+
+  /* Blueprint grid pulse */
+  @keyframes gridPulseExpand {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.15; }
+    100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+  }
+
+  /* Arrow drawing */
+  @keyframes arrowDraw {
+    0% { stroke-dashoffset: 100; }
+    100% { stroke-dashoffset: 0; }
+  }
+  .animate-arrow-draw { stroke-dasharray: 100; animation: arrowDraw 2s ease-out forwards; }
+
+  /* Glow drift */
+  @keyframes glowDrift {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(10px, -5px); }
+    50% { transform: translate(-5px, 10px); }
+    75% { transform: translate(-10px, -10px); }
+  }
+  .animate-glow-drift { animation: glowDrift 20s ease-in-out infinite; }
+
+  /* Data particle flow */
+  @keyframes dataParticle {
+    0% { transform: translateX(0) translateY(0); opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translateX(100px) translateY(-20px); opacity: 0; }
+  }
+  .animate-data-particle { animation: dataParticle 3s ease-in-out infinite; }
+
+  /* Sticker wobble on hover */
+  @keyframes stickerWobble {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(1deg); }
+    75% { transform: rotate(-1deg); }
+  }
+  .animate-sticker-wobble { animation: stickerWobble 0.5s ease-in-out; }
+
+  /* Holographic shimmer */
+  @keyframes holoShimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  .animate-holo-shimmer { background-size: 200% 100%; animation: holoShimmer 3s linear infinite; }
+
+  /* Peel corner effect */
+  @keyframes peel {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+  .animate-peel { animation: peel 0.3s ease-out forwards; }
+
+  /* Glow pulse */
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.25; }
+  }
+  .animate-glow-pulse { animation: glowPulse 4s ease-in-out infinite; }
 }
