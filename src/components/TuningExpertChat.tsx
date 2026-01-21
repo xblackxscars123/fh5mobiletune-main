@@ -276,7 +276,7 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
           : 'bottom-6 right-6 w-[90vw] max-w-[400px] h-[500px] max-h-[70vh]'
       }`}
     >
-      <div className="bg-[hsl(220,18%,8%)] border border-[hsl(220,15%,20%)] rounded-xl shadow-2xl shadow-black/50 overflow-hidden h-full flex flex-col">
+      <div className="bg-card/20 backdrop-blur-md border border-border/30 rounded-xl shadow-2xl shadow-black/50 overflow-hidden h-full flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary/20 to-[hsl(var(--racing-cyan)/0.2)] border-b border-[hsl(220,15%,20%)] p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">

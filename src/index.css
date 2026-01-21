@@ -199,19 +199,31 @@
     mix-blend-mode: overlay;
   }
 
-  /* Module block styles */
+  /* Module block styles - Glass effect */
   .module-block {
     position: relative;
     border-radius: 8px;
     background: linear-gradient(
       145deg,
-      hsl(var(--card) / 0.95) 0%,
-      hsl(var(--card) / 0.85) 100%
+      hsl(var(--card) / 0.25) 0%,
+      hsl(var(--card) / 0.15) 100%
     );
-    backdrop-filter: blur(10px);
-    border: 1px solid hsl(var(--border) / 0.5);
-    box-shadow: var(--shadow-module);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.3);
+    box-shadow: 
+      0 8px 32px hsl(var(--paper-shadow) / 0.3),
+      inset 0 1px 0 hsl(var(--foreground) / 0.05);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .module-block:hover {
+    background: linear-gradient(
+      145deg,
+      hsl(var(--card) / 0.35) 0%,
+      hsl(var(--card) / 0.25) 100%
+    );
+    border-color: hsl(var(--border) / 0.5);
   }
 
   .module-block::before {
@@ -222,9 +234,9 @@
     padding: 1px;
     background: linear-gradient(
       135deg,
-      hsl(var(--paper-highlight) / 0.1) 0%,
+      hsl(var(--paper-highlight) / 0.08) 0%,
       transparent 50%,
-      hsl(var(--paper-shadow) / 0.2) 100%
+      hsl(var(--paper-shadow) / 0.1) 100%
     );
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: xor;
@@ -252,61 +264,123 @@
     border-radius: 0 8px 0 0;
   }
 
-  /* Category color accents */
+  /* Category color accents - Glass variants with colored tints */
   .module-suspension {
+    background: linear-gradient(
+      145deg,
+      hsl(var(--module-suspension) / 0.15) 0%,
+      hsl(var(--card) / 0.15) 100%
+    );
     border-left: 3px solid hsl(var(--module-suspension));
-    box-shadow: 
-      var(--shadow-module),
-      inset 3px 0 12px hsl(var(--module-suspension) / 0.15);
+    border-color: hsl(var(--module-suspension) / 0.3);
+    border-left-color: hsl(var(--module-suspension));
   }
 
   .module-aero {
+    background: linear-gradient(
+      145deg,
+      hsl(var(--module-aero) / 0.15) 0%,
+      hsl(var(--card) / 0.15) 100%
+    );
     border-left: 3px solid hsl(var(--module-aero));
-    box-shadow: 
-      var(--shadow-module),
-      inset 3px 0 12px hsl(var(--module-aero) / 0.15);
+    border-color: hsl(var(--module-aero) / 0.3);
+    border-left-color: hsl(var(--module-aero));
   }
 
   .module-gearing {
+    background: linear-gradient(
+      145deg,
+      hsl(var(--module-gearing) / 0.12) 0%,
+      hsl(var(--card) / 0.15) 100%
+    );
     border-left: 3px solid hsl(var(--module-gearing));
-    box-shadow: 
-      var(--shadow-module),
-      inset 3px 0 12px hsl(var(--module-gearing) / 0.15);
+    border-color: hsl(var(--module-gearing) / 0.3);
+    border-left-color: hsl(var(--module-gearing));
   }
 
   .module-tires {
+    background: linear-gradient(
+      145deg,
+      hsl(var(--module-tires) / 0.15) 0%,
+      hsl(var(--card) / 0.15) 100%
+    );
     border-left: 3px solid hsl(var(--module-tires));
-    box-shadow: 
-      var(--shadow-module),
-      inset 3px 0 12px hsl(var(--module-tires) / 0.15);
+    border-color: hsl(var(--module-tires) / 0.3);
+    border-left-color: hsl(var(--module-tires));
   }
 
   .module-differential {
+    background: linear-gradient(
+      145deg,
+      hsl(var(--module-differential) / 0.15) 0%,
+      hsl(var(--card) / 0.15) 100%
+    );
     border-left: 3px solid hsl(var(--module-differential));
-    box-shadow: 
-      var(--shadow-module),
-      inset 3px 0 12px hsl(var(--module-differential) / 0.15);
+    border-color: hsl(var(--module-differential) / 0.3);
+    border-left-color: hsl(var(--module-differential));
   }
 
   .module-brakes {
+    background: linear-gradient(
+      145deg,
+      hsl(var(--module-brakes) / 0.12) 0%,
+      hsl(var(--card) / 0.15) 100%
+    );
     border-left: 3px solid hsl(var(--module-brakes));
-    box-shadow: 
-      var(--shadow-module),
-      inset 3px 0 12px hsl(var(--module-brakes) / 0.15);
+    border-color: hsl(var(--module-brakes) / 0.3);
+    border-left-color: hsl(var(--module-brakes));
   }
 
   .module-alignment {
+    background: linear-gradient(
+      145deg,
+      hsl(var(--module-alignment) / 0.15) 0%,
+      hsl(var(--card) / 0.15) 100%
+    );
     border-left: 3px solid hsl(var(--module-alignment));
-    box-shadow: 
-      var(--shadow-module),
-      inset 3px 0 12px hsl(var(--module-alignment) / 0.15);
+    border-color: hsl(var(--module-alignment) / 0.3);
+    border-left-color: hsl(var(--module-alignment));
   }
 
   .module-damping {
+    background: linear-gradient(
+      145deg,
+      hsl(var(--module-damping) / 0.15) 0%,
+      hsl(var(--card) / 0.15) 100%
+    );
     border-left: 3px solid hsl(var(--module-damping));
-    box-shadow: 
-      var(--shadow-module),
-      inset 3px 0 12px hsl(var(--module-damping) / 0.15);
+    border-color: hsl(var(--module-damping) / 0.3);
+    border-left-color: hsl(var(--module-damping));
+  }
+
+  /* Glass utility classes */
+  .glass-panel {
+    background: hsl(var(--card) / 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.25);
+  }
+
+  .glass-panel-neon {
+    background: hsl(var(--neon-purple) / 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--neon-purple) / 0.25);
+    box-shadow: 0 0 20px hsl(var(--neon-purple) / 0.1);
+  }
+
+  .glass-panel-cyan {
+    background: hsl(var(--neon-cyan) / 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--neon-cyan) / 0.25);
+  }
+
+  .glass-panel-pink {
+    background: hsl(var(--neon-pink) / 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--neon-pink) / 0.25);
   }
 
   /* Sketch annotation styles */

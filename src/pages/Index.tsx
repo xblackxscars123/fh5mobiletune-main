@@ -168,14 +168,19 @@ export default function Index() {
         <Header onShowAuth={() => setShowAuthModal(true)} />
         
         {/* Dev Banner */}
-        <div className="mb-4 md:mb-6 module-block p-3 md:p-4 text-center" style={{ borderLeft: '3px solid hsl(var(--module-gearing))' }}>
-          <p className="text-xs sm:text-sm font-sketch" style={{ color: 'hsl(var(--module-gearing))' }}>
+        <div className="mb-4 md:mb-6 p-3 md:p-4 text-center rounded-lg backdrop-blur-sm" 
+          style={{ 
+            background: 'hsl(var(--neon-purple) / 0.15)', 
+            borderLeft: '3px solid hsl(var(--neon-purple))',
+            border: '1px solid hsl(var(--neon-purple) / 0.3)'
+          }}>
+          <p className="text-xs sm:text-sm font-sketch" style={{ color: 'hsl(var(--neon-purple))' }}>
             🛠️ We'd love your help developing this app! 🛠️
           </p>
           <div className="flex items-center justify-center gap-3 mt-2">
             <a href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" target="_blank" rel="noopener noreferrer" 
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-colors"
-              style={{ background: 'hsl(var(--module-gearing))', color: 'black' }}>
+              style={{ background: 'hsl(var(--neon-purple) / 0.25)', color: 'hsl(var(--neon-purple))', border: '1px solid hsl(var(--neon-purple) / 0.5)' }}>
               ☕ Support
             </a>
             <Link to="/shop" className="inline-flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium animate-pulse-neon"
@@ -267,10 +272,15 @@ export default function Index() {
             )}
             
             {!user && savedTunes.length > 0 && (
-              <div className="module-block p-3 text-center" style={{ borderLeft: '3px solid hsl(var(--neon-cyan))' }}>
+              <div className="p-3 text-center rounded-lg backdrop-blur-sm" 
+                style={{ 
+                  background: 'hsl(var(--neon-cyan) / 0.1)',
+                  borderLeft: '3px solid hsl(var(--neon-cyan))',
+                  border: '1px solid hsl(var(--neon-cyan) / 0.25)'
+                }}>
                 <CloudOff className="w-5 h-5 mx-auto mb-2" style={{ color: 'hsl(var(--neon-cyan))' }} />
                 <p className="text-xs text-muted-foreground mb-2">Sign in to sync tunes</p>
-                <Button size="sm" onClick={() => setShowAuthModal(true)} style={{ background: 'hsl(var(--neon-cyan))', color: 'black' }}>
+                <Button size="sm" onClick={() => setShowAuthModal(true)} style={{ background: 'hsl(var(--neon-cyan) / 0.25)', color: 'hsl(var(--neon-cyan))', border: '1px solid hsl(var(--neon-cyan) / 0.5)' }}>
                   Sign In
                 </Button>
               </div>
