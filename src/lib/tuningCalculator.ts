@@ -3,8 +3,19 @@
 // Based on:
 // - ForzaTune Pro v6.9.0 framework (physics-first tuning)
 // - Forza Horizon 5 Tuning Guide Research (terramechanics, thermal dynamics)
+// - Natural Frequency spring calculation (k = m × (2πf)²)
+// - Critical Damping Ratio formulas (c = ζ × 2√(km))
 // - HokiHoshi weight distribution formulas
 // - Community-verified drift/drag/rally expertise
+
+import {
+  frequencyTargets,
+  dampingRatioTargets,
+  calculateSpringFromFrequency,
+  calculateDampingFromRatio,
+  calculateLLTD,
+  type LLTDResult,
+} from './physicsCalculations';
 
 export type DriveType = 'RWD' | 'FWD' | 'AWD';
 export type TuneType = 'grip' | 'drift' | 'offroad' | 'drag' | 'rally' | 'street';
@@ -84,6 +95,16 @@ export interface TuneModifiers {
   piClass: { name: string; stiffnessMod: number; diffAggression: number };
   drivingStyle: { value: number; description: string };
   combinedStiffness: number;
+  // Physics-based calculations
+  physics?: {
+    frontFrequencyHz: number;
+    rearFrequencyHz: number;
+    reboundRatioFront: number;
+    reboundRatioRear: number;
+    bumpRatioFront: number;
+    bumpRatioRear: number;
+    lltd: LLTDResult;
+  };
 }
 
 // ==========================================
@@ -321,44 +342,84 @@ function calculateTirePressure(
 }
 
 // ==========================================
-// DAMPING CALCULATION - Based on Weight Distribution
-// From Research:
-// - Rebound_Front = (19 × W_Front%) + 0.5
-// - Rebound_Rear = (19 × W_Rear%) + 1.0 (rear slightly higher for lift-off oversteer)
-// - Bump = 50-75% of Rebound (60% baseline)
-// - High rebound "sticks" landings after jumps (critical for dirt)
+// DAMPING CALCULATION - Critical Damping Ratio Based
+// From Physics:
+// - c_critical = 2 × √(k × m)
+// - c_actual = ζ × c_critical
+// - Rebound ζ: 0.60-0.75 (controls extension speed)
+// - Bump ζ: 0.32-0.52 (controls compression speed)
 // ==========================================
-function calculateDamping(
+function calculateDampingPhysics(
+  springFront: number,
+  springRear: number,
+  cornerWeightFront: number,
+  cornerWeightRear: number,
+  tuneType: TuneType,
+  piClass: string
+): { 
+  reboundF: number; 
+  reboundR: number; 
+  bumpF: number; 
+  bumpR: number;
+  ratios: { reboundF: number; reboundR: number; bumpF: number; bumpR: number };
+} {
+  const dampingTarget = dampingRatioTargets[tuneType];
+  const piScale = piClassScaling[piClass]?.dampingScale || 1.0;
+  
+  // Front damping from critical ratio
+  const frontDamping = calculateDampingFromRatio({
+    springRateLbIn: springFront,
+    cornerWeightLbs: cornerWeightFront,
+    reboundRatio: dampingTarget.reboundRatio * piScale,
+    bumpRatio: dampingTarget.bumpRatio * piScale,
+  });
+  
+  // Rear damping from critical ratio
+  const rearDamping = calculateDampingFromRatio({
+    springRateLbIn: springRear,
+    cornerWeightLbs: cornerWeightRear,
+    reboundRatio: dampingTarget.reboundRatio * piScale * 1.05, // Rear slightly higher
+    bumpRatio: dampingTarget.bumpRatio * piScale,
+  });
+  
+  return { 
+    reboundF: frontDamping.reboundValue, 
+    reboundR: rearDamping.reboundValue, 
+    bumpF: frontDamping.bumpValue, 
+    bumpR: rearDamping.bumpValue,
+    ratios: {
+      reboundF: frontDamping.reboundRatio,
+      reboundR: rearDamping.reboundRatio,
+      bumpF: frontDamping.bumpRatio,
+      bumpR: rearDamping.bumpRatio,
+    }
+  };
+}
+
+// Legacy damping calculation (fallback)
+function calculateDampingLegacy(
   weightDistribution: number,
   tuneType: TuneType,
   piClass: string
 ): { reboundF: number; reboundR: number; bumpF: number; bumpR: number } {
-  // Base rebound from weight distribution formula
   let reboundFront = Math.round(19 * (weightDistribution / 100) + 0.5);
   let reboundRear = Math.round(19 * ((100 - weightDistribution) / 100) + 1.0);
   
-  // Tune type multipliers - from research on damping behavior
   const tuneMultipliers: Record<TuneType, { reboundF: number; reboundR: number; bumpRatio: number }> = {
-    grip: { reboundF: 1.0, reboundR: 1.0, bumpRatio: 0.62 },     // Standard 62% bump ratio
-    street: { reboundF: 0.94, reboundR: 0.94, bumpRatio: 0.60 }, // Slightly softer for curbs
-    drift: { reboundF: 0.82, reboundR: 0.98, bumpRatio: 0.56 },  // Soft front for slide initiation
-    offroad: { reboundF: 1.20, reboundR: 1.28, bumpRatio: 0.52 }, // High rebound sticks landings
-    rally: { reboundF: 1.12, reboundR: 1.18, bumpRatio: 0.54 },   // Between road and offroad
-    drag: { reboundF: 1.10, reboundR: 0.70, bumpRatio: 0.68 },    // Stiff front, soft rear for squat
+    grip: { reboundF: 1.0, reboundR: 1.0, bumpRatio: 0.62 },
+    street: { reboundF: 0.94, reboundR: 0.94, bumpRatio: 0.60 },
+    drift: { reboundF: 0.82, reboundR: 0.98, bumpRatio: 0.56 },
+    offroad: { reboundF: 1.20, reboundR: 1.28, bumpRatio: 0.52 },
+    rally: { reboundF: 1.12, reboundR: 1.18, bumpRatio: 0.54 },
+    drag: { reboundF: 1.10, reboundR: 0.70, bumpRatio: 0.68 },
   };
   
   const tuneMod = tuneMultipliers[tuneType];
   const piScale = piClassScaling[piClass]?.dampingScale || 1.0;
   
-  // Apply tune type and PI scaling
-  reboundFront = Math.round(reboundFront * tuneMod.reboundF * piScale);
-  reboundRear = Math.round(reboundRear * tuneMod.reboundR * piScale);
+  reboundFront = Math.max(1, Math.min(20, Math.round(reboundFront * tuneMod.reboundF * piScale)));
+  reboundRear = Math.max(1, Math.min(20, Math.round(reboundRear * tuneMod.reboundR * piScale)));
   
-  // Clamp to valid range (1-20)
-  reboundFront = Math.max(1, Math.min(20, reboundFront));
-  reboundRear = Math.max(1, Math.min(20, reboundRear));
-  
-  // Bump = percentage of rebound (from research: 50-75%, 60% baseline)
   const bumpFront = Math.max(1, Math.min(20, Math.round(reboundFront * tuneMod.bumpRatio)));
   const bumpRear = Math.max(1, Math.min(20, Math.round(reboundRear * tuneMod.bumpRatio)));
   
@@ -689,12 +750,13 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   // Combined modifier (gentler scaling than before)
   const combinedStiffness = powerWeight.multiplier * (piMod.springScale * 0.55 + 0.45) * tireMod.springMod;
   
-  const modifiers: TuneModifiers = {
+  // Modifiers will be enhanced with physics data after spring/damping calculation
+  let modifiers: TuneModifiers = {
     powerToWeight: powerWeight,
     tireCompound: tireMod,
     piClass: { name: piMod.name, stiffnessMod: piMod.springScale, diffAggression: piMod.diffAggression },
     drivingStyle: { value: drivingStyle, description: getDrivingStyleDescription(drivingStyle) },
-    combinedStiffness: Math.round(combinedStiffness * 100) / 100
+    combinedStiffness: Math.round(combinedStiffness * 100) / 100,
   };
   
   // ==========================================
@@ -736,34 +798,73 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   arbs.rear = Math.max(1, Math.min(65, arbs.rear - drivingStyle * 3));
   
   // ==========================================
-  // SPRINGS - PI-aware ranges with slider math
+  // SPRINGS - Physics-Based Natural Frequency
+  // Formula: k = m × (2πf)² where f is target frequency in Hz
   // ==========================================
-  const springRange = springRangesByPI[piClass]?.[tuneType] || springRangesByPI['A'][tuneType];
   
-  let springsFront = sliderMath(springRange.min, springRange.max, weightDistribution);
-  let springsRear = sliderMath(springRange.min, springRange.max, 100 - weightDistribution);
+  // Calculate corner weights
+  const frontWeight = (weight * weightDistribution) / 100;
+  const rearWeight = weight - frontWeight;
+  const frontCornerWeight = frontWeight / 2;
+  const rearCornerWeight = rearWeight / 2;
   
-  // Apply power-to-weight and tire compound modifiers
-  const springMod = powerWeight.multiplier * tireMod.springMod;
-  springsFront = Math.round(springsFront * springMod);
-  springsRear = Math.round(springsRear * springMod);
+  // Get target frequencies for this tune type
+  const freqTargets = frequencyTargets[tuneType];
   
-  // Aero adjustment (from research: aero load requires stiffer springs)
+  // PI class frequency scaling (higher classes = stiffer = higher frequency)
+  const piFrequencyScale: Record<string, number> = {
+    D: 0.82,
+    C: 0.88,
+    B: 0.94,
+    A: 1.00,
+    S1: 1.08,
+    S2: 1.15,
+    X: 1.22,
+  };
+  const piFreqScale = piFrequencyScale[piClass] || 1.0;
+  
+  // Calculate physics-based spring rates
+  const frontFreqHz = freqTargets.front * piFreqScale;
+  const rearFreqHz = freqTargets.rear * piFreqScale;
+  
+  const frontSpringResult = calculateSpringFromFrequency({
+    cornerWeightLbs: frontCornerWeight,
+    targetFrequencyHz: frontFreqHz,
+  });
+  
+  const rearSpringResult = calculateSpringFromFrequency({
+    cornerWeightLbs: rearCornerWeight,
+    targetFrequencyHz: rearFreqHz,
+  });
+  
+  let springsFront = frontSpringResult.springRateLbIn;
+  let springsRear = rearSpringResult.springRateLbIn;
+  
+  // Apply tire compound modifier (compound affects grip, needs spring adjustment)
+  springsFront = Math.round(springsFront * tireMod.springMod);
+  springsRear = Math.round(springsRear * tireMod.springMod);
+  
+  // Aero adjustment (aero load adds to effective spring rate needed)
   if (hasAero && frontDownforce > 100) {
-    springsFront += Math.round(frontDownforce * 0.09);
-    springsRear += Math.round(rearDownforce * 0.09);
+    // Aero wheel rate = downforce / suspension travel (~4 inches)
+    const aeroWheelRateFront = frontDownforce / 4;
+    const aeroWheelRateRear = rearDownforce / 4;
+    springsFront += Math.round(aeroWheelRateFront * 0.35);
+    springsRear += Math.round(aeroWheelRateRear * 0.35);
   }
   
-  // Drag: stiff front, soft rear for squat (from research)
+  // Drag: stiff front for stability, soft rear for squat/weight transfer
   if (tuneType === 'drag') {
-    springsFront = Math.round(springsFront * 1.15);
-    springsRear = Math.round(springsRear * 0.68);
+    springsFront = Math.round(springsFront * 1.12);
+    springsRear = Math.round(springsRear * 0.72);
   }
   
-  // Clamp to reasonable range
-  const maxSpring = Math.round(springRange.max * 1.35);
-  springsFront = Math.max(springRange.min, Math.min(maxSpring, springsFront));
-  springsRear = Math.max(springRange.min, Math.min(maxSpring, springsRear));
+  // Clamp to FH5 valid ranges (use PI-aware bounds as sanity check)
+  const springRange = springRangesByPI[piClass]?.[tuneType] || springRangesByPI['A'][tuneType];
+  const minSpring = Math.round(springRange.min * 0.7);
+  const maxSpring = Math.round(springRange.max * 1.5);
+  springsFront = Math.max(minSpring, Math.min(maxSpring, springsFront));
+  springsRear = Math.max(minSpring, Math.min(maxSpring, springsRear));
   
   // ==========================================
   // RIDE HEIGHT - Tune type based
@@ -778,9 +879,29 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   }
   
   // ==========================================
-  // DAMPING - Weight distribution formula
+  // DAMPING - Critical Damping Ratio Based
+  // Formula: c = ζ × 2√(km) where ζ is the damping ratio
   // ==========================================
-  const damping = calculateDamping(weightDistribution, tuneType, piClass);
+  const damping = calculateDampingPhysics(
+    springsFront,
+    springsRear,
+    frontCornerWeight,
+    rearCornerWeight,
+    tuneType,
+    piClass
+  );
+  
+  // ==========================================
+  // LLTD - Lateral Load Transfer Distribution
+  // Predicts understeer/oversteer tendency
+  // ==========================================
+  const lltd = calculateLLTD({
+    springFrontLbIn: springsFront,
+    springRearLbIn: springsRear,
+    arbFront: arbs.front,
+    arbRear: arbs.rear,
+    trackWidthIn: 60, // Standard track width estimate
+  });
   
   // ==========================================
   // AERO - Match to weight distribution
@@ -913,7 +1034,18 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
     brakePressure: brakes.pressure,
     brakeBalance,
     brakeBalanceNote,
-    modifiers,
+    modifiers: {
+      ...modifiers,
+      physics: {
+        frontFrequencyHz: Math.round(frontFreqHz * 100) / 100,
+        rearFrequencyHz: Math.round(rearFreqHz * 100) / 100,
+        reboundRatioFront: damping.ratios.reboundF,
+        reboundRatioRear: damping.ratios.reboundR,
+        bumpRatioFront: damping.ratios.bumpF,
+        bumpRatioRear: damping.ratios.bumpR,
+        lltd,
+      },
+    },
   };
 }
 
