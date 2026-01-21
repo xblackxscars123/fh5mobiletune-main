@@ -1,6 +1,7 @@
-import { useState, useRef, ReactNode } from 'react';
+import { useState, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
+import { useModuleDragDrop } from '@/hooks/useModuleDragDrop';
 
 export type ModuleCategory = 
   | 'suspension' 
@@ -21,9 +22,6 @@ interface TuningModuleProps {
   isCollapsible?: boolean;
   defaultExpanded?: boolean;
   className?: string;
-  onDragStart?: (id: string) => void;
-  onDragEnd?: () => void;
-  isDragging?: boolean;
 }
 
 const categoryColors: Record<ModuleCategory, string> = {
@@ -68,33 +66,12 @@ export const TuningModule = ({
   isCollapsible = true,
   defaultExpanded = true,
   className,
-  onDragStart,
-  onDragEnd,
-  isDragging = false,
 }: TuningModuleProps) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [showRipple, setShowRipple] = useState(false);
   const [ripplePosition, setRipplePosition] = useState({ x: 0, y: 0 });
-  const moduleRef = useRef<HTMLDivElement>(null);
-
-  const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData('moduleId', id);
-    onDragStart?.(id);
-  };
-
-  const handleDragEnd = () => {
-    onDragEnd?.();
-    triggerSnapAnimation();
-  };
-
-  const triggerSnapAnimation = () => {
-    if (moduleRef.current) {
-      moduleRef.current.classList.add('module-snap');
-      setTimeout(() => {
-        moduleRef.current?.classList.remove('module-snap');
-      }, 300);
-    }
-  };
+  
+  const { moduleRef, dragHandlers, isDragging, isDropTarget } = useModuleDragDrop(id);
 
   const triggerRipple = (e: React.MouseEvent) => {
     const rect = moduleRef.current?.getBoundingClientRect();
@@ -111,14 +88,13 @@ export const TuningModule = ({
   return (
     <div
       ref={moduleRef}
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+      {...dragHandlers}
       onClick={triggerRipple}
       className={cn(
         'module-block paper-edge relative overflow-hidden transition-all duration-300',
         categoryColors[category],
         isDragging && 'module-dragging',
+        isDropTarget && 'module-drop-indicator',
         className
       )}
       style={{
