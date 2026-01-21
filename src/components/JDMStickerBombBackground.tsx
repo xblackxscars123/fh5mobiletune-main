@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Import JDM car images
@@ -26,34 +26,55 @@ interface StickerConfig {
   rotate: number;
   zIndex: number;
   mobileHidden?: boolean;
+  layer: 'far' | 'mid' | 'near'; // For parallax
+  hasHolo?: boolean; // Holographic effect
 }
 
 const stickerConfigs: StickerConfig[] = [
-  // Top row - visible on desktop & mobile
-  { src: supra, alt: "Toyota Supra", top: "-2%", left: "5%", width: "280px", rotate: -8, zIndex: 12 },
-  { src: gtr, alt: "Nissan GTR", top: "0%", left: "30%", width: "320px", rotate: 5, zIndex: 11, mobileHidden: true },
-  { src: rx7, alt: "Mazda RX7", top: "-5%", right: "15%", width: "300px", rotate: -12, zIndex: 10 },
-  { src: nsx, alt: "Honda NSX", top: "5%", right: "-5%", width: "260px", rotate: 15, zIndex: 9, mobileHidden: true },
+  // Far layer (slowest parallax)
+  { src: supra, alt: "Toyota Supra", top: "-2%", left: "5%", width: "280px", rotate: -8, zIndex: 4, layer: 'far' },
+  { src: gtr, alt: "Nissan GTR", top: "0%", left: "30%", width: "320px", rotate: 5, zIndex: 3, mobileHidden: true, layer: 'far' },
+  { src: rx7, alt: "Mazda RX7", top: "-5%", right: "15%", width: "300px", rotate: -12, zIndex: 4, layer: 'far', hasHolo: true },
+  { src: nsx, alt: "Honda NSX", top: "5%", right: "-5%", width: "260px", rotate: 15, zIndex: 3, mobileHidden: true, layer: 'far' },
   
-  // Upper middle - staggered
-  { src: silvia, alt: "Nissan Silvia", top: "15%", left: "-8%", width: "280px", rotate: 12, zIndex: 8 },
-  { src: evo, alt: "Mitsubishi Evo", top: "22%", right: "8%", width: "300px", rotate: -6, zIndex: 7, mobileHidden: true },
+  // Mid layer
+  { src: silvia, alt: "Nissan Silvia", top: "15%", left: "-8%", width: "280px", rotate: 12, zIndex: 6, layer: 'mid', hasHolo: true },
+  { src: evo, alt: "Mitsubishi Evo", top: "22%", right: "8%", width: "300px", rotate: -6, zIndex: 5, mobileHidden: true, layer: 'mid' },
+  { src: wrx, alt: "Subaru WRX", top: "35%", left: "-12%", width: "240px", rotate: 18, zIndex: 5, mobileHidden: true, layer: 'mid' },
+  { src: z350, alt: "Nissan 350Z", top: "38%", right: "-10%", width: "260px", rotate: -15, zIndex: 6, layer: 'mid' },
   
-  // Middle row - peek from sides
-  { src: wrx, alt: "Subaru WRX", top: "35%", left: "-12%", width: "240px", rotate: 18, zIndex: 6, mobileHidden: true },
-  { src: z350, alt: "Nissan 350Z", top: "38%", right: "-10%", width: "260px", rotate: -15, zIndex: 5 },
-  
-  // Lower middle
-  { src: ae86, alt: "Toyota AE86", top: "55%", left: "3%", width: "260px", rotate: -10, zIndex: 4, mobileHidden: true },
-  { src: s2000, alt: "Honda S2000", top: "52%", right: "0%", width: "280px", rotate: 8, zIndex: 3 },
-  
-  // Bottom row
-  { src: r32, alt: "Nissan Skyline R32", bottom: "8%", left: "-5%", width: "300px", rotate: 6, zIndex: 2 },
-  { src: mr2, alt: "Toyota MR2", bottom: "5%", right: "-8%", width: "280px", rotate: -12, zIndex: 1, mobileHidden: true },
+  // Near layer (fastest parallax)
+  { src: ae86, alt: "Toyota AE86", top: "55%", left: "3%", width: "260px", rotate: -10, zIndex: 8, mobileHidden: true, layer: 'near', hasHolo: true },
+  { src: s2000, alt: "Honda S2000", top: "52%", right: "0%", width: "280px", rotate: 8, zIndex: 7, layer: 'near' },
+  { src: r32, alt: "Nissan Skyline R32", bottom: "8%", left: "-5%", width: "300px", rotate: 6, zIndex: 8, layer: 'near' },
+  { src: mr2, alt: "Toyota MR2", bottom: "5%", right: "-8%", width: "280px", rotate: -12, zIndex: 7, mobileHidden: true, layer: 'near', hasHolo: true },
 ];
 
 export const JDMStickerBombBackground = () => {
   const isMobile = useIsMobile();
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const [hoveredSticker, setHoveredSticker] = useState<number | null>(null);
+  const [driftOffset, setDriftOffset] = useState({ x: 0, y: 0 });
+  
+  // Slow continuous drift animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDriftOffset(prev => ({
+        x: Math.sin(Date.now() / 10000) * 2,
+        y: Math.cos(Date.now() / 12000) * 1.5,
+      }));
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Random z-index shuffle every 30 seconds
+  const [shuffleSeed, setShuffleSeed] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShuffleSeed(prev => prev + 1);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
   
   const visibleStickers = useMemo(() => {
     if (isMobile) {
@@ -61,6 +82,13 @@ export const JDMStickerBombBackground = () => {
     }
     return stickerConfigs;
   }, [isMobile]);
+
+  // Parallax factors for each layer
+  const parallaxFactor: Record<'far' | 'mid' | 'near', number> = {
+    far: 0.2,
+    mid: 0.5,
+    near: 0.8,
+  };
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
@@ -78,62 +106,119 @@ export const JDMStickerBombBackground = () => {
         }}
       />
       
-      {/* Sticker images */}
-      {visibleStickers.map((sticker, index) => (
-        <div
-          key={index}
-          className="absolute transition-transform duration-500"
-          style={{
-            top: sticker.top,
-            left: sticker.left,
-            right: sticker.right,
-            bottom: sticker.bottom,
-            width: isMobile ? `calc(${sticker.width} * 0.6)` : sticker.width,
-            zIndex: sticker.zIndex,
-            transform: `rotate(${sticker.rotate}deg)`,
-          }}
-        >
+      {/* Sticker images with parallax layers */}
+      {visibleStickers.map((sticker, index) => {
+        const parallax = parallaxFactor[sticker.layer];
+        const isHovered = hoveredSticker === index;
+        const driftX = driftOffset.x * parallax;
+        const driftY = driftOffset.y * parallax;
+        
+        return (
           <div
-            className="relative w-full h-full"
+            key={index}
+            className={`absolute transition-all duration-700 ${isHovered ? 'z-50' : ''}`}
             style={{
-              filter: 'saturate(1.1) contrast(1.05)',
+              top: sticker.top,
+              left: sticker.left,
+              right: sticker.right,
+              bottom: sticker.bottom,
+              width: isMobile ? `calc(${sticker.width} * 0.6)` : sticker.width,
+              zIndex: sticker.zIndex + (shuffleSeed % 3),
+              transform: `
+                rotate(${sticker.rotate + driftX * 0.1}deg) 
+                translateX(${driftX}px) 
+                translateY(${driftY}px)
+                ${isHovered ? 'scale(1.05) rotate(0deg)' : ''}
+              `,
             }}
+            onMouseEnter={() => setHoveredSticker(index)}
+            onMouseLeave={() => setHoveredSticker(null)}
           >
-            {/* Sticker border/shadow effect */}
             <div
-              className="absolute inset-0 rounded-lg"
+              className={`relative w-full h-full transition-all duration-300 ${isHovered ? 'animate-sticker-wobble' : ''}`}
               style={{
-                boxShadow: `
-                  0 4px 20px rgba(0,0,0,0.5),
-                  0 0 30px hsl(var(--primary) / 0.15),
-                  inset 0 0 0 2px rgba(255,255,255,0.08)
-                `,
+                filter: 'saturate(1.1) contrast(1.05)',
               }}
-            />
-            <img
-              src={sticker.src}
-              alt={sticker.alt}
-              className="w-full h-auto rounded-lg object-cover"
-              style={{
-                opacity: 0.75,
-                mixBlendMode: 'normal',
-              }}
-              loading="lazy"
-            />
-            {/* Subtle overlay for blending */}
-            <div 
-              className="absolute inset-0 rounded-lg"
-              style={{
-                background: `linear-gradient(135deg, 
-                  hsl(var(--primary) / 0.05) 0%, 
-                  transparent 50%,
-                  hsl(var(--racing-cyan) / 0.05) 100%
-                )`,
-              }}
-            />
+            >
+              {/* Sticker border/shadow effect */}
+              <div
+                className={`absolute inset-0 rounded-lg transition-all duration-300 ${isHovered ? 'shadow-2xl' : ''}`}
+                style={{
+                  boxShadow: isHovered ? `
+                    0 8px 40px rgba(0,0,0,0.6),
+                    0 0 40px hsl(var(--primary) / 0.3),
+                    inset 0 0 0 2px rgba(255,255,255,0.15)
+                  ` : `
+                    0 4px 20px rgba(0,0,0,0.5),
+                    0 0 30px hsl(var(--primary) / 0.15),
+                    inset 0 0 0 2px rgba(255,255,255,0.08)
+                  `,
+                }}
+              />
+              
+              {/* Peel corner effect on hover */}
+              {isHovered && (
+                <div 
+                  className="absolute top-0 right-0 w-8 h-8 animate-peel"
+                  style={{
+                    background: 'linear-gradient(135deg, transparent 50%, hsl(var(--neon-pink)) 50%)',
+                    borderRadius: '0 8px 0 0',
+                  }}
+                />
+              )}
+              
+              <img
+                src={sticker.src}
+                alt={sticker.alt}
+                className="w-full h-auto rounded-lg object-cover pointer-events-auto cursor-pointer"
+                style={{
+                  opacity: isHovered ? 0.9 : 0.75,
+                  mixBlendMode: 'normal',
+                }}
+                loading="lazy"
+              />
+              
+              {/* Holographic shimmer effect */}
+              {sticker.hasHolo && (
+                <div 
+                  className="absolute inset-0 rounded-lg pointer-events-none animate-holo-shimmer"
+                  style={{
+                    background: `linear-gradient(
+                      ${45 + driftX * 10}deg, 
+                      transparent 0%,
+                      hsl(300 100% 70% / 0.1) 25%,
+                      hsl(180 100% 70% / 0.1) 50%,
+                      hsl(60 100% 70% / 0.1) 75%,
+                      transparent 100%
+                    )`,
+                    mixBlendMode: 'overlay',
+                  }}
+                />
+              )}
+              
+              {/* Subtle overlay for blending */}
+              <div 
+                className="absolute inset-0 rounded-lg"
+                style={{
+                  background: `linear-gradient(135deg, 
+                    hsl(var(--primary) / 0.05) 0%, 
+                    transparent 50%,
+                    hsl(var(--racing-cyan) / 0.05) 100%
+                  )`,
+                }}
+              />
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
+      
+      {/* JDM Text stickers (decorative) */}
+      <div className="absolute top-[40%] left-[15%] rotate-[-15deg] opacity-20 font-display text-3xl text-white hidden md:block">
+        チューン
+      </div>
+      <div className="absolute bottom-[35%] right-[20%] rotate-[10deg] opacity-15 font-display text-2xl text-cyan-400 hidden md:block">
+        カスタム
+      </div>
       
       {/* Frosted glass blur overlay for content readability */}
       <div 
@@ -185,17 +270,32 @@ export const JDMStickerBombBackground = () => {
         }}
       />
       
+      {/* Chrome accent lines */}
+      <div 
+        className="absolute top-[20%] left-0 right-0 h-px opacity-10 hidden md:block"
+        style={{
+          background: 'linear-gradient(90deg, transparent, hsl(var(--neon-cyan)), transparent)',
+        }}
+      />
+      <div 
+        className="absolute bottom-[25%] left-0 right-0 h-px opacity-10 hidden md:block"
+        style={{
+          background: 'linear-gradient(90deg, transparent, hsl(var(--neon-pink)), transparent)',
+        }}
+      />
+      
       {/* Ambient racing glow accents */}
       <div 
-        className="absolute top-1/4 left-0 w-1/3 h-96 opacity-20 blur-3xl hidden md:block"
+        className="absolute top-1/4 left-0 w-1/3 h-96 opacity-20 blur-3xl hidden md:block animate-glow-pulse"
         style={{
           background: 'hsl(var(--primary) / 0.3)',
         }}
       />
       <div 
-        className="absolute bottom-1/4 right-0 w-1/3 h-96 opacity-15 blur-3xl hidden md:block"
+        className="absolute bottom-1/4 right-0 w-1/3 h-96 opacity-15 blur-3xl hidden md:block animate-glow-pulse"
         style={{
           background: 'hsl(var(--racing-cyan) / 0.3)',
+          animationDelay: '-2s',
         }}
       />
     </div>
