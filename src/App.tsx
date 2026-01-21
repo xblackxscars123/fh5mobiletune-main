@@ -9,6 +9,7 @@ import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import Cars from "./pages/Cars";
 import TelemetryGuide from "./pages/TelemetryGuide";
+import Community from "./pages/Community";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/cars" element={<Cars />} />
+            <Route path="/community" element={<Community />} />
             <Route path="/shop" element={<Shop />} />
             <Route path="/shop/product/:handle" element={<ProductDetail />} />
             <Route path="/telemetry-guide" element={<TelemetryGuide />} />
