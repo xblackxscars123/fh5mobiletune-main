@@ -1,10 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useMemo, ReactNode } from 'react';
 import { TuneSettings, DriveType, TuneType, tuneTypeDescriptions, UnitSystem, convertTuneToUnits, getUnitLabels } from '@/lib/tuningCalculator';
 import { TuningModule, ModuleCategory } from './TuningModule';
 import { BlueprintSlider } from './BlueprintSlider';
-import { EngineeringTable, FrontRearValue, CompactValue } from './EngineeringTable';
+import { FrontRearValue, CompactValue } from './EngineeringTable';
+import { ModuleDropZone } from './ModuleDropZone';
+import { ModuleLayoutProvider, useModuleLayout } from '@/contexts/ModuleLayoutContext';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Gauge, Settings2, Wind, Disc, Cog, Wrench, Compass, Activity } from 'lucide-react';
+import { Copy, Check, Gauge, Settings2, Wind, Disc, Cog, Wrench, Compass, Activity, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -16,7 +18,23 @@ interface BlueprintTunePanelProps {
   carName?: string;
 }
 
-export const BlueprintTunePanel = ({ 
+export const BlueprintTunePanel = (props: BlueprintTunePanelProps) => {
+  return (
+    <ModuleLayoutProvider>
+      <BlueprintTunePanelInner {...props} />
+    </ModuleLayoutProvider>
+  );
+};
+
+interface ModuleConfig {
+  id: string;
+  title: string;
+  category: ModuleCategory;
+  icon: ReactNode;
+  className?: string;
+}
+
+const BlueprintTunePanelInner = ({ 
   tune, 
   driveType, 
   tuneType, 
@@ -24,11 +42,196 @@ export const BlueprintTunePanel = ({
   carName 
 }: BlueprintTunePanelProps) => {
   const [copied, setCopied] = useState(false);
-  const [draggedModule, setDraggedModule] = useState<string | null>(null);
+  const { moduleOrder, resetLayout, draggedId } = useModuleLayout();
   
   const tuneInfo = tuneTypeDescriptions[tuneType];
   const displayTune = convertTuneToUnits(tune, unitSystem);
   const units = getUnitLabels(unitSystem);
+
+  // Module configurations
+  const moduleConfigs: Record<string, ModuleConfig> = {
+    tires: { id: 'tires', title: 'Tires', category: 'tires', icon: <Gauge className="w-4 h-4" /> },
+    gearing: { id: 'gearing', title: 'Gearing', category: 'gearing', icon: <Cog className="w-4 h-4" /> },
+    alignment: { id: 'alignment', title: 'Alignment', category: 'alignment', icon: <Compass className="w-4 h-4" /> },
+    antiroll: { id: 'antiroll', title: 'Anti-Roll Bars', category: 'suspension', icon: <Settings2 className="w-4 h-4" /> },
+    springs: { id: 'springs', title: 'Springs', category: 'suspension', icon: <Activity className="w-4 h-4" /> },
+    damping: { id: 'damping', title: 'Damping', category: 'damping', icon: <Wrench className="w-4 h-4" /> },
+    aero: { id: 'aero', title: 'Aero', category: 'aero', icon: <Wind className="w-4 h-4" /> },
+    brakes: { id: 'brakes', title: 'Brakes', category: 'brakes', icon: <Disc className="w-4 h-4" /> },
+    differential: { id: 'differential', title: 'Differential', category: 'differential', icon: <Settings2 className="w-4 h-4" />, className: 'md:col-span-2' },
+  };
+
+  // Render module content based on ID
+  const renderModuleContent = (moduleId: string) => {
+    switch (moduleId) {
+      case 'tires':
+        return (
+          <div className="space-y-1">
+            <BlueprintSlider
+              label="Front Pressure"
+              value={displayTune.tirePressureFront}
+              min={unitSystem === 'imperial' ? 14 : 0.96}
+              max={unitSystem === 'imperial' ? 35 : 2.41}
+              unit={units.pressure}
+              leftLabel="Soft"
+              rightLabel="Hard"
+              category="tires"
+              explanationKey="tirePressureFront"
+            />
+            <BlueprintSlider
+              label="Rear Pressure"
+              value={displayTune.tirePressureRear}
+              min={unitSystem === 'imperial' ? 14 : 0.96}
+              max={unitSystem === 'imperial' ? 35 : 2.41}
+              unit={units.pressure}
+              leftLabel="Soft"
+              rightLabel="Hard"
+              category="tires"
+              explanationKey="tirePressureRear"
+            />
+          </div>
+        );
+
+      case 'gearing':
+        return (
+          <div className="space-y-3">
+            <BlueprintSlider
+              label="Final Drive"
+              value={tune.finalDrive}
+              min={2.0}
+              max={6.0}
+              isHighlighted
+              category="gearing"
+              explanationKey="finalDrive"
+            />
+            <div className="grid grid-cols-3 gap-1.5">
+              {tune.gearRatios.map((ratio, i) => (
+                <CompactValue
+                  key={i}
+                  label={i === 0 ? '1st' : i === 1 ? '2nd' : i === 2 ? '3rd' : `${i + 1}th`}
+                  value={ratio.toFixed(2)}
+                  category="gearing"
+                  size="sm"
+                />
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'alignment':
+        return (
+          <div className="space-y-3">
+            <FrontRearValue label="Camber" front={tune.camberFront} rear={tune.camberRear} unit="°" category="alignment" />
+            <FrontRearValue label="Toe" front={tune.toeFront} rear={tune.toeRear} unit="°" category="alignment" />
+            <CompactValue label="Caster" value={tune.caster} unit="°" category="alignment" />
+          </div>
+        );
+
+      case 'antiroll':
+        return (
+          <div className="space-y-1">
+            <BlueprintSlider label="Front ARB" value={tune.arbFront} min={1} max={65} leftLabel="Soft" rightLabel="Stiff" category="suspension" explanationKey="arbFront" />
+            <BlueprintSlider label="Rear ARB" value={tune.arbRear} min={1} max={65} leftLabel="Soft" rightLabel="Stiff" category="suspension" explanationKey="arbRear" />
+          </div>
+        );
+
+      case 'springs':
+        return (
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <BlueprintSlider
+                label="Front Springs"
+                value={displayTune.springsFront}
+                min={unitSystem === 'imperial' ? 100 : 1.79}
+                max={unitSystem === 'imperial' ? 1000 : 17.86}
+                unit={units.springs}
+                leftLabel="Soft"
+                rightLabel="Stiff"
+                category="suspension"
+                explanationKey="springsFront"
+              />
+              <BlueprintSlider
+                label="Rear Springs"
+                value={displayTune.springsRear}
+                min={unitSystem === 'imperial' ? 100 : 1.79}
+                max={unitSystem === 'imperial' ? 1000 : 17.86}
+                unit={units.springs}
+                leftLabel="Soft"
+                rightLabel="Stiff"
+                category="suspension"
+                explanationKey="springsRear"
+              />
+            </div>
+            <FrontRearValue label="Ride Height" front={displayTune.rideHeightFront} rear={displayTune.rideHeightRear} unit={units.rideHeight} category="suspension" />
+          </div>
+        );
+
+      case 'damping':
+        return (
+          <div className="space-y-3">
+            <FrontRearValue label="Rebound" front={tune.reboundFront} rear={tune.reboundRear} category="damping" />
+            <FrontRearValue label="Bump" front={tune.bumpFront} rear={tune.bumpRear} category="damping" />
+          </div>
+        );
+
+      case 'aero':
+        return (
+          <div className="space-y-1">
+            <BlueprintSlider
+              label="Front Downforce"
+              value={displayTune.aeroFront}
+              min={0}
+              max={unitSystem === 'imperial' ? 400 : 1779}
+              unit={units.aero}
+              leftLabel="Low"
+              rightLabel="High"
+              category="aero"
+              explanationKey="aeroFront"
+            />
+            <BlueprintSlider
+              label="Rear Downforce"
+              value={displayTune.aeroRear}
+              min={0}
+              max={unitSystem === 'imperial' ? 400 : 1779}
+              unit={units.aero}
+              leftLabel="Low"
+              rightLabel="High"
+              category="aero"
+              explanationKey="aeroRear"
+            />
+          </div>
+        );
+
+      case 'brakes':
+        return (
+          <div className="space-y-1">
+            <BlueprintSlider label="Pressure" value={tune.brakePressure} min={50} max={200} unit="%" leftLabel="Light" rightLabel="Heavy" category="brakes" explanationKey="brakePressure" />
+            <BlueprintSlider label="Balance" value={tune.brakeBalance} min={40} max={60} unit="%" leftLabel="Rear" rightLabel="Front" category="brakes" explanationKey="brakeBalance" />
+          </div>
+        );
+
+      case 'differential':
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {driveType === 'AWD' && (
+              <div>
+                <CompactValue label="Center Balance" value={`${tune.centerBalance || 50}%`} category="differential" />
+                <p className="text-[10px] text-muted-foreground/60 mt-1 font-sketch">→ Power to rear</p>
+              </div>
+            )}
+            {(driveType === 'AWD' || driveType === 'FWD') && (
+              <FrontRearValue label="Front Diff" front={tune.diffAccelFront || 0} rear={tune.diffDecelFront || 0} unit="%" category="differential" />
+            )}
+            {(driveType === 'AWD' || driveType === 'RWD') && (
+              <FrontRearValue label="Rear Diff" front={tune.diffAccelRear} rear={tune.diffDecelRear} unit="%" category="differential" />
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   const formatTuneForClipboard = () => {
     const lines = [
@@ -120,6 +323,11 @@ export const BlueprintTunePanel = ({
     }
   };
 
+  // Check if layout has been customized
+  const isDefaultLayout = JSON.stringify(moduleOrder) === JSON.stringify([
+    'tires', 'gearing', 'alignment', 'antiroll', 'springs', 'damping', 'aero', 'brakes', 'differential'
+  ]);
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -152,366 +360,79 @@ export const BlueprintTunePanel = ({
           </div>
         </div>
         
-        <Button
-          onClick={handleCopyAll}
-          className={cn(
-            "gap-2 transition-all",
-            copied 
-              ? "bg-module-suspension text-white" 
-              : "bg-neon-pink/20 text-neon-pink border border-neon-pink/30 hover:bg-neon-pink/30"
+        <div className="flex items-center gap-2">
+          {!isDefaultLayout && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetLayout}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
           )}
-        >
-          {copied ? (
-            <>
-              <Check className="w-4 h-4" />
-              Copied!
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4" />
-              Copy All
-            </>
-          )}
-        </Button>
+          <Button
+            onClick={handleCopyAll}
+            className={cn(
+              "gap-2 transition-all",
+              copied 
+                ? "bg-module-suspension text-white" 
+                : "bg-neon-pink/20 text-neon-pink border border-neon-pink/30 hover:bg-neon-pink/30"
+            )}
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                Copy All
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Modular Grid */}
+      {/* Drag hint when actively dragging */}
+      {draggedId && (
+        <div className="text-center text-xs text-muted-foreground font-sketch animate-pulse">
+          ✨ Drag modules to rearrange • Layout is auto-saved
+        </div>
+      )}
+
+      {/* Modular Grid - Ordered by moduleOrder */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Tires Module */}
-        <TuningModule
-          id="tires"
-          title="Tires"
-          category="tires"
-          icon={<Gauge className="w-4 h-4" />}
-          isDragging={draggedModule === 'tires'}
-          onDragStart={setDraggedModule}
-          onDragEnd={() => setDraggedModule(null)}
-        >
-          <div className="space-y-1">
-            <BlueprintSlider
-              label="Front Pressure"
-              value={displayTune.tirePressureFront}
-              min={unitSystem === 'imperial' ? 14 : 0.96}
-              max={unitSystem === 'imperial' ? 35 : 2.41}
-              unit={units.pressure}
-              leftLabel="Soft"
-              rightLabel="Hard"
-              category="tires"
-              explanationKey="tirePressureFront"
-            />
-            <BlueprintSlider
-              label="Rear Pressure"
-              value={displayTune.tirePressureRear}
-              min={unitSystem === 'imperial' ? 14 : 0.96}
-              max={unitSystem === 'imperial' ? 35 : 2.41}
-              unit={units.pressure}
-              leftLabel="Soft"
-              rightLabel="Hard"
-              category="tires"
-              explanationKey="tirePressureRear"
-            />
-          </div>
-        </TuningModule>
+        {moduleOrder.map((moduleId, index) => {
+          const config = moduleConfigs[moduleId];
+          if (!config) return null;
 
-        {/* Gearing Module */}
-        <TuningModule
-          id="gearing"
-          title="Gearing"
-          category="gearing"
-          icon={<Cog className="w-4 h-4" />}
-          isDragging={draggedModule === 'gearing'}
-          onDragStart={setDraggedModule}
-          onDragEnd={() => setDraggedModule(null)}
-        >
-          <div className="space-y-3">
-            <BlueprintSlider
-              label="Final Drive"
-              value={tune.finalDrive}
-              min={2.0}
-              max={6.0}
-              isHighlighted
-              category="gearing"
-              explanationKey="finalDrive"
-            />
-            <div className="grid grid-cols-3 gap-1.5">
-              {tune.gearRatios.map((ratio, i) => (
-                <CompactValue
-                  key={i}
-                  label={i === 0 ? '1st' : i === 1 ? '2nd' : i === 2 ? '3rd' : `${i + 1}th`}
-                  value={ratio.toFixed(2)}
-                  category="gearing"
-                  size="sm"
-                />
-              ))}
+          return (
+            <div key={moduleId} className={config.className}>
+              {/* Drop zone before first item */}
+              {index === 0 && <ModuleDropZone targetModuleId={moduleId} position="before" />}
+              
+              <TuningModule
+                id={config.id}
+                title={config.title}
+                category={config.category}
+                icon={config.icon}
+              >
+                {renderModuleContent(moduleId)}
+              </TuningModule>
+              
+              {/* Drop zone after each item */}
+              <ModuleDropZone targetModuleId={moduleId} position="after" />
             </div>
-          </div>
-        </TuningModule>
-
-        {/* Alignment Module */}
-        <TuningModule
-          id="alignment"
-          title="Alignment"
-          category="alignment"
-          icon={<Compass className="w-4 h-4" />}
-          isDragging={draggedModule === 'alignment'}
-          onDragStart={setDraggedModule}
-          onDragEnd={() => setDraggedModule(null)}
-        >
-          <div className="space-y-3">
-            <FrontRearValue
-              label="Camber"
-              front={tune.camberFront}
-              rear={tune.camberRear}
-              unit="°"
-              category="alignment"
-            />
-            <FrontRearValue
-              label="Toe"
-              front={tune.toeFront}
-              rear={tune.toeRear}
-              unit="°"
-              category="alignment"
-            />
-            <CompactValue
-              label="Caster"
-              value={tune.caster}
-              unit="°"
-              category="alignment"
-            />
-          </div>
-        </TuningModule>
-
-        {/* Anti-Roll Bars Module */}
-        <TuningModule
-          id="antiroll"
-          title="Anti-Roll Bars"
-          category="suspension"
-          icon={<Settings2 className="w-4 h-4" />}
-          isDragging={draggedModule === 'antiroll'}
-          onDragStart={setDraggedModule}
-          onDragEnd={() => setDraggedModule(null)}
-        >
-          <div className="space-y-1">
-            <BlueprintSlider
-              label="Front ARB"
-              value={tune.arbFront}
-              min={1}
-              max={65}
-              leftLabel="Soft"
-              rightLabel="Stiff"
-              category="suspension"
-              explanationKey="arbFront"
-            />
-            <BlueprintSlider
-              label="Rear ARB"
-              value={tune.arbRear}
-              min={1}
-              max={65}
-              leftLabel="Soft"
-              rightLabel="Stiff"
-              category="suspension"
-              explanationKey="arbRear"
-            />
-          </div>
-        </TuningModule>
-
-        {/* Springs Module */}
-        <TuningModule
-          id="springs"
-          title="Springs"
-          category="suspension"
-          icon={<Activity className="w-4 h-4" />}
-          isDragging={draggedModule === 'springs'}
-          onDragStart={setDraggedModule}
-          onDragEnd={() => setDraggedModule(null)}
-        >
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <BlueprintSlider
-                label="Front Springs"
-                value={displayTune.springsFront}
-                min={unitSystem === 'imperial' ? 100 : 1.79}
-                max={unitSystem === 'imperial' ? 1000 : 17.86}
-                unit={units.springs}
-                leftLabel="Soft"
-                rightLabel="Stiff"
-                category="suspension"
-                explanationKey="springsFront"
-              />
-              <BlueprintSlider
-                label="Rear Springs"
-                value={displayTune.springsRear}
-                min={unitSystem === 'imperial' ? 100 : 1.79}
-                max={unitSystem === 'imperial' ? 1000 : 17.86}
-                unit={units.springs}
-                leftLabel="Soft"
-                rightLabel="Stiff"
-                category="suspension"
-                explanationKey="springsRear"
-              />
-            </div>
-            <FrontRearValue
-              label="Ride Height"
-              front={displayTune.rideHeightFront}
-              rear={displayTune.rideHeightRear}
-              unit={units.rideHeight}
-              category="suspension"
-            />
-          </div>
-        </TuningModule>
-
-        {/* Damping Module */}
-        <TuningModule
-          id="damping"
-          title="Damping"
-          category="damping"
-          icon={<Wrench className="w-4 h-4" />}
-          isDragging={draggedModule === 'damping'}
-          onDragStart={setDraggedModule}
-          onDragEnd={() => setDraggedModule(null)}
-        >
-          <div className="space-y-3">
-            <FrontRearValue
-              label="Rebound"
-              front={tune.reboundFront}
-              rear={tune.reboundRear}
-              category="damping"
-            />
-            <FrontRearValue
-              label="Bump"
-              front={tune.bumpFront}
-              rear={tune.bumpRear}
-              category="damping"
-            />
-          </div>
-        </TuningModule>
-
-        {/* Aero Module */}
-        <TuningModule
-          id="aero"
-          title="Aero"
-          category="aero"
-          icon={<Wind className="w-4 h-4" />}
-          isDragging={draggedModule === 'aero'}
-          onDragStart={setDraggedModule}
-          onDragEnd={() => setDraggedModule(null)}
-        >
-          <div className="space-y-1">
-            <BlueprintSlider
-              label="Front Downforce"
-              value={displayTune.aeroFront}
-              min={0}
-              max={unitSystem === 'imperial' ? 400 : 1779}
-              unit={units.aero}
-              leftLabel="Low"
-              rightLabel="High"
-              category="aero"
-              explanationKey="aeroFront"
-            />
-            <BlueprintSlider
-              label="Rear Downforce"
-              value={displayTune.aeroRear}
-              min={0}
-              max={unitSystem === 'imperial' ? 400 : 1779}
-              unit={units.aero}
-              leftLabel="Low"
-              rightLabel="High"
-              category="aero"
-              explanationKey="aeroRear"
-            />
-          </div>
-        </TuningModule>
-
-        {/* Brakes Module */}
-        <TuningModule
-          id="brakes"
-          title="Brakes"
-          category="brakes"
-          icon={<Disc className="w-4 h-4" />}
-          isDragging={draggedModule === 'brakes'}
-          onDragStart={setDraggedModule}
-          onDragEnd={() => setDraggedModule(null)}
-        >
-          <div className="space-y-1">
-            <BlueprintSlider
-              label="Pressure"
-              value={tune.brakePressure}
-              min={50}
-              max={200}
-              unit="%"
-              leftLabel="Light"
-              rightLabel="Heavy"
-              category="brakes"
-              explanationKey="brakePressure"
-            />
-            <BlueprintSlider
-              label="Balance"
-              value={tune.brakeBalance}
-              min={40}
-              max={60}
-              unit="%"
-              leftLabel="Rear"
-              rightLabel="Front"
-              category="brakes"
-              explanationKey="brakeBalance"
-            />
-          </div>
-        </TuningModule>
-
-        {/* Differential Module */}
-        <TuningModule
-          id="differential"
-          title="Differential"
-          category="differential"
-          icon={<Settings2 className="w-4 h-4" />}
-          isDragging={draggedModule === 'differential'}
-          onDragStart={setDraggedModule}
-          onDragEnd={() => setDraggedModule(null)}
-          className="md:col-span-2"
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {driveType === 'AWD' && (
-              <div>
-                <CompactValue
-                  label="Center Balance"
-                  value={`${tune.centerBalance || 50}%`}
-                  category="differential"
-                />
-                <p className="text-[10px] text-muted-foreground/60 mt-1 font-sketch">
-                  → Power to rear
-                </p>
-              </div>
-            )}
-            
-            {(driveType === 'AWD' || driveType === 'FWD') && (
-              <FrontRearValue
-                label="Front Diff"
-                front={tune.diffAccelFront || 0}
-                rear={tune.diffDecelFront || 0}
-                unit="%"
-                category="differential"
-              />
-            )}
-            
-            {(driveType === 'AWD' || driveType === 'RWD') && (
-              <FrontRearValue
-                label="Rear Diff"
-                front={tune.diffAccelRear}
-                rear={tune.diffDecelRear}
-                unit="%"
-                category="differential"
-              />
-            )}
-          </div>
-        </TuningModule>
+          );
+        })}
       </div>
 
       {/* Tune Tips */}
       <div 
         className="module-block p-4"
-        style={{
-          borderLeft: '3px solid hsl(var(--neon-cyan))',
-        }}
+        style={{ borderLeft: '3px solid hsl(var(--neon-cyan))' }}
       >
         <h3 className="font-sketch text-lg text-neon-cyan mb-2">
           {tuneInfo.title} Tune Tips
