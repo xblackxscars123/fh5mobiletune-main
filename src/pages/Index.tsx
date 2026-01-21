@@ -8,7 +8,7 @@ import { CarSelector } from '@/components/CarSelector';
 import { BlueprintTunePanel } from '@/components/workspace/BlueprintTunePanel';
 import { SavedTunesManager } from '@/components/SavedTunesManager';
 import { ShopPromoPopup } from '@/components/ShopPromoPopup';
-import { JDMCinemaBackground } from '@/components/JDMCinemaBackground';
+import { ThemeBackground } from '@/components/ThemeBackground';
 import { TuningExpertChat, TuneContext } from '@/components/TuningExpertChat';
 import { TroubleshootingWizard } from '@/components/TroubleshootingWizard';
 import { TemplateSelector } from '@/components/TemplateSelector';
@@ -160,7 +160,7 @@ export default function Index() {
 
   return (
     <div className="min-h-screen pb-8 md:pb-16 relative overflow-x-hidden">
-      <JDMCinemaBackground />
+      <ThemeBackground />
       <ShopPromoPopup />
       <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
       
