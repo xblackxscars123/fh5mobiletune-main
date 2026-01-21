@@ -322,7 +322,7 @@ export function TroubleshootingWizard({ onClose }: TroubleshootingWizardProps) {
     : [];
 
   return (
-    <Card className="bg-[hsl(220,18%,8%)] border-[hsl(220,15%,18%)]">
+    <Card className="bg-card/20 backdrop-blur-md border-border/30">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
