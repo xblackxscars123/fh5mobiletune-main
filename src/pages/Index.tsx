@@ -66,6 +66,20 @@ export default function Index() {
       toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
       window.history.replaceState({}, document.title);
     }
+    
+    // Handle loading tune from community page
+    if (location.state?.loadTune) {
+      const { specs: tuneSpecs, tuneType: loadedTuneType, carName: loadedCarName } = location.state.loadTune;
+      setSpecs(tuneSpecs);
+      setTuneType(loadedTuneType);
+      setShowResults(true);
+      setSelectedCar(null);
+      setBalance(0);
+      setStiffness(50);
+      setManualOverrides({});
+      toast.success(`Loaded community tune for ${loadedCarName}`);
+      window.history.replaceState({}, document.title);
+    }
   }, [location.state]);
 
   useEffect(() => {
