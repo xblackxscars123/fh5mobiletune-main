@@ -17,8 +17,11 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         racing: "bg-gradient-to-r from-primary to-destructive text-primary-foreground shadow-lg shadow-primary/40 hover:shadow-primary/60 hover:scale-[1.02]",
         cyber: "bg-gradient-to-r from-accent to-secondary text-background shadow-lg shadow-accent/30 hover:shadow-accent/50 hover:scale-[1.02]",
-        tuneType: "border border-border bg-card hover:border-primary hover:bg-primary/10 text-foreground",
-        tuneTypeActive: "border-2 border-primary bg-primary/20 text-primary shadow-lg shadow-primary/20",
+        tuneType: "border border-border bg-card hover:border-primary hover:bg-primary/10 text-foreground circuit-button",
+        tuneTypeActive: "border-2 border-primary bg-primary/20 text-primary shadow-lg shadow-primary/20 circuit-button-active",
+        circuit: "relative border border-neon-cyan/30 bg-card/80 backdrop-blur-sm text-neon-cyan hover:border-neon-cyan/60 hover:bg-neon-cyan/10 hover:shadow-[0_0_20px_hsl(var(--neon-cyan)/0.3)] circuit-button",
+        circuitPink: "relative border border-neon-pink/30 bg-card/80 backdrop-blur-sm text-neon-pink hover:border-neon-pink/60 hover:bg-neon-pink/10 hover:shadow-[0_0_20px_hsl(var(--neon-pink)/0.3)] circuit-button",
+        circuitPurple: "relative border border-neon-purple/30 bg-card/80 backdrop-blur-sm text-neon-purple hover:border-neon-purple/60 hover:bg-neon-purple/10 hover:shadow-[0_0_20px_hsl(var(--neon-purple)/0.3)] circuit-button",
       },
       size: {
         default: "h-10 px-4 py-2",
