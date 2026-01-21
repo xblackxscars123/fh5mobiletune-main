@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Gauge, Zap, Car, User, LogOut } from 'lucide-react';
+import { Gauge, Zap, Car, User, LogOut, Radio } from 'lucide-react';
 import japanPlateBg from '@/assets/japan-plate-clean.png';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -61,13 +61,21 @@ export function Header({ onShowAuth }: HeaderProps) {
         <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-sm md:text-base px-2 sm:px-4 hidden sm:block">AI tuning calculator for almost all 1000+ cars in Forza Horizon 5. Enter your car specs, select your tune type, and get optimized settings instantly.</p>
         
         {/* Navigation Links */}
-        <div className="flex items-center justify-center gap-4 pt-3">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 pt-3 flex-wrap">
           <Link 
             to="/cars" 
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-colors text-sm font-medium text-primary"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-colors text-sm font-medium text-primary"
           >
             <Car className="w-4 h-4" />
-            Browse Cars
+            <span className="hidden sm:inline">Browse</span> Cars
+          </Link>
+          
+          <Link 
+            to="/telemetry-guide" 
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-racing-cyan/10 hover:bg-racing-cyan/20 border border-racing-cyan/30 hover:border-racing-cyan/50 transition-colors text-sm font-medium text-racing-cyan"
+          >
+            <Radio className="w-4 h-4" />
+            <span className="hidden sm:inline">Telemetry</span> Guide
           </Link>
           
           {user ? (
