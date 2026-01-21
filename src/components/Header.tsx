@@ -45,27 +45,27 @@ export function Header({ onShowAuth }: HeaderProps) {
           }}
         />
 
-        {/* Circuit board pattern overlay */}
-        <svg className="absolute inset-0 w-full h-full opacity-20" preserveAspectRatio="none">
+        {/* Circuit board pattern overlay - transparent glass effect */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.08]" preserveAspectRatio="none">
           <defs>
             <pattern id="circuit" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
               {/* Horizontal traces */}
-              <line x1="0" y1="20" x2="30" y2="20" stroke="hsl(var(--neon-cyan))" strokeWidth="1"/>
-              <line x1="40" y1="20" x2="100" y2="20" stroke="hsl(var(--neon-pink))" strokeWidth="1"/>
-              <line x1="0" y1="50" x2="60" y2="50" stroke="hsl(var(--neon-purple))" strokeWidth="1"/>
-              <line x1="70" y1="50" x2="100" y2="50" stroke="hsl(var(--neon-cyan))" strokeWidth="1"/>
-              <line x1="0" y1="80" x2="45" y2="80" stroke="hsl(var(--neon-pink))" strokeWidth="1"/>
+              <line x1="0" y1="20" x2="30" y2="20" stroke="hsl(var(--neon-cyan))" strokeWidth="0.5"/>
+              <line x1="40" y1="20" x2="100" y2="20" stroke="hsl(var(--neon-pink))" strokeWidth="0.5"/>
+              <line x1="0" y1="50" x2="60" y2="50" stroke="hsl(var(--neon-purple))" strokeWidth="0.5"/>
+              <line x1="70" y1="50" x2="100" y2="50" stroke="hsl(var(--neon-cyan))" strokeWidth="0.5"/>
+              <line x1="0" y1="80" x2="45" y2="80" stroke="hsl(var(--neon-pink))" strokeWidth="0.5"/>
               
               {/* Vertical traces */}
-              <line x1="30" y1="20" x2="30" y2="50" stroke="hsl(var(--neon-cyan))" strokeWidth="1"/>
-              <line x1="60" y1="50" x2="60" y2="80" stroke="hsl(var(--neon-purple))" strokeWidth="1"/>
-              <line x1="70" y1="0" x2="70" y2="50" stroke="hsl(var(--neon-cyan))" strokeWidth="1"/>
+              <line x1="30" y1="20" x2="30" y2="50" stroke="hsl(var(--neon-cyan))" strokeWidth="0.5"/>
+              <line x1="60" y1="50" x2="60" y2="80" stroke="hsl(var(--neon-purple))" strokeWidth="0.5"/>
+              <line x1="70" y1="0" x2="70" y2="50" stroke="hsl(var(--neon-cyan))" strokeWidth="0.5"/>
               
-              {/* LED nodes */}
-              <circle cx="30" cy="20" r="3" fill="hsl(var(--neon-cyan))"/>
-              <circle cx="60" cy="50" r="3" fill="hsl(var(--neon-purple))"/>
-              <circle cx="70" cy="50" r="3" fill="hsl(var(--neon-cyan))"/>
-              <circle cx="45" cy="80" r="3" fill="hsl(var(--neon-pink))"/>
+              {/* LED nodes - pulsing dots */}
+              <circle cx="30" cy="20" r="2" fill="hsl(var(--neon-cyan))" className="animate-pulse"/>
+              <circle cx="60" cy="50" r="2" fill="hsl(var(--neon-purple))" className="animate-pulse"/>
+              <circle cx="70" cy="50" r="2" fill="hsl(var(--neon-cyan))" className="animate-pulse"/>
+              <circle cx="45" cy="80" r="2" fill="hsl(var(--neon-pink))" className="animate-pulse"/>
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#circuit)"/>
@@ -270,18 +270,20 @@ export function Header({ onShowAuth }: HeaderProps) {
         <div className="flex items-center justify-center gap-3 sm:gap-4 pt-4 flex-wrap">
           <Link 
             to="/cars" 
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-module-suspension/10 hover:bg-module-suspension/20 border border-module-suspension/40 hover:border-module-suspension/60 transition-all text-sm font-medium text-module-suspension shadow-[0_0_15px_hsl(var(--module-suspension)/0.2)] hover:shadow-[0_0_25px_hsl(var(--module-suspension)/0.4)] backdrop-blur-sm"
+            className="relative flex items-center gap-2 px-4 py-2.5 rounded-lg bg-module-suspension/10 hover:bg-module-suspension/20 border border-module-suspension/40 hover:border-module-suspension/60 transition-all text-sm font-medium text-module-suspension shadow-[0_0_15px_hsl(var(--module-suspension)/0.2)] hover:shadow-[0_0_25px_hsl(var(--module-suspension)/0.4)] backdrop-blur-sm circuit-button overflow-hidden"
           >
-            <Car className="w-4 h-4" />
-            <span className="hidden sm:inline">Browse</span> Cars
+            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-module-suspension shadow-[0_0_6px_hsl(var(--module-suspension))]" />
+            <Car className="w-4 h-4 relative z-10" />
+            <span className="hidden sm:inline relative z-10">Browse</span> <span className="relative z-10">Cars</span>
           </Link>
           
           <Link 
             to="/telemetry-guide" 
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-module-aero/10 hover:bg-module-aero/20 border border-module-aero/40 hover:border-module-aero/60 transition-all text-sm font-medium text-module-aero shadow-[0_0_15px_hsl(var(--module-aero)/0.2)] hover:shadow-[0_0_25px_hsl(var(--module-aero)/0.4)] backdrop-blur-sm"
+            className="relative flex items-center gap-2 px-4 py-2.5 rounded-lg bg-module-aero/10 hover:bg-module-aero/20 border border-module-aero/40 hover:border-module-aero/60 transition-all text-sm font-medium text-module-aero shadow-[0_0_15px_hsl(var(--module-aero)/0.2)] hover:shadow-[0_0_25px_hsl(var(--module-aero)/0.4)] backdrop-blur-sm circuit-button overflow-hidden"
           >
-            <Radio className="w-4 h-4" />
-            <span className="hidden sm:inline">Telemetry</span> Guide
+            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-module-aero shadow-[0_0_6px_hsl(var(--module-aero))]" />
+            <Radio className="w-4 h-4 relative z-10" />
+            <span className="hidden sm:inline relative z-10">Telemetry</span> <span className="relative z-10">Guide</span>
           </Link>
           
           {user ? (
@@ -289,20 +291,22 @@ export function Header({ onShowAuth }: HeaderProps) {
               variant="outline"
               size="sm"
               onClick={signOut}
-              className="gap-2 border-module-tires/40 text-module-tires hover:bg-module-tires/10 hover:border-module-tires/60 shadow-[0_0_15px_hsl(var(--module-tires)/0.2)] backdrop-blur-sm"
+              className="gap-2 border-module-tires/40 text-module-tires hover:bg-module-tires/10 hover:border-module-tires/60 shadow-[0_0_15px_hsl(var(--module-tires)/0.2)] backdrop-blur-sm circuit-button overflow-hidden relative"
             >
-              <LogOut className="w-4 h-4" />
-              Sign Out
+              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-module-tires shadow-[0_0_6px_hsl(var(--module-tires))]" />
+              <LogOut className="w-4 h-4 relative z-10" />
+              <span className="relative z-10">Sign Out</span>
             </Button>
           ) : (
             <Button
               variant="outline"
               size="sm"
               onClick={onShowAuth}
-              className="gap-2 border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan/70 shadow-[0_0_15px_hsl(var(--neon-cyan)/0.2)] backdrop-blur-sm"
+              className="gap-2 border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan/70 shadow-[0_0_15px_hsl(var(--neon-cyan)/0.2)] backdrop-blur-sm circuit-button overflow-hidden relative"
             >
-              <User className="w-4 h-4" />
-              Sign In
+              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-neon-cyan shadow-[0_0_6px_hsl(var(--neon-cyan))]" />
+              <User className="w-4 h-4 relative z-10" />
+              <span className="relative z-10">Sign In</span>
             </Button>
           )}
         </div>

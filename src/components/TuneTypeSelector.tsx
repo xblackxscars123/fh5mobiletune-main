@@ -24,12 +24,21 @@ export function TuneTypeSelector({ selected, onChange }: TuneTypeSelectorProps) 
               variant={isActive ? 'tuneTypeActive' : 'tuneType'}
               onClick={() => onChange(type)}
               className={cn(
-                "h-auto py-2 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-2 transition-all duration-300",
+                "h-auto py-2 sm:py-3 md:py-4 flex flex-col items-center gap-1 sm:gap-2 transition-all duration-300 relative overflow-hidden",
                 isActive && "animate-pulse-glow"
               )}
             >
-              <span className="text-lg sm:text-xl md:text-2xl">{info.icon}</span>
-              <span className="font-display text-[10px] sm:text-xs leading-tight text-center break-words hyphens-auto">{info.title}</span>
+              {/* LED indicator dot */}
+              <span 
+                className={cn(
+                  "absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full transition-all",
+                  isActive 
+                    ? "bg-neon-pink shadow-[0_0_6px_hsl(var(--neon-pink)),0_0_12px_hsl(var(--neon-pink)/0.5)]" 
+                    : "bg-neon-cyan/50 shadow-[0_0_4px_hsl(var(--neon-cyan)/0.3)]"
+                )}
+              />
+              <span className="text-lg sm:text-xl md:text-2xl relative z-10">{info.icon}</span>
+              <span className="font-display text-[10px] sm:text-xs leading-tight text-center break-words hyphens-auto relative z-10">{info.title}</span>
             </Button>
           );
         })}
