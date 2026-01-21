@@ -4,9 +4,10 @@ import { TuningModule, ModuleCategory } from './TuningModule';
 import { BlueprintSlider } from './BlueprintSlider';
 import { FrontRearValue, CompactValue } from './EngineeringTable';
 import { ModuleDropZone } from './ModuleDropZone';
+import { GearingVisualizer } from './GearingVisualizer';
 import { ModuleLayoutProvider, useModuleLayout } from '@/contexts/ModuleLayoutContext';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Gauge, Settings2, Wind, Disc, Cog, Wrench, Compass, Activity, RotateCcw } from 'lucide-react';
+import { Copy, Check, Gauge, Settings2, Wind, Disc, Cog, Wrench, Compass, Activity, RotateCcw, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +17,7 @@ interface BlueprintTunePanelProps {
   tuneType: TuneType;
   unitSystem: UnitSystem;
   carName?: string;
+  horsepower?: number;
 }
 
 export const BlueprintTunePanel = (props: BlueprintTunePanelProps) => {
@@ -39,7 +41,8 @@ const BlueprintTunePanelInner = ({
   driveType, 
   tuneType, 
   unitSystem, 
-  carName 
+  carName,
+  horsepower = 400 
 }: BlueprintTunePanelProps) => {
   const [copied, setCopied] = useState(false);
   const { moduleOrder, resetLayout, draggedId } = useModuleLayout();
@@ -52,6 +55,7 @@ const BlueprintTunePanelInner = ({
   const moduleConfigs: Record<string, ModuleConfig> = {
     tires: { id: 'tires', title: 'Tires', category: 'tires', icon: <Gauge className="w-4 h-4" /> },
     gearing: { id: 'gearing', title: 'Gearing', category: 'gearing', icon: <Cog className="w-4 h-4" /> },
+    gearingVisualizer: { id: 'gearingVisualizer', title: 'Gearing Analysis', category: 'gearing', icon: <BarChart3 className="w-4 h-4" />, className: 'md:col-span-2' },
     alignment: { id: 'alignment', title: 'Alignment', category: 'alignment', icon: <Compass className="w-4 h-4" /> },
     antiroll: { id: 'antiroll', title: 'Anti-Roll Bars', category: 'suspension', icon: <Settings2 className="w-4 h-4" /> },
     springs: { id: 'springs', title: 'Springs', category: 'suspension', icon: <Activity className="w-4 h-4" /> },
@@ -116,6 +120,16 @@ const BlueprintTunePanelInner = ({
               ))}
             </div>
           </div>
+        );
+
+      case 'gearingVisualizer':
+        return (
+          <GearingVisualizer
+            gearRatios={tune.gearRatios}
+            finalDrive={tune.finalDrive}
+            tuneType={tuneType}
+            horsepower={horsepower}
+          />
         );
 
       case 'alignment':
@@ -325,7 +339,7 @@ const BlueprintTunePanelInner = ({
 
   // Check if layout has been customized
   const isDefaultLayout = JSON.stringify(moduleOrder) === JSON.stringify([
-    'tires', 'gearing', 'alignment', 'antiroll', 'springs', 'damping', 'aero', 'brakes', 'differential'
+    'tires', 'gearing', 'gearingVisualizer', 'alignment', 'antiroll', 'springs', 'damping', 'aero', 'brakes', 'differential'
   ]);
 
   return (

@@ -280,7 +280,7 @@ export default function Index() {
           {/* Right Panel - Results */}
           <div>
             {showResults ? (
-              <BlueprintTunePanel tune={tuneSettings} driveType={specs.driveType} tuneType={tuneType} unitSystem={unitSystem} carName={carName} />
+              <BlueprintTunePanel tune={tuneSettings} driveType={specs.driveType} tuneType={tuneType} unitSystem={unitSystem} carName={carName} horsepower={specs.horsepower} />
             ) : (
               <div className="module-block p-8 text-center h-full flex flex-col items-center justify-center min-h-[400px]">
                 <div className="w-20 h-20 rounded-full mb-4 flex items-center justify-center" style={{ background: 'hsl(var(--neon-pink) / 0.1)', border: '2px dashed hsl(var(--neon-pink) / 0.3)' }}>

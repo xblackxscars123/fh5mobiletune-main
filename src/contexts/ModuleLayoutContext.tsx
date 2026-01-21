@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useCallback, useEffect, ReactNode 
 const DEFAULT_MODULE_ORDER = [
   'tires',
   'gearing',
+  'gearingVisualizer',
   'alignment',
   'antiroll',
   'springs',
