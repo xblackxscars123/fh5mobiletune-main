@@ -1,7 +1,9 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Gauge, Zap, Car, User, LogOut, Radio } from 'lucide-react';
+import { Gauge, Zap, Car, User, LogOut, Radio, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme, UI_THEMES } from '@/contexts/ThemeContext';
 
 interface HeaderProps {
   onShowAuth?: () => void;
@@ -9,16 +11,30 @@ interface HeaderProps {
 
 export function Header({ onShowAuth }: HeaderProps) {
   const { user, signOut } = useAuth();
+  const { currentTheme, setTheme, themes } = useTheme();
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowThemeDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <header className="relative py-6 sm:py-8 md:py-10 mb-6 sm:mb-8 overflow-hidden">
-      {/* Vaporwave city background */}
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Base gradient - deep purple to dark blue */}
+      {/* Glassmorphism background with blur */}
+      <div className="absolute inset-0 overflow-hidden rounded-xl">
+        {/* Base glass effect - transparent with blur */}
         <div 
-          className="absolute inset-0"
+          className="absolute inset-0 backdrop-blur-sm"
           style={{
-            background: 'linear-gradient(180deg, hsl(280, 80%, 8%) 0%, hsl(260, 70%, 12%) 30%, hsl(220, 60%, 10%) 100%)'
+            background: 'linear-gradient(180deg, hsl(280 80% 8% / 0.3) 0%, hsl(260 70% 12% / 0.4) 30%, hsl(220 60% 10% / 0.3) 100%)',
           }}
         />
         
@@ -26,7 +42,7 @@ export function Header({ onShowAuth }: HeaderProps) {
         <div 
           className="absolute bottom-0 left-0 right-0 h-1/2"
           style={{
-            background: 'linear-gradient(180deg, transparent 0%, hsl(320, 100%, 50%, 0.1) 60%, hsl(320, 100%, 60%, 0.3) 100%)'
+            background: 'linear-gradient(180deg, transparent 0%, hsl(320 100% 50% / 0.08) 60%, hsl(320 100% 60% / 0.15) 100%)'
           }}
         />
         
@@ -35,8 +51,8 @@ export function Header({ onShowAuth }: HeaderProps) {
           className="absolute bottom-0 left-0 right-0 h-32"
           style={{
             background: `
-              linear-gradient(90deg, hsl(var(--neon-cyan) / 0.3) 1px, transparent 1px),
-              linear-gradient(0deg, hsl(var(--neon-cyan) / 0.4) 1px, transparent 1px)
+              linear-gradient(90deg, hsl(var(--neon-cyan) / 0.2) 1px, transparent 1px),
+              linear-gradient(0deg, hsl(var(--neon-cyan) / 0.3) 1px, transparent 1px)
             `,
             backgroundSize: '40px 20px',
             transform: 'perspective(200px) rotateX(60deg)',
@@ -46,22 +62,17 @@ export function Header({ onShowAuth }: HeaderProps) {
         />
 
         {/* Circuit board pattern overlay - transparent glass effect */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.08]" preserveAspectRatio="none">
+        <svg className="absolute inset-0 w-full h-full opacity-[0.06]" preserveAspectRatio="none">
           <defs>
             <pattern id="circuit" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-              {/* Horizontal traces */}
               <line x1="0" y1="20" x2="30" y2="20" stroke="hsl(var(--neon-cyan))" strokeWidth="0.5"/>
               <line x1="40" y1="20" x2="100" y2="20" stroke="hsl(var(--neon-pink))" strokeWidth="0.5"/>
               <line x1="0" y1="50" x2="60" y2="50" stroke="hsl(var(--neon-purple))" strokeWidth="0.5"/>
               <line x1="70" y1="50" x2="100" y2="50" stroke="hsl(var(--neon-cyan))" strokeWidth="0.5"/>
               <line x1="0" y1="80" x2="45" y2="80" stroke="hsl(var(--neon-pink))" strokeWidth="0.5"/>
-              
-              {/* Vertical traces */}
               <line x1="30" y1="20" x2="30" y2="50" stroke="hsl(var(--neon-cyan))" strokeWidth="0.5"/>
               <line x1="60" y1="50" x2="60" y2="80" stroke="hsl(var(--neon-purple))" strokeWidth="0.5"/>
               <line x1="70" y1="0" x2="70" y2="50" stroke="hsl(var(--neon-cyan))" strokeWidth="0.5"/>
-              
-              {/* LED nodes - pulsing dots */}
               <circle cx="30" cy="20" r="2" fill="hsl(var(--neon-cyan))" className="animate-pulse"/>
               <circle cx="60" cy="50" r="2" fill="hsl(var(--neon-purple))" className="animate-pulse"/>
               <circle cx="70" cy="50" r="2" fill="hsl(var(--neon-cyan))" className="animate-pulse"/>
@@ -71,15 +82,11 @@ export function Header({ onShowAuth }: HeaderProps) {
           <rect width="100%" height="100%" fill="url(#circuit)"/>
         </svg>
 
-        {/* Neon city buildings silhouette */}
-        <svg className="absolute bottom-0 left-0 right-0 h-40 opacity-60" preserveAspectRatio="none" viewBox="0 0 1200 200">
+        {/* Neon city skyline - OUTLINE ONLY (no fill) */}
+        <svg className="absolute bottom-0 left-0 right-0 h-40 opacity-70" preserveAspectRatio="none" viewBox="0 0 1200 200">
           <defs>
-            <linearGradient id="buildingGlow" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="hsl(var(--neon-purple))" stopOpacity="0.8"/>
-              <stop offset="100%" stopColor="hsl(var(--neon-pink))" stopOpacity="0.3"/>
-            </linearGradient>
             <filter id="neonGlow">
-              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
               <feMerge>
                 <feMergeNode in="coloredBlur"/>
                 <feMergeNode in="SourceGraphic"/>
@@ -87,83 +94,59 @@ export function Header({ onShowAuth }: HeaderProps) {
             </filter>
           </defs>
           
-          {/* Building shapes with LED windows */}
-          <g filter="url(#neonGlow)">
+          {/* Building outlines only - no fill */}
+          <g filter="url(#neonGlow)" fill="none">
             {/* Left buildings */}
-            <rect x="20" y="80" width="60" height="120" fill="hsl(260, 50%, 8%)" stroke="hsl(var(--neon-purple))" strokeWidth="1"/>
-            <rect x="90" y="50" width="50" height="150" fill="hsl(260, 50%, 6%)" stroke="hsl(var(--neon-cyan))" strokeWidth="1"/>
-            <rect x="150" y="100" width="40" height="100" fill="hsl(260, 50%, 10%)" stroke="hsl(var(--neon-pink))" strokeWidth="1"/>
+            <rect x="20" y="80" width="60" height="120" stroke="hsl(var(--neon-purple))" strokeWidth="1.5"/>
+            <rect x="90" y="50" width="50" height="150" stroke="hsl(var(--neon-cyan))" strokeWidth="1.5"/>
+            <rect x="150" y="100" width="40" height="100" stroke="hsl(var(--neon-pink))" strokeWidth="1.5"/>
             
             {/* Center buildings (taller) */}
-            <rect x="250" y="30" width="80" height="170" fill="hsl(260, 50%, 5%)" stroke="hsl(var(--neon-cyan))" strokeWidth="1.5"/>
-            <rect x="340" y="60" width="60" height="140" fill="hsl(260, 50%, 8%)" stroke="hsl(var(--neon-purple))" strokeWidth="1"/>
-            <rect x="410" y="20" width="100" height="180" fill="hsl(260, 50%, 4%)" stroke="hsl(var(--neon-pink))" strokeWidth="2"/>
-            <rect x="520" y="70" width="70" height="130" fill="hsl(260, 50%, 7%)" stroke="hsl(var(--neon-cyan))" strokeWidth="1"/>
+            <rect x="250" y="30" width="80" height="170" stroke="hsl(var(--neon-cyan))" strokeWidth="2"/>
+            <rect x="340" y="60" width="60" height="140" stroke="hsl(var(--neon-purple))" strokeWidth="1.5"/>
+            <rect x="410" y="20" width="100" height="180" stroke="hsl(var(--neon-pink))" strokeWidth="2.5"/>
+            <rect x="520" y="70" width="70" height="130" stroke="hsl(var(--neon-cyan))" strokeWidth="1.5"/>
             
             {/* Right side buildings */}
-            <rect x="650" y="40" width="90" height="160" fill="hsl(260, 50%, 6%)" stroke="hsl(var(--neon-purple))" strokeWidth="1.5"/>
-            <rect x="750" y="90" width="50" height="110" fill="hsl(260, 50%, 9%)" stroke="hsl(var(--neon-pink))" strokeWidth="1"/>
-            <rect x="810" y="55" width="70" height="145" fill="hsl(260, 50%, 5%)" stroke="hsl(var(--neon-cyan))" strokeWidth="1"/>
-            <rect x="890" y="80" width="55" height="120" fill="hsl(260, 50%, 8%)" stroke="hsl(var(--neon-purple))" strokeWidth="1"/>
+            <rect x="650" y="40" width="90" height="160" stroke="hsl(var(--neon-purple))" strokeWidth="2"/>
+            <rect x="750" y="90" width="50" height="110" stroke="hsl(var(--neon-pink))" strokeWidth="1.5"/>
+            <rect x="810" y="55" width="70" height="145" stroke="hsl(var(--neon-cyan))" strokeWidth="1.5"/>
+            <rect x="890" y="80" width="55" height="120" stroke="hsl(var(--neon-purple))" strokeWidth="1.5"/>
             
             {/* Far buildings */}
-            <rect x="1000" y="60" width="80" height="140" fill="hsl(260, 50%, 6%)" stroke="hsl(var(--neon-pink))" strokeWidth="1"/>
-            <rect x="1090" y="100" width="60" height="100" fill="hsl(260, 50%, 10%)" stroke="hsl(var(--neon-cyan))" strokeWidth="1"/>
+            <rect x="1000" y="60" width="80" height="140" stroke="hsl(var(--neon-pink))" strokeWidth="1.5"/>
+            <rect x="1090" y="100" width="60" height="100" stroke="hsl(var(--neon-cyan))" strokeWidth="1.5"/>
           </g>
           
-          {/* LED window lights - scattered across buildings */}
+          {/* LED window lights - glowing dots */}
           <g className="animate-pulse">
-            {/* Building 1 windows */}
-            <rect x="30" y="90" width="8" height="6" fill="hsl(var(--neon-cyan))" opacity="0.9"/>
-            <rect x="50" y="110" width="8" height="6" fill="hsl(var(--neon-pink))" opacity="0.7"/>
-            <rect x="30" y="140" width="8" height="6" fill="hsl(var(--neon-cyan))" opacity="0.8"/>
-            
-            {/* Building 2 windows */}
-            <rect x="100" y="60" width="10" height="8" fill="hsl(var(--neon-purple))" opacity="0.9"/>
-            <rect x="120" y="90" width="10" height="8" fill="hsl(var(--neon-cyan))" opacity="0.6"/>
-            <rect x="100" y="130" width="10" height="8" fill="hsl(var(--neon-pink))" opacity="0.8"/>
-            
-            {/* Center building windows */}
-            <rect x="260" y="45" width="12" height="10" fill="hsl(var(--neon-pink))" opacity="0.9"/>
-            <rect x="290" y="45" width="12" height="10" fill="hsl(var(--neon-cyan))" opacity="0.7"/>
-            <rect x="260" y="80" width="12" height="10" fill="hsl(var(--neon-cyan))" opacity="0.8"/>
-            <rect x="290" y="110" width="12" height="10" fill="hsl(var(--neon-purple))" opacity="0.9"/>
-            
-            {/* Main tower windows */}
-            <rect x="425" y="35" width="15" height="12" fill="hsl(var(--neon-cyan))" opacity="1"/>
-            <rect x="460" y="35" width="15" height="12" fill="hsl(var(--neon-pink))" opacity="0.9"/>
-            <rect x="425" y="70" width="15" height="12" fill="hsl(var(--neon-purple))" opacity="0.8"/>
-            <rect x="460" y="100" width="15" height="12" fill="hsl(var(--neon-cyan))" opacity="0.9"/>
-            <rect x="425" y="130" width="15" height="12" fill="hsl(var(--neon-pink))" opacity="0.7"/>
-            <rect x="480" y="130" width="15" height="12" fill="hsl(var(--neon-cyan))" opacity="0.8"/>
-            
-            {/* Right side windows */}
-            <rect x="665" y="55" width="12" height="10" fill="hsl(var(--neon-cyan))" opacity="0.9"/>
-            <rect x="700" y="90" width="12" height="10" fill="hsl(var(--neon-pink))" opacity="0.8"/>
-            <rect x="665" y="130" width="12" height="10" fill="hsl(var(--neon-purple))" opacity="0.7"/>
-            
-            <rect x="820" y="70" width="10" height="8" fill="hsl(var(--neon-pink))" opacity="0.9"/>
-            <rect x="850" y="100" width="10" height="8" fill="hsl(var(--neon-cyan))" opacity="0.8"/>
-            <rect x="820" y="140" width="10" height="8" fill="hsl(var(--neon-purple))" opacity="0.6"/>
-            
-            <rect x="1015" y="80" width="12" height="10" fill="hsl(var(--neon-cyan))" opacity="0.9"/>
-            <rect x="1050" y="110" width="12" height="10" fill="hsl(var(--neon-pink))" opacity="0.8"/>
+            <rect x="35" y="95" width="6" height="4" fill="hsl(var(--neon-cyan))" rx="1"/>
+            <rect x="55" y="115" width="6" height="4" fill="hsl(var(--neon-pink))" rx="1"/>
+            <rect x="105" y="65" width="6" height="4" fill="hsl(var(--neon-purple))" rx="1"/>
+            <rect x="270" y="50" width="8" height="5" fill="hsl(var(--neon-pink))" rx="1"/>
+            <rect x="300" y="50" width="8" height="5" fill="hsl(var(--neon-cyan))" rx="1"/>
+            <rect x="435" y="40" width="10" height="6" fill="hsl(var(--neon-cyan))" rx="1"/>
+            <rect x="470" y="40" width="10" height="6" fill="hsl(var(--neon-pink))" rx="1"/>
+            <rect x="435" y="80" width="10" height="6" fill="hsl(var(--neon-purple))" rx="1"/>
+            <rect x="670" y="60" width="8" height="5" fill="hsl(var(--neon-cyan))" rx="1"/>
+            <rect x="830" y="75" width="6" height="4" fill="hsl(var(--neon-pink))" rx="1"/>
+            <rect x="1020" y="85" width="8" height="5" fill="hsl(var(--neon-cyan))" rx="1"/>
           </g>
         </svg>
 
         {/* Floating LED particles */}
         <div className="absolute inset-0 overflow-hidden">
-          {[...Array(20)].map((_, i) => (
+          {[...Array(15)].map((_, i) => (
             <div
               key={i}
               className="absolute w-1 h-1 rounded-full animate-pulse"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 60}%`,
+                left: `${(i * 7 + 5) % 100}%`,
+                top: `${(i * 11 + 10) % 60}%`,
                 backgroundColor: ['hsl(var(--neon-cyan))', 'hsl(var(--neon-pink))', 'hsl(var(--neon-purple))'][i % 3],
                 boxShadow: `0 0 6px ${['hsl(var(--neon-cyan))', 'hsl(var(--neon-pink))', 'hsl(var(--neon-purple))'][i % 3]}`,
                 animationDelay: `${i * 0.2}s`,
-                opacity: 0.6 + Math.random() * 0.4
+                opacity: 0.5
               }}
             />
           ))}
@@ -171,30 +154,72 @@ export function Header({ onShowAuth }: HeaderProps) {
 
         {/* Sun/moon glow on horizon */}
         <div 
-          className="absolute bottom-20 left-1/2 -translate-x-1/2 w-40 h-20"
+          className="absolute bottom-16 left-1/2 -translate-x-1/2 w-32 h-16"
           style={{
-            background: 'radial-gradient(ellipse at center, hsl(var(--neon-pink) / 0.6) 0%, hsl(var(--neon-purple) / 0.3) 40%, transparent 70%)',
-            filter: 'blur(10px)'
+            background: 'radial-gradient(ellipse at center, hsl(var(--neon-pink) / 0.4) 0%, hsl(var(--neon-purple) / 0.2) 40%, transparent 70%)',
+            filter: 'blur(8px)'
           }}
         />
 
         {/* Scanline overlay for retro effect */}
         <div 
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none opacity-[0.02]"
           style={{
-            background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)'
+            background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 4px)'
           }}
         />
       </div>
       
       <div className="relative z-10 text-center space-y-4 md:space-y-6">
-        {/* Icon row with neon styling */}
+        {/* Icon row with neon styling - Zap is Easter egg theme switcher */}
         <div className="flex items-center justify-center gap-3 mb-4">
           <div className="p-2 rounded-lg bg-neon-pink/10 border border-neon-pink/50 shadow-[0_0_15px_hsl(var(--neon-pink)/0.3)] backdrop-blur-sm">
             <Gauge className="w-6 h-6 md:w-8 md:h-8 text-neon-pink" />
           </div>
-          <div className="p-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/50 shadow-[0_0_15px_hsl(var(--neon-cyan)/0.3)] backdrop-blur-sm">
-            <Zap className="w-6 h-6 md:w-8 md:h-8 text-neon-cyan" />
+          
+          {/* Easter Egg: Theme Switcher hidden in Zap icon */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+              className="p-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/50 shadow-[0_0_15px_hsl(var(--neon-cyan)/0.3)] backdrop-blur-sm cursor-pointer hover:bg-neon-cyan/20 transition-all"
+              aria-label="Theme switcher"
+            >
+              <Zap className="w-6 h-6 md:w-8 md:h-8 text-neon-cyan" />
+            </button>
+            
+            {/* Theme Dropdown - appears when clicked */}
+            {showThemeDropdown && (
+              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 w-48 rounded-lg overflow-hidden shadow-[0_0_30px_hsl(var(--neon-cyan)/0.3)] animate-scale-in">
+                <div className="bg-card border border-neon-cyan/30 rounded-lg overflow-hidden">
+                  <div className="px-3 py-2 text-xs font-display uppercase tracking-wider text-neon-cyan border-b border-border/50 bg-card">
+                    UI Theme
+                  </div>
+                  <div className="py-1 bg-card">
+                    {themes.map((theme) => (
+                      <button
+                        key={theme.id}
+                        onClick={() => {
+                          setTheme(theme.id);
+                          setShowThemeDropdown(false);
+                        }}
+                        className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors hover:bg-neon-cyan/10 ${
+                          currentTheme === theme.id ? 'text-neon-cyan bg-neon-cyan/5' : 'text-foreground'
+                        }`}
+                      >
+                        <span className="text-base">{theme.icon}</span>
+                        <div className="flex-1">
+                          <div className="font-medium">{theme.name}</div>
+                          <div className="text-xs text-muted-foreground">{theme.description}</div>
+                        </div>
+                        {currentTheme === theme.id && (
+                          <Check className="w-4 h-4 text-neon-cyan" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         
@@ -204,12 +229,12 @@ export function Header({ onShowAuth }: HeaderProps) {
           <div 
             className="absolute inset-0 -m-4 rounded-xl backdrop-blur-md"
             style={{
-              background: 'linear-gradient(135deg, hsl(260, 50%, 10%, 0.8) 0%, hsl(280, 50%, 8%, 0.9) 100%)',
-              border: '1px solid hsl(var(--neon-cyan) / 0.4)',
+              background: 'linear-gradient(135deg, hsl(260 50% 10% / 0.6) 0%, hsl(280 50% 8% / 0.7) 100%)',
+              border: '1px solid hsl(var(--neon-cyan) / 0.3)',
               boxShadow: `
-                0 0 40px hsl(var(--neon-pink) / 0.2),
-                0 0 80px hsl(var(--neon-purple) / 0.1),
-                inset 0 1px 0 hsl(var(--neon-cyan) / 0.2)
+                0 0 40px hsl(var(--neon-pink) / 0.15),
+                0 0 80px hsl(var(--neon-purple) / 0.08),
+                inset 0 1px 0 hsl(var(--neon-cyan) / 0.15)
               `
             }}
           />
