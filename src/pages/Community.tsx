@@ -7,10 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ThemeBackground } from '@/components/ThemeBackground';
 import { TuneCard } from '@/components/community/TuneCard';
 import { SignupIncentiveBanner } from '@/components/community/SignupIncentiveBanner';
+import { FeaturedTunesSection } from '@/components/community/FeaturedTunesSection';
 import { AuthModal } from '@/components/AuthModal';
 import { usePublicTunes, SortOption, PublicTune } from '@/hooks/usePublicTunes';
 import { useAuth } from '@/hooks/useAuth';
 import { TuneType } from '@/lib/tuningCalculator';
+import { CuratedTune } from '@/data/curatedTunes';
 import { Link } from 'react-router-dom';
 
 export default function Community() {
@@ -32,6 +34,20 @@ export default function Community() {
     // Navigate to home with tune data in state
     navigate('/', { 
       state: { 
+        loadTune: {
+          specs: tune.specs,
+          tuneType: tune.tuneType,
+          carName: tune.carName,
+          tuneSettings: tune.tuneSettings
+        }
+      }
+    });
+  };
+
+  const handleTryFeaturedTune = (tune: CuratedTune) => {
+    // Navigate to home with curated tune data
+    navigate('/', {
+      state: {
         loadTune: {
           specs: tune.specs,
           tuneType: tune.tuneType,
@@ -88,6 +104,13 @@ export default function Community() {
             <SignupIncentiveBanner onSignUp={() => setShowAuthModal(true)} />
           </div>
         )}
+
+        {/* Featured Tunes Section */}
+        <FeaturedTunesSection
+          onTryTune={handleTryFeaturedTune}
+          onAuthRequired={() => setShowAuthModal(true)}
+          isAuthenticated={!!user}
+        />
 
         {/* Filters */}
         <div className="module-block p-4 mb-6">
