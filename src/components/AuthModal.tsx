@@ -54,10 +54,13 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
     setLoading(true);
 
     try {
+      const redirectUrl = `${window.location.origin}/`;
+      
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             display_name: displayName || email.split('@')[0],
           },

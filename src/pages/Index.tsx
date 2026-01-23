@@ -5,23 +5,24 @@ import { TuneTypeSelector } from '@/components/TuneTypeSelector';
 import { CarSpecsForm } from '@/components/CarSpecsForm';
 import { SimpleModeForm } from '@/components/SimpleModeForm';
 import { CarSelector } from '@/components/CarSelector';
-import { ForzaTunePanel } from '@/components/ForzaTunePanel';
+import { BlueprintTunePanel } from '@/components/workspace/BlueprintTunePanel';
 import { SavedTunesManager } from '@/components/SavedTunesManager';
 import { ShopPromoPopup } from '@/components/ShopPromoPopup';
-import { JDMStickerBombBackground } from '@/components/JDMStickerBombBackground';
-import { TuningExpertChat } from '@/components/TuningExpertChat';
+import { ThemeBackground } from '@/components/ThemeBackground';
+import { TuningExpertChat, TuneContext } from '@/components/TuningExpertChat';
 import { TroubleshootingWizard } from '@/components/TroubleshootingWizard';
 import { TemplateSelector } from '@/components/TemplateSelector';
 import { BalanceStiffnessSliders, applyBalanceStiffness } from '@/components/BalanceStiffnessSliders';
 import { TuneCompare } from '@/components/TuneCompare';
+import { AuthModal } from '@/components/AuthModal';
 import { TuneTemplate } from '@/data/tuneTemplates';
 import { Button } from '@/components/ui/button';
 import { CarSpecs, TuneType, calculateTune, UnitSystem, TuneSettings } from '@/lib/tuningCalculator';
 import { parseTuneFromCurrentURL, copyShareURLToClipboard } from '@/lib/tuneShare';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
 import { SavedTune, useSavedTunes } from '@/hooks/useSavedTunes';
-import { quickStartTips } from '@/data/tuningGuide';
-import { Calculator, RotateCcw, ShoppingBag, Zap, Settings, Wrench, Share2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Calculator, RotateCcw, ShoppingBag, Zap, Settings, Wrench, Share2, Scale, CloudOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 const defaultSpecs: CarSpecs = {
@@ -37,7 +38,8 @@ const defaultSpecs: CarSpecs = {
 
 export default function Index() {
   const location = useLocation();
-  const { savedTunes } = useSavedTunes();
+  const { user } = useAuth();
+  const { savedTunes, syncLocalTunesToCloud } = useSavedTunes();
   const [tuneType, setTuneType] = useState<TuneType>('grip');
   const [specs, setSpecs] = useState<CarSpecs>(defaultSpecs);
   const [showResults, setShowResults] = useState(false);
@@ -45,10 +47,12 @@ export default function Index() {
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
   const [isSimpleMode, setIsSimpleMode] = useState(true);
   const [showTroubleshooting, setShowTroubleshooting] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
   const [balance, setBalance] = useState(0);
   const [stiffness, setStiffness] = useState(50);
+  const [manualOverrides, setManualOverrides] = useState<Partial<TuneSettings>>({});
 
-  // Handle car selection from Cars page
   useEffect(() => {
     if (location.state?.selectedCar) {
       const car = location.state.selectedCar as FH5Car;
@@ -60,12 +64,24 @@ export default function Index() {
         driveType: car.driveType
       }));
       toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
-      // Clear state to prevent re-loading on refresh
+      window.history.replaceState({}, document.title);
+    }
+    
+    // Handle loading tune from community page
+    if (location.state?.loadTune) {
+      const { specs: tuneSpecs, tuneType: loadedTuneType, carName: loadedCarName } = location.state.loadTune;
+      setSpecs(tuneSpecs);
+      setTuneType(loadedTuneType);
+      setShowResults(true);
+      setSelectedCar(null);
+      setBalance(0);
+      setStiffness(50);
+      setManualOverrides({});
+      toast.success(`Loaded community tune for ${loadedCarName}`);
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
 
-  // Parse shared tune from URL on mount
   useEffect(() => {
     const sharedTune = parseTuneFromCurrentURL();
     if (sharedTune) {
@@ -73,22 +89,36 @@ export default function Index() {
       setTuneType(sharedTune.tuneType);
       setShowResults(true);
       toast.success('Loaded shared tune!');
-      // Clear URL params
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
-  const tuneSettings = useMemo(() => calculateTune(specs, tuneType), [specs, tuneType]);
+  useEffect(() => {
+    if (user) {
+      syncLocalTunesToCloud();
+    }
+  }, [user, syncLocalTunesToCloud]);
+
+  const tuneSettings = useMemo(() => {
+    const baseTune = calculateTune(specs, tuneType);
+    const { arbFront, arbRear, springsFront, springsRear } = applyBalanceStiffness(
+      baseTune.arbFront, baseTune.arbRear, baseTune.springsFront, baseTune.springsRear, balance, stiffness
+    );
+    return { ...baseTune, arbFront, arbRear, springsFront, springsRear, ...manualOverrides };
+  }, [specs, tuneType, balance, stiffness, manualOverrides]);
+
   const carName = selectedCar ? getCarDisplayName(selectedCar) : 'Custom Car';
+
+  const tuneContext: TuneContext | undefined = showResults ? {
+    carName, tuneType, specs, currentTune: tuneSettings
+  } : undefined;
 
   const handleCarSelect = (car: FH5Car) => {
     setSelectedCar(car);
-    setSpecs({
-      ...specs,
-      weight: car.weight,
-      weightDistribution: car.weightDistribution,
-      driveType: car.driveType
-    });
+    setSpecs({ ...specs, weight: car.weight, weightDistribution: car.weightDistribution, driveType: car.driveType });
+    setBalance(0);
+    setStiffness(50);
+    setManualOverrides({});
     toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
   };
 
@@ -102,6 +132,9 @@ export default function Index() {
     setTuneType('grip');
     setShowResults(false);
     setSelectedCar(null);
+    setBalance(0);
+    setStiffness(50);
+    setManualOverrides({});
   };
 
   const handleLoadTune = (tune: SavedTune) => {
@@ -109,139 +142,183 @@ export default function Index() {
     setTuneType(tune.tuneType);
     setShowResults(true);
     setSelectedCar(null);
+    setBalance(0);
+    setStiffness(50);
+    setManualOverrides({});
   };
 
   const handleShare = async () => {
     const success = await copyShareURLToClipboard({ specs, tuneType, carName });
-    if (success) {
-      toast.success('Share link copied to clipboard!');
-    } else {
-      toast.error('Failed to copy link');
+    if (success) toast.success('Share link copied!');
+    else toast.error('Failed to copy link');
+  };
+
+  const handleApplyAISuggestion = (setting: string, value: number) => {
+    const settingMap: Record<string, keyof TuneSettings> = {
+      'arb front': 'arbFront', 'arb rear': 'arbRear', 'front arb': 'arbFront', 'rear arb': 'arbRear',
+      'springs front': 'springsFront', 'springs rear': 'springsRear',
+    };
+    const key = settingMap[setting.toLowerCase()];
+    if (key) {
+      setManualOverrides(prev => ({ ...prev, [key]: value }));
+      toast.success(`Applied: ${setting} → ${value}`);
     }
   };
-  return <div className="min-h-screen pb-8 md:pb-16 relative overflow-x-hidden">
-      <JDMStickerBombBackground />
+
+  const handleApplyTemplate = (template: TuneTemplate) => {
+    setBalance(template.modifiers.balance);
+    setStiffness(template.modifiers.stiffness);
+    setManualOverrides({});
+    toast.success(`Applied "${template.name}" template`);
+  };
+
+  return (
+    <div className="min-h-screen pb-8 md:pb-16 relative overflow-x-hidden">
+      <ThemeBackground />
       <ShopPromoPopup />
+      <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
+      
       <div className="container max-w-7xl mx-auto px-3 sm:px-4 md:px-6 relative z-10">
-        <Header />
+        <Header onShowAuth={() => setShowAuthModal(true)} />
         
-        {/* Development Help Banner */}
-        <div className="mb-4 md:mb-6 bg-gradient-to-r from-[hsl(var(--racing-yellow)/0.15)] via-[hsl(var(--racing-yellow)/0.1)] to-[hsl(var(--racing-yellow)/0.15)] border border-[hsl(var(--racing-yellow)/0.3)] rounded-lg p-3 md:p-4 text-center">
-          <p className="text-xs sm:text-sm text-[hsl(var(--racing-yellow))] font-medium"> 🛠️WE'D LOVE YOUR HELP DEVELOPING THIS APP! 🛠️<span className="font-display uppercase tracking-wide">We'd love your help developing this app!</span> 🛠️
-          </p>
-          <p className="text-xs text-muted-foreground mt-1 hidden sm:block">
-            Got ideas, found bugs, or want to contribute? Drop a comment on the Reddit post!
-          </p>
-          {/* Desktop: Side by side buttons */}
-          <div className="hidden sm:flex items-center justify-center gap-3 mt-2 md:mt-3">
-            <a href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-xs md:text-sm rounded-md transition-colors">
-              ☕ Support Development
-            </a>
-            <Link to="/shop" className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.8)] text-black font-medium text-xs md:text-sm rounded-md transition-colors shadow-[0_0_15px_hsl(var(--racing-orange)/0.5),0_0_30px_hsl(var(--racing-orange)/0.3)] hover:shadow-[0_0_20px_hsl(var(--racing-orange)/0.7),0_0_40px_hsl(var(--racing-orange)/0.4)] animate-pulse" style={{
-            animationDuration: '2s'
+        {/* Dev Banner */}
+        <div className="mb-4 md:mb-6 p-3 md:p-4 text-center rounded-lg backdrop-blur-sm" 
+          style={{ 
+            background: 'hsl(var(--neon-purple) / 0.15)', 
+            borderLeft: '3px solid hsl(var(--neon-purple))',
+            border: '1px solid hsl(var(--neon-purple) / 0.3)'
           }}>
-              <ShoppingBag className="w-4 h-4" />
-              🔥 Garage Shop
-            </Link>
-          </div>
-          {/* Mobile: Stack vertically */}
-          <div className="flex sm:hidden flex-col items-center gap-2 mt-2">
-            <a href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(var(--racing-yellow)/0.8)] text-black font-medium text-xs rounded-md transition-colors">
-              ☕ Support Development
+          <p className="text-xs sm:text-sm font-sketch" style={{ color: 'hsl(var(--neon-purple))' }}>
+            🛠️ We'd love your help developing this app! 🛠️
+          </p>
+          <div className="flex items-center justify-center gap-3 mt-2">
+            <a href="https://www.paypal.com/invoice/p/#ZGYJ49YV6B3DQRGL" target="_blank" rel="noopener noreferrer" 
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+              style={{ background: 'hsl(var(--neon-purple) / 0.25)', color: 'hsl(var(--neon-purple))', border: '1px solid hsl(var(--neon-purple) / 0.5)' }}>
+              ☕ Support
             </a>
-            <Link to="/shop" className="inline-flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.8)] text-black font-medium text-xs rounded-md transition-colors shadow-[0_0_15px_hsl(var(--racing-orange)/0.5),0_0_30px_hsl(var(--racing-orange)/0.3)] animate-pulse" style={{
-            animationDuration: '2s'
-          }}>
-              <ShoppingBag className="w-3 h-3" />
-              🔥 Garage Shop
+            <Link to="/shop" className="inline-flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium animate-pulse-neon"
+              style={{ background: 'hsl(var(--neon-pink) / 0.2)', color: 'hsl(var(--neon-pink))', border: '1px solid hsl(var(--neon-pink) / 0.4)' }}>
+              <ShoppingBag className="w-3 h-3" /> Garage Shop
             </Link>
           </div>
         </div>
         
         {/* Mode Toggle */}
         <div className="mb-4 flex items-center justify-center gap-2">
-          <Button variant={isSimpleMode ? 'tuneTypeActive' : 'tuneType'} onClick={() => setIsSimpleMode(true)} className="text-xs sm:text-sm">
-            <Zap className="w-4 h-4 mr-1" />
-            Simple Mode
+          <Button onClick={() => setIsSimpleMode(true)} 
+            className={isSimpleMode ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40' : 'bg-card/50 text-muted-foreground border border-border'}>
+            <Zap className="w-4 h-4 mr-1" /> Simple
           </Button>
-          <Button variant={!isSimpleMode ? 'tuneTypeActive' : 'tuneType'} onClick={() => setIsSimpleMode(false)} className="text-xs sm:text-sm">
-            <Settings className="w-4 h-4 mr-1" />
-            Advanced Mode
+          <Button onClick={() => setIsSimpleMode(false)}
+            className={!isSimpleMode ? 'bg-neon-pink/20 text-neon-pink border border-neon-pink/40' : 'bg-card/50 text-muted-foreground border border-border'}>
+            <Settings className="w-4 h-4 mr-1" /> Advanced
           </Button>
         </div>
         
-        {/* Mobile: Stack vertically, Desktop: Side by side */}
+        {/* Main Layout */}
         <div className="flex flex-col lg:grid lg:grid-cols-[minmax(320px,400px)_1fr] gap-4 md:gap-6">
-          {/* Left Panel - Setup */}
+          {/* Left Panel */}
           <div className="space-y-3 md:space-y-4">
-            {/* Tune Type */}
-            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
+            <div className="module-block module-gearing p-3 md:p-4">
               <TuneTypeSelector selected={tuneType} onChange={setTuneType} />
             </div>
             
-            {/* Car Selector - Only in Advanced Mode */}
-            {!isSimpleMode && <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
+            {!isSimpleMode && (
+              <div className="module-block module-aero p-3 md:p-4">
                 <CarSelector onSelect={handleCarSelect} selectedCar={selectedCar} />
-              </div>}
+              </div>
+            )}
             
-            {/* Car Specs */}
-            <div className="bg-[hsl(220,18%,8%)] rounded-lg p-3 md:p-4 border border-[hsl(220,15%,18%)]">
-              <h3 className="font-display text-sm text-[hsl(var(--racing-yellow))] mb-3 md:mb-4 uppercase tracking-wider flex items-center gap-2">
-                {isSimpleMode ? <>
-                    <Zap className="w-4 h-4" />
-                    Quick Setup (HokiHoshi Method)
-                  </> : 'Car Specifications'}
+            <div className="module-block module-tires p-3 md:p-4">
+              <h3 className="font-display text-sm mb-3 uppercase tracking-wider flex items-center gap-2" style={{ color: 'hsl(var(--module-tires))' }}>
+                {isSimpleMode ? <><Zap className="w-4 h-4" /> Quick Setup</> : 'Car Specifications'}
               </h3>
-              {isSimpleMode ? <SimpleModeForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} /> : <CarSpecsForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} />}
+              {isSimpleMode ? (
+                <SimpleModeForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} />
+              ) : (
+                <CarSpecsForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} />
+              )}
             </div>
 
-            {/* Actions */}
+            {showResults && (
+              <div className="module-block module-suspension p-3 md:p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-display text-sm uppercase tracking-wider flex items-center gap-2" style={{ color: 'hsl(var(--module-suspension))' }}>
+                    <Scale className="w-4 h-4" /> Quick Adjust
+                  </h3>
+                  {(balance !== 0 || stiffness !== 50) && (
+                    <Button variant="ghost" size="sm" onClick={() => { setBalance(0); setStiffness(50); }} className="text-xs h-6 px-2">Reset</Button>
+                  )}
+                </div>
+                <BalanceStiffnessSliders balance={balance} stiffness={stiffness} onBalanceChange={setBalance} onStiffnessChange={setStiffness} />
+              </div>
+            )}
+
             <div className="flex gap-2 md:gap-3">
-              <Button onClick={handleCalculate} className="flex-1 bg-[hsl(var(--racing-yellow))] hover:bg-[hsl(45,100%,45%)] text-black font-display uppercase tracking-wider h-10 md:h-12 text-sm md:text-base">
-                <Calculator className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                Calculate Tune
+              <Button onClick={handleCalculate} className="flex-1 h-10 md:h-12 font-display uppercase tracking-wider" 
+                style={{ background: 'hsl(var(--neon-pink))', color: 'white' }}>
+                <Calculator className="w-4 h-4 md:w-5 md:h-5 mr-2" /> Calculate
               </Button>
-              <Button variant="outline" onClick={handleReset} className="h-10 md:h-12 px-3 md:px-4 border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,15%)]">
+              <Button variant="outline" onClick={handleReset} className="h-10 md:h-12 px-3 border-border hover:bg-card">
                 <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
               </Button>
               {showResults && (
-                <Button variant="outline" onClick={handleShare} className="h-10 md:h-12 px-3 md:px-4 border-[hsl(220,15%,25%)] hover:bg-[hsl(220,15%,15%)]" title="Share Tune">
+                <Button variant="outline" onClick={handleShare} className="h-10 md:h-12 px-3 border-border hover:bg-card">
                   <Share2 className="w-4 h-4 md:w-5 md:h-5" />
                 </Button>
               )}
             </div>
 
-            {/* Troubleshooting Toggle */}
-            <Button
-              variant="outline"
-              onClick={() => setShowTroubleshooting(!showTroubleshooting)}
-              className="w-full border-[hsl(var(--racing-orange)/0.5)] text-[hsl(var(--racing-orange))] hover:bg-[hsl(var(--racing-orange)/0.1)]"
-            >
-              <Wrench className="w-4 h-4 mr-2" />
-              {showTroubleshooting ? 'Hide' : 'Fix My Car'} - Troubleshoot Issues
+            {showResults && <TemplateSelector tuneType={tuneType} driveType={specs.driveType} onSelectTemplate={handleApplyTemplate} />}
+            
+            <Button variant="outline" onClick={() => setShowTroubleshooting(!showTroubleshooting)} 
+              className="w-full" style={{ borderColor: 'hsl(var(--module-brakes) / 0.5)', color: 'hsl(var(--module-brakes))' }}>
+              <Wrench className="w-4 h-4 mr-2" /> {showTroubleshooting ? 'Hide' : 'Fix My Car'}
             </Button>
 
-            {/* Troubleshooting Wizard */}
-            {showTroubleshooting && (
-              <TroubleshootingWizard onClose={() => setShowTroubleshooting(false)} />
+            {showTroubleshooting && <TroubleshootingWizard onClose={() => setShowTroubleshooting(false)} />}
+            
+            <SavedTunesManager carName={carName} tuneType={tuneType} specs={specs} onLoad={handleLoadTune} />
+            
+            {savedTunes.length >= 1 && showResults && (
+              <TuneCompare savedTunes={savedTunes} currentTune={{ name: carName, tune: tuneSettings }} unitSystem={unitSystem} />
             )}
             
-            {/* Save/Load */}
-            <SavedTunesManager carName={carName} tuneType={tuneType} specs={specs} onLoad={handleLoadTune} />
+            {!user && savedTunes.length > 0 && (
+              <div className="p-3 text-center rounded-lg backdrop-blur-sm" 
+                style={{ 
+                  background: 'hsl(var(--neon-cyan) / 0.1)',
+                  borderLeft: '3px solid hsl(var(--neon-cyan))',
+                  border: '1px solid hsl(var(--neon-cyan) / 0.25)'
+                }}>
+                <CloudOff className="w-5 h-5 mx-auto mb-2" style={{ color: 'hsl(var(--neon-cyan))' }} />
+                <p className="text-xs text-muted-foreground mb-2">Sign in to sync tunes</p>
+                <Button size="sm" onClick={() => setShowAuthModal(true)} style={{ background: 'hsl(var(--neon-cyan) / 0.25)', color: 'hsl(var(--neon-cyan))', border: '1px solid hsl(var(--neon-cyan) / 0.5)' }}>
+                  Sign In
+                </Button>
+              </div>
+            )}
           </div>
-
-          {/* Right Panel - Tune Results (Forza Style) */}
-          <div className={showResults ? 'animate-fade-in' : 'opacity-30 pointer-events-none'}>
-            <ForzaTunePanel tune={tuneSettings} driveType={specs.driveType} tuneType={tuneType} unitSystem={unitSystem} carName={carName} />
+          
+          {/* Right Panel - Results */}
+          <div>
+            {showResults ? (
+              <BlueprintTunePanel tune={tuneSettings} driveType={specs.driveType} tuneType={tuneType} unitSystem={unitSystem} carName={carName} horsepower={specs.horsepower} />
+            ) : (
+              <div className="module-block p-8 text-center h-full flex flex-col items-center justify-center min-h-[400px]">
+                <div className="w-20 h-20 rounded-full mb-4 flex items-center justify-center" style={{ background: 'hsl(var(--neon-pink) / 0.1)', border: '2px dashed hsl(var(--neon-pink) / 0.3)' }}>
+                  <Calculator className="w-10 h-10" style={{ color: 'hsl(var(--neon-pink) / 0.5)' }} />
+                </div>
+                <h3 className="font-display text-xl mb-2 text-gradient-neon">Ready to Tune</h3>
+                <p className="text-muted-foreground text-sm font-sketch">Enter your car specs and click Calculate</p>
+              </div>
+            )}
           </div>
         </div>
-
-        <footer className="mt-8 md:mt-16 text-center text-muted-foreground text-xs px-4">
-          <p>Based on community tuning guides. Not affiliated with Playground Games.</p>
-        </footer>
         
-        {/* AI Tuning Expert Chat */}
-        <TuningExpertChat />
+        <TuningExpertChat tuneContext={tuneContext} onApplySuggestion={handleApplyAISuggestion} />
       </div>
-    </div>;
+    </div>
+  );
 }

@@ -45,8 +45,12 @@ export type Database = {
         Row: {
           car_name: string
           created_at: string
+          description: string | null
+          downloads_count: number
+          featured: boolean
           id: string
           is_public: boolean
+          likes_count: number
           name: string
           notes: string | null
           parent_tune_id: string | null
@@ -61,8 +65,12 @@ export type Database = {
         Insert: {
           car_name: string
           created_at?: string
+          description?: string | null
+          downloads_count?: number
+          featured?: boolean
           id?: string
           is_public?: boolean
+          likes_count?: number
           name: string
           notes?: string | null
           parent_tune_id?: string | null
@@ -77,8 +85,12 @@ export type Database = {
         Update: {
           car_name?: string
           created_at?: string
+          description?: string | null
+          downloads_count?: number
+          featured?: boolean
           id?: string
           is_public?: boolean
+          likes_count?: number
           name?: string
           notes?: string | null
           parent_tune_id?: string | null
@@ -94,6 +106,35 @@ export type Database = {
           {
             foreignKeyName: "saved_tunes_parent_tune_id_fkey"
             columns: ["parent_tune_id"]
+            isOneToOne: false
+            referencedRelation: "saved_tunes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tune_downloads: {
+        Row: {
+          downloaded_at: string
+          id: string
+          tune_id: string
+          user_id: string | null
+        }
+        Insert: {
+          downloaded_at?: string
+          id?: string
+          tune_id: string
+          user_id?: string | null
+        }
+        Update: {
+          downloaded_at?: string
+          id?: string
+          tune_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tune_downloads_tune_id_fkey"
+            columns: ["tune_id"]
             isOneToOne: false
             referencedRelation: "saved_tunes"
             referencedColumns: ["id"]
@@ -131,6 +172,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "tune_history_tune_id_fkey"
+            columns: ["tune_id"]
+            isOneToOne: false
+            referencedRelation: "saved_tunes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tune_likes: {
+        Row: {
+          created_at: string
+          id: string
+          tune_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tune_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tune_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tune_likes_tune_id_fkey"
             columns: ["tune_id"]
             isOneToOne: false
             referencedRelation: "saved_tunes"
