@@ -3,11 +3,9 @@ import { TuneSettings, DriveType, TuneType, tuneTypeDescriptions, UnitSystem, co
 import { TuningModule, ModuleCategory } from './TuningModule';
 import { BlueprintSlider } from './BlueprintSlider';
 import { FrontRearValue, CompactValue } from './EngineeringTable';
-import { ModuleDropZone } from './ModuleDropZone';
 import { GearingVisualizer } from './GearingVisualizer';
-import { ModuleLayoutProvider, useModuleLayout } from '@/contexts/ModuleLayoutContext';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Gauge, Settings2, Wind, Disc, Cog, Wrench, Compass, Activity, RotateCcw, BarChart3 } from 'lucide-react';
+import { Copy, Check, Gauge, Settings2, Wind, Disc, Cog, Wrench, Compass, Activity, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -21,11 +19,7 @@ interface BlueprintTunePanelProps {
 }
 
 export const BlueprintTunePanel = (props: BlueprintTunePanelProps) => {
-  return (
-    <ModuleLayoutProvider>
-      <BlueprintTunePanelInner {...props} />
-    </ModuleLayoutProvider>
-  );
+  return <BlueprintTunePanelInner {...props} />;
 };
 
 interface ModuleConfig {
@@ -45,24 +39,37 @@ const BlueprintTunePanelInner = ({
   horsepower = 400 
 }: BlueprintTunePanelProps) => {
   const [copied, setCopied] = useState(false);
-  const { moduleOrder, resetLayout, draggedId } = useModuleLayout();
+  
+  // Fixed module order for responsive layout
+  const moduleOrder = [
+    'tires',
+    'gearing',
+    'gearingVisualizer',
+    'alignment',
+    'antiroll',
+    'springs',
+    'damping',
+    'aero',
+    'brakes',
+    'differential',
+  ];
   
   const tuneInfo = tuneTypeDescriptions[tuneType];
   const displayTune = convertTuneToUnits(tune, unitSystem);
   const units = getUnitLabels(unitSystem);
 
-  // Module configurations
+  // Module configurations with improved responsive layouts
   const moduleConfigs: Record<string, ModuleConfig> = {
     tires: { id: 'tires', title: 'Tires', category: 'tires', icon: <Gauge className="w-4 h-4" /> },
     gearing: { id: 'gearing', title: 'Gearing', category: 'gearing', icon: <Cog className="w-4 h-4" /> },
-    gearingVisualizer: { id: 'gearingVisualizer', title: 'Gearing Analysis', category: 'gearing', icon: <BarChart3 className="w-4 h-4" />, className: 'md:col-span-2' },
+    gearingVisualizer: { id: 'gearingVisualizer', title: 'Gearing Analysis', category: 'gearing', icon: <BarChart3 className="w-4 h-4" />, className: 'col-span-1 lg:col-span-2' },
     alignment: { id: 'alignment', title: 'Alignment', category: 'alignment', icon: <Compass className="w-4 h-4" /> },
     antiroll: { id: 'antiroll', title: 'Anti-Roll Bars', category: 'suspension', icon: <Settings2 className="w-4 h-4" /> },
     springs: { id: 'springs', title: 'Springs', category: 'suspension', icon: <Activity className="w-4 h-4" /> },
     damping: { id: 'damping', title: 'Damping', category: 'damping', icon: <Wrench className="w-4 h-4" /> },
     aero: { id: 'aero', title: 'Aero', category: 'aero', icon: <Wind className="w-4 h-4" /> },
     brakes: { id: 'brakes', title: 'Brakes', category: 'brakes', icon: <Disc className="w-4 h-4" /> },
-    differential: { id: 'differential', title: 'Differential', category: 'differential', icon: <Settings2 className="w-4 h-4" />, className: 'md:col-span-2' },
+    differential: { id: 'differential', title: 'Differential', category: 'differential', icon: <Settings2 className="w-4 h-4" />, className: 'col-span-1 lg:col-span-2' },
   };
 
   // Render module content based on ID
@@ -337,11 +344,6 @@ const BlueprintTunePanelInner = ({
     }
   };
 
-  // Check if layout has been customized
-  const isDefaultLayout = JSON.stringify(moduleOrder) === JSON.stringify([
-    'tires', 'gearing', 'gearingVisualizer', 'alignment', 'antiroll', 'springs', 'damping', 'aero', 'brakes', 'differential'
-  ]);
-
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -375,16 +377,6 @@ const BlueprintTunePanelInner = ({
         </div>
         
         <div className="flex items-center gap-2">
-          {!isDefaultLayout && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetLayout}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </Button>
-          )}
           <Button
             onClick={handleCopyAll}
             className={cn(
@@ -409,24 +401,14 @@ const BlueprintTunePanelInner = ({
         </div>
       </div>
 
-      {/* Drag hint when actively dragging */}
-      {draggedId && (
-        <div className="text-center text-xs text-muted-foreground font-sketch animate-pulse">
-          ✨ Drag modules to rearrange • Layout is auto-saved
-        </div>
-      )}
-
-      {/* Modular Grid - Ordered by moduleOrder */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {moduleOrder.map((moduleId, index) => {
+      {/* Modular Grid - Responsive layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+        {moduleOrder.map((moduleId) => {
           const config = moduleConfigs[moduleId];
           if (!config) return null;
 
           return (
             <div key={moduleId} className={config.className}>
-              {/* Drop zone before first item */}
-              {index === 0 && <ModuleDropZone targetModuleId={moduleId} position="before" />}
-              
               <TuningModule
                 id={config.id}
                 title={config.title}
@@ -435,30 +417,9 @@ const BlueprintTunePanelInner = ({
               >
                 {renderModuleContent(moduleId)}
               </TuningModule>
-              
-              {/* Drop zone after each item */}
-              <ModuleDropZone targetModuleId={moduleId} position="after" />
             </div>
           );
         })}
-      </div>
-
-      {/* Tune Tips */}
-      <div 
-        className="module-block p-4"
-        style={{ borderLeft: '3px solid hsl(var(--neon-cyan))' }}
-      >
-        <h3 className="font-sketch text-lg text-neon-cyan mb-2">
-          {tuneInfo.title} Tune Tips
-        </h3>
-        <p className="text-sm text-muted-foreground font-body">
-          {tuneType === 'grip' && 'Focus on maximizing mechanical grip through balanced suspension and optimal tire temperatures. Keep ARBs relatively stiff for quick transitions.'}
-          {tuneType === 'drift' && 'Maximize rear wheel slip while maintaining control. Softer front suspension and stiffer rear helps initiate and hold angles.'}
-          {tuneType === 'drag' && 'All about traction and straight-line stability. Lower rear for grip, minimize rolling resistance.'}
-          {tuneType === 'offroad' && 'Prioritize suspension travel and stability over bumpy terrain. Softer settings overall with higher ride height.'}
-          {tuneType === 'rally' && 'Balance between grip and controlled slides. Medium-soft suspension for absorbing impacts while maintaining cornering ability.'}
-          {tuneType === 'street' && 'Versatile tune for mixed conditions. Balanced settings that work on various surfaces and driving styles.'}
-        </p>
       </div>
     </div>
   );

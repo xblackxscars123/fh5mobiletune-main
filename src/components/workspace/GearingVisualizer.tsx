@@ -354,7 +354,7 @@ export const GearingVisualizer = ({
           <TrendingUp className="w-4 h-4" />
           Acceleration vs Top Speed Tradeoff
         </h4>
-        <div className="h-[180px]">
+        <div className="h-[240px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={tradeoffData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
