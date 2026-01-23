@@ -1,9 +1,17 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { MessageSquare, Send, X, Loader2, Bot, User, Minimize2, Maximize2, Sparkles, AlertCircle } from 'lucide-react';
+import { MessageSquare, Send, X, Loader2, Bot, User, Minimize2, Maximize2, Sparkles, AlertCircle, TrendingUp, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { CarSpecs, TuneType, TuneSettings } from '@/lib/tuningCalculator';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  parseSuggestionsWithImpact,
+  calculateTuneImpact,
+  getTuneTypeRecommendations,
+  TuningSuggestion,
+  TuneProfile,
+  PerformanceImpact,
+} from '@/lib/tuning-utils';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
@@ -102,71 +110,7 @@ async function streamChat({
   }
 }
 
-// Parse AI response for clickable suggestions
-function parseSuggestions(content: string): Array<{ setting: string; value: number; text: string }> {
-  const suggestions: Array<{ setting: string; value: number; text: string }> = [];
-  
-  // Match patterns like "ARB Front to 28" or "Tire Pressure Rear to 30"
-  const patterns = [
-    /(?:set|try setting|adjust|change)\s+(?:the\s+)?([A-Za-z\s]+?)\s+to\s+(\d+(?:\.\d+)?)/gi,
-    /([A-Za-z\s]+?)\s+(?:to|at)\s+(\d+(?:\.\d+)?)\s*(?:PSI|%|°|degrees)?/gi,
-  ];
-  
-  const settingMap: Record<string, string> = {
-    'arb front': 'arbFront',
-    'arb rear': 'arbRear',
-    'anti-roll bar front': 'arbFront',
-    'anti-roll bar rear': 'arbRear',
-    'tire pressure front': 'tirePressureFront',
-    'tire pressure rear': 'tirePressureRear',
-    'front tire pressure': 'tirePressureFront',
-    'rear tire pressure': 'tirePressureRear',
-    'springs front': 'springsFront',
-    'springs rear': 'springsRear',
-    'front springs': 'springsFront',
-    'rear springs': 'springsRear',
-    'camber front': 'camberFront',
-    'camber rear': 'camberRear',
-    'front camber': 'camberFront',
-    'rear camber': 'camberRear',
-    'toe front': 'toeFront',
-    'toe rear': 'toeRear',
-    'caster': 'caster',
-    'rebound front': 'reboundFront',
-    'rebound rear': 'reboundRear',
-    'bump front': 'bumpFront',
-    'bump rear': 'bumpRear',
-    'brake pressure': 'brakePressure',
-    'brake balance': 'brakeBalance',
-    'diff accel': 'diffAccelRear',
-    'diff decel': 'diffDecelRear',
-    'final drive': 'finalDrive',
-    'ride height front': 'rideHeightFront',
-    'ride height rear': 'rideHeightRear',
-  };
-  
-  for (const pattern of patterns) {
-    let match;
-    while ((match = pattern.exec(content)) !== null) {
-      const settingText = match[1].toLowerCase().trim();
-      const value = parseFloat(match[2]);
-      
-      const settingKey = settingMap[settingText];
-      if (settingKey && !isNaN(value)) {
-        // Avoid duplicates
-        if (!suggestions.find(s => s.setting === settingKey && s.value === value)) {
-          suggestions.push({
-            setting: settingKey,
-            value,
-            text: `${match[1].trim()}: ${value}`,
-          });
-        }
-      }
-    }
-  }
-  
-  return suggestions;
-}
+
 
 export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExpertChatProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -176,6 +120,10 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [tuneProfiles, setTuneProfiles] = useState<TuneProfile[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
+  const [showProfiles, setShowProfiles] = useState(false);
+  const [lastSuggestions, setLastSuggestions] = useState<TuningSuggestion[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const assistantContentRef = useRef('');
@@ -271,6 +219,51 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
     });
   }, []);
 
+  // Load tune profiles from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tune-profiles');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setTuneProfiles(parsed);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load tune profiles:', e);
+    }
+  }, []);
+
+  const saveTuneProfile = useCallback((name: string, notes?: string) => {
+    if (!tuneContext?.currentTune || !tuneContext?.specs) {
+      toast.error('No tune to save');
+      return;
+    }
+
+    const profile: TuneProfile = {
+      id: crypto.randomUUID?.() || Date.now().toString(),
+      name,
+      carName: tuneContext.carName || 'Unknown',
+      tuneType: tuneContext.tuneType || 'grip',
+      settings: tuneContext.currentTune,
+      performance: calculateTuneImpact(tuneContext.currentTune, getTuneTypeRecommendations(tuneContext.tuneType || 'grip') as TuneSettings, tuneContext.specs),
+      createdAt: new Date(),
+      notes: notes || '',
+    };
+
+    const updated = [profile, ...tuneProfiles].slice(0, 10);
+    setTuneProfiles(updated);
+    localStorage.setItem('tune-profiles', JSON.stringify(updated));
+    toast.success(`Saved tune: ${name}`);
+  }, [tuneContext]);
+
+  const deleteProfile = useCallback((id: string) => {
+    const updated = tuneProfiles.filter(p => p.id !== id);
+    setTuneProfiles(updated);
+    localStorage.setItem('tune-profiles', JSON.stringify(updated));
+    toast.success('Profile deleted');
+  }, [tuneProfiles]);
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -293,7 +286,18 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
       messages: [...messages, userMessage],
       tuneContext,
       onDelta: updateAssistant,
-      onDone: () => setIsLoading(false),
+      onDone: () => {
+        setIsLoading(false);
+        // Parse suggestions from the assistant response
+        if (tuneContext?.currentTune && tuneContext?.specs) {
+          const suggestions = parseSuggestionsWithImpact(
+            assistantContentRef.current,
+            tuneContext.specs,
+            tuneContext.currentTune
+          );
+          setLastSuggestions(suggestions);
+        }
+      },
       onError: (errorMsg) => {
         setIsLoading(false);
         setError(errorMsg);
@@ -458,17 +462,69 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                     </div>
                     
-                    {/* Clickable suggestions for assistant messages */}
-                    {msg.role === 'assistant' && onApplySuggestion && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {parseSuggestions(msg.content).slice(0, 3).map((suggestion, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => handleApplySuggestion(suggestion.setting, suggestion.value)}
-                            className="text-[10px] px-2 py-0.5 rounded bg-[hsl(var(--racing-cyan)/0.2)] text-[hsl(var(--racing-cyan))] hover:bg-[hsl(var(--racing-cyan)/0.3)] transition-colors border border-[hsl(var(--racing-cyan)/0.3)]"
-                          >
-                            Apply: {suggestion.text}
-                          </button>
+                    {/* Clickable suggestions for last assistant message with performance impact */}
+                    {msg.role === 'assistant' && onApplySuggestion && i === messages.length - 1 && lastSuggestions.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {lastSuggestions.slice(0, 3).map((suggestion, idx) => (
+                          <div key={idx} className="text-[10px] space-y-1 p-2 bg-[hsl(220,15%,12%)] rounded border border-[hsl(220,15%,20%)]">
+                            <div className="flex items-center justify-between">
+                              <button
+                                onClick={() => handleApplySuggestion(suggestion.setting, suggestion.value)}
+                                className="flex-1 text-left px-2 py-1 rounded bg-[hsl(var(--racing-cyan)/0.2)] text-[hsl(var(--racing-cyan))] hover:bg-[hsl(var(--racing-cyan)/0.3)] transition-colors border border-[hsl(var(--racing-cyan)/0.3)]"
+                              >
+                                Apply: {suggestion.setting} → {suggestion.value}
+                              </button>
+                              <span className="text-[8px] text-muted-foreground ml-1 px-1 py-0.5 bg-white/5 rounded">
+                                {suggestion.confidence}%
+                              </span>
+                            </div>
+                            
+                            <p className="text-[9px] text-muted-foreground">{suggestion.reason}</p>
+
+                            {/* Performance Impact */}
+                            <div className="grid grid-cols-2 gap-1 mt-1">
+                              <div className="flex items-center justify-between text-[8px]">
+                                <span className="text-muted-foreground">Grip:</span>
+                                <span className={suggestion.impact.grip > 0 ? 'text-green-400' : suggestion.impact.grip < 0 ? 'text-red-400' : 'text-gray-400'}>
+                                  {suggestion.impact.grip > 0 ? '+' : ''}{suggestion.impact.grip}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-[8px]">
+                                <span className="text-muted-foreground">Stability:</span>
+                                <span className={suggestion.impact.stability > 0 ? 'text-green-400' : suggestion.impact.stability < 0 ? 'text-red-400' : 'text-gray-400'}>
+                                  {suggestion.impact.stability > 0 ? '+' : ''}{suggestion.impact.stability}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-[8px]">
+                                <span className="text-muted-foreground">Responsive:</span>
+                                <span className={suggestion.impact.responsiveness > 0 ? 'text-green-400' : suggestion.impact.responsiveness < 0 ? 'text-red-400' : 'text-gray-400'}>
+                                  {suggestion.impact.responsiveness > 0 ? '+' : ''}{suggestion.impact.responsiveness}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-[8px]">
+                                <span className="text-muted-foreground">Est. PI:</span>
+                                <span className="text-[hsl(var(--racing-yellow))]">{suggestion.impact.estimatedPI}</span>
+                              </div>
+                            </div>
+
+                            {/* Warnings */}
+                            {suggestion.impact.warnings.length > 0 && (
+                              <div className="mt-1 p-1 bg-orange-500/10 rounded border border-orange-500/30 space-y-0.5">
+                                {suggestion.impact.warnings.map((w, widx) => (
+                                  <p key={widx} className="text-[8px] text-orange-300">⚠️ {w}</p>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Improvements */}
+                            {suggestion.impact.improvements.length > 0 && (
+                              <div className="mt-1 p-1 bg-green-500/10 rounded border border-green-500/30 space-y-0.5">
+                                {suggestion.impact.improvements.map((imp, iidx) => (
+                                  <p key={iidx} className="text-[8px] text-green-300">✓ {imp}</p>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     )}
@@ -498,13 +554,44 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
             {/* Input */}
             <div className="border-t border-[hsl(220,15%,20%)] p-3 space-y-2">
               {messages.length > 0 && (
-                <button
-                  onClick={clearHistory}
-                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Clear history
-                </button>
+                <div className="flex items-center justify-between text-[10px]">
+                  <button
+                    onClick={clearHistory}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Clear history
+                  </button>
+                  <button
+                    onClick={() => setShowProfiles(!showProfiles)}
+                    className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                  >
+                    <TrendingUp className="w-3 h-3" />
+                    Profiles {tuneProfiles.length > 0 && `(${tuneProfiles.length})`}
+                  </button>
+                </div>
               )}
+
+              {/* Profiles List */}
+              {showProfiles && tuneProfiles.length > 0 && (
+                <div className="max-h-[120px] overflow-y-auto space-y-1 p-2 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,18%)]">
+                  {tuneProfiles.map((profile) => (
+                    <div key={profile.id} className="flex items-center justify-between text-[9px] p-1 bg-[hsl(220,15%,15%)] rounded">
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground">{profile.name}</p>
+                        <p className="text-muted-foreground text-[8px]">{profile.carName} • {profile.tuneType}</p>
+                      </div>
+                      <button
+                        onClick={() => deleteProfile(profile.id)}
+                        className="ml-1 p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                        title="Delete profile"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <input
                   ref={inputRef}
@@ -516,6 +603,19 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
                   className="flex-1 bg-[hsl(220,15%,12%)] border border-[hsl(220,15%,20%)] rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 disabled:opacity-50"
                   disabled={isLoading || isAuthenticated === false}
                 />
+                <Button
+                  onClick={() => {
+                    const name = prompt('Profile name:', tuneContext?.carName);
+                    if (name) saveTuneProfile(name);
+                  }}
+                  disabled={!tuneContext?.currentTune || isAuthenticated === false}
+                  variant="ghost"
+                  size="sm"
+                  title="Save current tune as profile"
+                  className="hover:bg-primary/20"
+                >
+                  <Save className="w-4 h-4" />
+                </Button>
                 <Button
                   onClick={handleSend}
                   disabled={!input.trim() || isLoading || isAuthenticated === false}
