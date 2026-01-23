@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { MessageSquare, Send, X, Loader2, Bot, User, Minimize2, Maximize2, Sparkles, LogIn } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { MessageSquare, Send, X, Loader2, Bot, User, Minimize2, Maximize2, Sparkles, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { CarSpecs, TuneType, TuneSettings } from '@/lib/tuningCalculator';
@@ -20,6 +20,8 @@ interface TuningExpertChatProps {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tuning-expert`;
+const CHAT_HISTORY_KEY = 'tuning-chat-history';
+const MAX_MESSAGES = 100;
 
 async function streamChat({
   messages,
@@ -172,8 +174,56 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const assistantContentRef = useRef('');
+
+  // Load messages from localStorage on mount
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      try {
+        const saved = localStorage.getItem(CHAT_HISTORY_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setMessages(parsed.slice(-MAX_MESSAGES));
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load chat history:', e);
+      }
+    };
+
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+
+    loadChatHistory();
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      try {
+        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+      } catch (e) {
+        console.error('Failed to save chat history:', e);
+      }
+    }
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -191,50 +241,63 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
 
   // Quick queries based on tune type
   const quickQueries = useMemo(() => {
+    if (!tuneContext?.carName) {
+      return ['Why is my car understeering?', 'Help me reduce oversteer', 'Review tune basics'];
+    }
+
     const base = ['Why is my car understeering?', 'Help me reduce oversteer'];
     
     if (tuneContext?.tuneType === 'drift') {
-      return ['How do I hold longer drifts?', 'Improve drift initiation', 'More angle tips'];
+      return [`Optimize ${tuneContext.carName} for drifting`, 'How do I hold longer drifts?', 'Improve drift initiation'];
     } else if (tuneContext?.tuneType === 'drag') {
-      return ['Better launch setup', 'Reduce wheelspin', 'Top speed vs acceleration'];
+      return [`Optimize ${tuneContext.carName} for drag`, 'Better launch setup', 'Reduce wheelspin'];
     } else if (tuneContext?.tuneType === 'rally' || tuneContext?.tuneType === 'offroad') {
-      return ['Handle jumps better', 'Improve loose surface grip', 'Reduce bouncing'];
+      return [`Optimize ${tuneContext.carName} for rally`, 'Handle jumps better', 'Improve loose surface grip'];
     }
     
-    return [...base, 'Review my current tune'];
-  }, [tuneContext?.tuneType]);
+    return [...base, `Review my ${tuneContext.carName} tune`];
+  }, [tuneContext?.carName, tuneContext?.tuneType]);
+
+  const updateAssistant = useCallback((chunk: string) => {
+    assistantContentRef.current += chunk;
+    setMessages(prev => {
+      const last = prev[prev.length - 1];
+      if (last?.role === 'assistant') {
+        return prev.map((m, i) => 
+          i === prev.length - 1 ? { ...m, content: assistantContentRef.current } : m
+        );
+      }
+      return [...prev, { role: 'assistant', content: assistantContentRef.current }];
+    });
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    // Check authentication
+    if (!isAuthenticated) {
+      setError('Please sign in to use the AI tuning expert');
+      toast.error('Please sign in to continue');
+      return;
+    }
+
+    setError(null);
     const userMessage: Message = { role: 'user', content: input.trim() };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
-    let assistantContent = '';
-    
-    const updateAssistant = (chunk: string) => {
-      assistantContent += chunk;
-      setMessages(prev => {
-        const last = prev[prev.length - 1];
-        if (last?.role === 'assistant') {
-          return prev.map((m, i) => 
-            i === prev.length - 1 ? { ...m, content: assistantContent } : m
-          );
-        }
-        return [...prev, { role: 'assistant', content: assistantContent }];
-      });
-    };
+    assistantContentRef.current = '';
 
     await streamChat({
       messages: [...messages, userMessage],
       tuneContext,
       onDelta: updateAssistant,
       onDone: () => setIsLoading(false),
-      onError: (error) => {
+      onError: (errorMsg) => {
         setIsLoading(false);
-        toast.error(error);
+        setError(errorMsg);
+        toast.error(errorMsg);
       },
     });
   };
@@ -251,6 +314,12 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
       onApplySuggestion(setting, value);
       toast.success(`Applied: ${setting} → ${value}`);
     }
+  };
+
+  const clearHistory = () => {
+    setMessages([]);
+    localStorage.removeItem(CHAT_HISTORY_KEY);
+    toast.success('Chat history cleared');
   };
 
   if (!isOpen) {
@@ -314,13 +383,30 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
 
         {!isMinimized && (
           <>
-            {/* Context Badge */}
+            {/* Auth/Context Badge */}
+            {isAuthenticated === false && (
+              <div className="px-3 py-2 bg-red-500/10 border-b border-red-500/30 flex items-center gap-2">
+                <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                <span className="text-[10px] text-red-300">
+                  Sign in to use the AI tuning expert
+                </span>
+              </div>
+            )}
+            
             {tuneContext?.carName && (
               <div className="px-3 py-1.5 bg-[hsl(220,15%,10%)] border-b border-[hsl(220,15%,18%)] flex items-center gap-2">
                 <Sparkles className="w-3 h-3 text-[hsl(var(--racing-yellow))]" />
                 <span className="text-[10px] text-[hsl(var(--racing-yellow))]">
                   AI knows your {tuneContext.tuneType} tune for {tuneContext.carName}
                 </span>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="px-3 py-2 bg-red-500/10 border-b border-red-500/30 flex items-center gap-2">
+                <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                <span className="text-[10px] text-red-300">{error}</span>
               </div>
             )}
 
@@ -338,7 +424,10 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
                     {quickQueries.map((q) => (
                       <button
                         key={q}
-                        onClick={() => setInput(q)}
+                        onClick={() => {
+                          setInput(q);
+                          setTimeout(() => inputRef.current?.focus(), 0);
+                        }}
                         className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/30"
                       >
                         {q}
@@ -407,7 +496,15 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
             </div>
 
             {/* Input */}
-            <div className="border-t border-[hsl(220,15%,20%)] p-3">
+            <div className="border-t border-[hsl(220,15%,20%)] p-3 space-y-2">
+              {messages.length > 0 && (
+                <button
+                  onClick={clearHistory}
+                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Clear history
+                </button>
+              )}
               <div className="flex gap-2">
                 <input
                   ref={inputRef}
@@ -415,13 +512,13 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={tuneContext?.carName ? `Ask about your ${tuneContext.tuneType} tune...` : "Ask about tuning..."}
-                  className="flex-1 bg-[hsl(220,15%,12%)] border border-[hsl(220,15%,20%)] rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                  disabled={isLoading}
+                  placeholder={isAuthenticated === false ? "Sign in to chat..." : tuneContext?.carName ? `Ask about your ${tuneContext.tuneType} tune...` : "Ask about tuning..."}
+                  className="flex-1 bg-[hsl(220,15%,12%)] border border-[hsl(220,15%,20%)] rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 disabled:opacity-50"
+                  disabled={isLoading || isAuthenticated === false}
                 />
                 <Button
                   onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
+                  disabled={!input.trim() || isLoading || isAuthenticated === false}
                   className="bg-primary hover:bg-primary/80 text-black px-3"
                 >
                   {isLoading ? (
