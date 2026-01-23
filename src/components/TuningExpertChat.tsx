@@ -618,6 +618,42 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              {/* Tuning Tips Section */}
+              {showTips && tuneContext?.tuneType && (
+                <div className="bg-[hsl(220,15%,10%)] border border-[hsl(var(--racing-yellow)/0.3)] rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-semibold text-[hsl(var(--racing-yellow))] flex items-center gap-1">
+                    <Sparkles className="w-4 h-4" />
+                    FH5 Tuning Tips - {tuneContext.tuneType.toUpperCase()}
+                  </p>
+                  <div className="text-[9px] space-y-1">
+                    {getTuningTips(tuneContext.tuneType).map((tip, idx) => (
+                      <p key={idx} className="text-muted-foreground leading-relaxed">
+                        {tip}
+                      </p>
+                    ))}
+                  </div>
+                  {tuneContext.currentTune && (
+                    <div className="mt-3 pt-3 border-t border-[hsl(220,15%,18%)] space-y-1">
+                      <p className="text-[9px] font-semibold text-cyan-400">Quick Adjustments to Try:</p>
+                      {['grip', 'speed', 'stability', 'drift'].slice(0, 2).map((target) => (
+                        <div key={target} className="text-[8px] text-muted-foreground">
+                          <span className="capitalize font-semibold text-cyan-300">{target}:</span>
+                          {getQuickAdjustments(tuneContext.currentTune, target as any).length > 0 ? (
+                            getQuickAdjustments(tuneContext.currentTune, target as any).map((adj, aidx) => (
+                              <p key={aidx} className="ml-2">
+                                {adj.setting}: {adj.adjustment > 0 ? '+' : ''}{adj.adjustment} ({adj.reason})
+                              </p>
+                            ))
+                          ) : (
+                            <p className="ml-2 text-muted-foreground/70">Already optimized</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {messages.length === 0 && (
                 <div className="text-center py-6 px-4">
                   <Bot className="w-10 h-10 mx-auto text-primary/60 mb-3" />
