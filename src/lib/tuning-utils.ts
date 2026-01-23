@@ -462,3 +462,84 @@ export function getTuneTypeRecommendations(tuneType: TuneType): Partial<TuneSett
 
   return recommendations[tuneType] || {};
 }
+
+// FH5 Physics-Based Tuning Tips
+export function getTuningTips(tuneType: TuneType, specs?: CarSpecs): string[] {
+  const baseTips = [
+    '🎯 Tire pressure sweet spot: 31.5 PSI optimal for FH5 physics',
+    '⚖️ ARB balance affects understeer/oversteer - adjust gradually',
+    '🔧 Spring stiffness impacts weight transfer and cornering stability',
+    '🛞 Camber -1.5° to -2° gives best grip in FH5',
+    '💨 Final drive ratio heavily impacts acceleration curve shape',
+    '⚡ Differential settings critical for launch traction',
+    '🏁 Brake balance: rear 48-52% prevents lockup in FH5',
+  ];
+
+  const typeTips: Record<string, string[]> = {
+    grip: [
+      '🎯 Maximize downforce at high speeds (60+ mph)',
+      '⚖️ Neutral to slight understeer setup for safety',
+      '🔧 Stiffer springs improve mid-corner stability',
+      '💪 Reduce tire slip ratio with aggressive AWD diff settings',
+      '📊 Target 0.85G+ lateral grip at 60 mph',
+    ],
+    drift: [
+      '🌪️ Increase camber front (-2.5°) for wall scrape potential',
+      '⚖️ Oversteer bias essential - lower rear ARB significantly',
+      '🔧 Soft front springs allow weight transfer for initiation',
+      '💨 High final drive for continuous power delivery in drift',
+      '🎪 Front + Rear anti-roll bar difference key to drift feel',
+    ],
+    drag: [
+      '🚀 Reduce final drive for maximum top speed in straights',
+      '⚡ High differential lock rear (80-100%) prevents wheelspin',
+      '🔧 Launch control via suspension tuning not direct PI setting',
+      '📈 Front springs soft, rear very stiff for weight transfer',
+      '🏁 Gearing must maximize power delivery in low RPM',
+    ],
+    rally: [
+      '🏔️ Increase ride height 1-2 notches for ground clearance',
+      '🌍 Loose surface grip lower - lower ARB values help feel',
+      '🔧 Softer springs absorb bumps, stiffer springs improve grip',
+      '⚡ Differential lock rear high (70%+) for traction on gravel',
+      '🛞 All-terrain tires or rally tires recommended for FH5',
+    ],
+    offroad: [
+      '🏜️ Max ride height for obstacle clearance',
+      '🌳 Very low spring rates for suspension articulation',
+      '⚖️ Higher ARB reduces body roll on uneven terrain',
+      '🔧 Soft dampers help tires maintain contact',
+      '⚡ Limited slip diff rear prevents spinning one wheel',
+    ],
+    street: [
+      '🛣️ Balanced setup for road feel and responsiveness',
+      '⚖️ Moderate ARB values prevent harshness',
+      '🔧 Stock-like spring rates for comfortable ride',
+      '🎯 Mild downforce for high-speed stability',
+      '💨 Moderate tire pressure for daily driving',
+    ],
+  };
+
+  return [...baseTips, ...(typeTips[tuneType] || [])];
+}
+
+// Generate quick adjustment suggestions based on current tune
+export function getQuickAdjustments(tune: TuneSettings, target: 'grip' | 'speed' | 'stability' | 'drift'): Array<{setting: string, adjustment: number, reason: string}> {
+  const adjustments = [];
+
+  if (target === 'grip') {
+    if (tune.tirePressureFront < 31) adjustments.push({setting: 'tirePressureFront', adjustment: 0.5, reason: 'Increase to optimal 31.5 PSI'});
+    if (tune.camberFront > -1.2) adjustments.push({setting: 'camberFront', adjustment: -0.3, reason: 'More camber = more grip'});
+    if (tune.arbFront > 30) adjustments.push({setting: 'arbFront', adjustment: -5, reason: 'Softer ARB reduces understeer'});
+  } else if (target === 'speed') {
+    if (tune.finalDrive > 3.5) adjustments.push({setting: 'finalDrive', adjustment: -0.3, reason: 'Lower final drive increases top speed'});
+  } else if (target === 'stability') {
+    if (tune.springsFront < 16) adjustments.push({setting: 'springsFront', adjustment: 2, reason: 'Stiffer springs improve stability'});
+    if (Math.abs(tune.arbFront - tune.arbRear) > 20) adjustments.push({setting: 'arbFront', adjustment: 5, reason: 'Balance front/rear ARB'});
+  } else if (target === 'drift') {
+    if (tune.camberFront > -2) adjustments.push({setting: 'camberFront', adjustment: -0.5, reason: 'More camber for wall scrapes'});
+    if (tune.arbRear > tune.arbFront - 10) adjustments.push({setting: 'arbRear', adjustment: -8, reason: 'Much lower rear ARB for oversteer'});
+  }
+
+  return adjustments;
+}

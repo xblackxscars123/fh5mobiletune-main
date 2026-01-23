@@ -8,6 +8,8 @@ import {
   parseSuggestionsWithImpact,
   calculateTuneImpact,
   getTuneTypeRecommendations,
+  getTuningTips,
+  getQuickAdjustments,
   TuningSuggestion,
   TuneProfile,
   PerformanceImpact,
@@ -137,6 +139,7 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
   const [compareProfile1, setCompareProfile1] = useState<TuneProfile | null>(null);
   const [compareProfile2, setCompareProfile2] = useState<TuneProfile | null>(null);
   const [comparison, setComparison] = useState<any>(null);
+  const [showTips, setShowTips] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const assistantContentRef = useRef('');
@@ -405,6 +408,15 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 hover:bg-white/10"
+              onClick={() => setShowTips(!showTips)}
+              title="Show tuning tips"
+            >
+              <Sparkles className="w-4 h-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
