@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { MessageSquare, Send, X, Loader2, Bot, User, Minimize2, Maximize2, Sparkles, AlertCircle, TrendingUp, Save, Trash2 } from 'lucide-react';
+import { MessageSquare, Send, X, Loader2, Bot, User, Minimize2, Maximize2, Sparkles, AlertCircle, TrendingUp, Save, Trash2, Gauge, Zap, Wind } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { CarSpecs, TuneType, TuneSettings } from '@/lib/tuningCalculator';
@@ -12,6 +12,13 @@ import {
   TuneProfile,
   PerformanceImpact,
 } from '@/lib/tuning-utils';
+import {
+  calculateFullPerformance,
+  comparePerformance,
+  PerformancePrediction,
+  HandlingCharacteristics,
+  analyzeHandling,
+} from '@/lib/fh5-physics';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
@@ -124,6 +131,9 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [showProfiles, setShowProfiles] = useState(false);
   const [lastSuggestions, setLastSuggestions] = useState<TuningSuggestion[]>([]);
+  const [performancePrediction, setPerformancePrediction] = useState<PerformancePrediction | null>(null);
+  const [handlingAnalysis, setHandlingAnalysis] = useState<HandlingCharacteristics | null>(null);
+  const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const assistantContentRef = useRef('');
@@ -186,6 +196,20 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
       inputRef.current?.focus();
     }
   }, [isOpen, isMinimized]);
+
+  // Calculate performance prediction when tune changes
+  useEffect(() => {
+    if (tuneContext?.specs && tuneContext?.currentTune) {
+      try {
+        const prediction = calculateFullPerformance(tuneContext.specs, tuneContext.currentTune);
+        const handling = analyzeHandling(tuneContext.specs, tuneContext.currentTune);
+        setPerformancePrediction(prediction);
+        setHandlingAnalysis(handling);
+      } catch (e) {
+        console.error('Error calculating performance:', e);
+      }
+    }
+  }, [tuneContext?.specs, tuneContext?.currentTune]);
 
   // Quick queries based on tune type
   const quickQueries = useMemo(() => {
@@ -403,6 +427,157 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
                 <span className="text-[10px] text-[hsl(var(--racing-yellow))]">
                   AI knows your {tuneContext.tuneType} tune for {tuneContext.carName}
                 </span>
+              </div>
+            )}
+
+            {/* Performance Metrics */}
+            {performancePrediction && (
+              <div className="px-3 py-2 bg-[hsl(var(--racing-cyan)/0.1)] border-b border-[hsl(var(--racing-cyan)/0.3)] grid grid-cols-4 gap-2 text-[9px]">
+                <div className="text-center">
+                  <p className="text-muted-foreground">0-60</p>
+                  <p className="text-[hsl(var(--racing-cyan))] font-semibold">{performancePrediction.zeroToSixty}s</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-muted-foreground">Top Speed</p>
+                  <p className="text-[hsl(var(--racing-yellow))] font-semibold">{Math.round(performancePrediction.topSpeed)} mph</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-muted-foreground">Grip</p>
+                  <p className="text-green-400 font-semibold">{performancePrediction.tireGrip}%</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-muted-foreground">Cornering</p>
+                  <p className="text-purple-400 font-semibold">{performancePrediction.corneringG}G</p>
+                </div>
+              </div>
+            )}
+
+            {/* Handling Analysis - Expandable */}
+            {handlingAnalysis && (
+              <div className="space-y-0">
+                <button
+                  onClick={() => setShowDetailedAnalysis(!showDetailedAnalysis)}
+                  className="w-full px-3 py-2 bg-[hsl(220,15%,10%)] border-b border-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,12%)] transition-colors"
+                >
+                  <div className="grid grid-cols-4 gap-2 text-[9px] items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="text-muted-foreground">Balance:</span>
+                      <span className={handlingAnalysis.understeerTendency > 10 ? 'text-blue-400' : handlingAnalysis.understeerTendency < -10 ? 'text-red-400' : 'text-green-400'}>
+                        {handlingAnalysis.understeerTendency > 0 ? 'Oversteer' : handlingAnalysis.understeerTendency < 0 ? 'Understeer' : 'Neutral'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-muted-foreground">Response:</span>
+                      <span className="text-[hsl(var(--racing-cyan))]">{handlingAnalysis.responsiveness}%</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-muted-foreground">Recovery:</span>
+                      <span className="text-[hsl(var(--racing-yellow))]">{handlingAnalysis.recoveryTime}s</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-muted-foreground">{showDetailedAnalysis ? '▼' : '▶'}</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Detailed Analysis */}
+                {showDetailedAnalysis && performancePrediction && (
+                  <div className="px-3 py-2 bg-[hsl(220,15%,8%)] border-b border-[hsl(220,15%,18%)] space-y-2">
+                    {/* Acceleration Curve */}
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-semibold text-[hsl(var(--racing-yellow))]">Acceleration Curve</p>
+                      <div className="text-[8px] space-y-0.5 max-h-24 overflow-y-auto bg-[hsl(220,15%,5%)] rounded p-2">
+                        <div className="grid grid-cols-4 gap-1 text-muted-foreground border-b border-[hsl(220,15%,20%)] pb-1 font-semibold">
+                          <span>Gear</span>
+                          <span>Speed</span>
+                          <span>Time</span>
+                          <span>Accel</span>
+                        </div>
+                        {performancePrediction.accelerationCurve.slice(0, 12).map((point, idx) => (
+                          <div key={idx} className={`grid grid-cols-4 gap-1 ${point.speed > 80 ? 'text-red-300/70' : point.speed > 60 ? 'text-yellow-300/70' : 'text-green-300/70'}`}>
+                            <span>{point.gear}</span>
+                            <span>{point.speed.toFixed(0)} mph</span>
+                            <span>{point.time.toFixed(1)}s</span>
+                            <span>{point.acceleration.toFixed(1)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Detailed Handling Metrics */}
+                    <div className="grid grid-cols-2 gap-2 text-[9px]">
+                      <div className="bg-[hsl(220,15%,5%)] rounded p-1.5 space-y-0.5">
+                        <p className="text-muted-foreground text-[8px]">Turn-In Speed</p>
+                        <p className="font-semibold text-[hsl(var(--racing-cyan))]">{handlingAnalysis.turnInSpeed.toFixed(1)} mph</p>
+                      </div>
+                      <div className="bg-[hsl(220,15%,5%)] rounded p-1.5 space-y-0.5">
+                        <p className="text-muted-foreground text-[8px]">Mid-Corner Stability</p>
+                        <p className="font-semibold text-[hsl(var(--racing-yellow))]">{(handlingAnalysis.midCornerStability * 100).toFixed(0)}%</p>
+                      </div>
+                      <div className="bg-[hsl(220,15%,5%)] rounded p-1.5 space-y-0.5">
+                        <p className="text-muted-foreground text-[8px]">Exit Traction</p>
+                        <p className="font-semibold text-green-400">{(handlingAnalysis.exitTraction * 100).toFixed(0)}%</p>
+                      </div>
+                      <div className="bg-[hsl(220,15%,5%)] rounded p-1.5 space-y-0.5">
+                        <p className="text-muted-foreground text-[8px]">Recovery Time</p>
+                        <p className="font-semibold text-[hsl(var(--racing-purple))]">{handlingAnalysis.recoveryTime.toFixed(2)}s</p>
+                      </div>
+                    </div>
+
+                    {/* Tire & Braking Analysis */}
+                    <div className="grid grid-cols-2 gap-2 text-[9px]">
+                      {performancePrediction.tireBehavior && (
+                        <div className="bg-[hsl(220,15%,5%)] rounded p-1.5 space-y-0.5">
+                          <p className="text-green-400 text-[8px] font-semibold">Tire Performance</p>
+                          <div className="text-[8px] space-y-0.5">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Front Grip</span>
+                              <span className={performancePrediction.tireBehavior.frontGrip > 1.0 ? 'text-green-300' : 'text-yellow-300'}>
+                                {performancePrediction.tireBehavior.frontGrip.toFixed(2)}G
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Temp</span>
+                              <span className={performancePrediction.tireBehavior.temperature === 'hot' ? 'text-red-300' : 'text-green-300'}>
+                                {performancePrediction.tireBehavior.temperature}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      <div className="bg-[hsl(220,15%,5%)] rounded p-1.5 space-y-0.5">
+                        <p className="text-red-400 text-[8px] font-semibold">Braking</p>
+                        <div className="text-[8px] space-y-0.5">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">60→0 ft</span>
+                            <span className="text-red-300">{performancePrediction.brakingDistance.toFixed(0)}</span>
+                          </div>
+                          <div className="w-full bg-[hsl(220,15%,10%)] rounded h-1.5 overflow-hidden border border-[hsl(220,15%,20%)]">
+                            <div 
+                              className="h-full bg-red-500"
+                              style={{width: `${Math.min(100, (100 / 400) * performancePrediction.brakingDistance)}%`}}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Weight Transfer */}
+                    <div className="bg-[hsl(220,15%,5%)] rounded p-1.5 space-y-0.5 text-[9px]">
+                      <p className="text-yellow-400 text-[8px] font-semibold">Weight Transfer</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground text-[8px]">Suspension Response</span>
+                        <span className="text-yellow-300">{performancePrediction.weightTransferPercent.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-[hsl(220,15%,10%)] rounded h-1.5 overflow-hidden border border-[hsl(220,15%,20%)]">
+                        <div 
+                          className="h-full bg-yellow-500"
+                          style={{width: `${performancePrediction.weightTransferPercent}%`}}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
