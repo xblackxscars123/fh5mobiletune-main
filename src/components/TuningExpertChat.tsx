@@ -134,6 +134,9 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
   const [performancePrediction, setPerformancePrediction] = useState<PerformancePrediction | null>(null);
   const [handlingAnalysis, setHandlingAnalysis] = useState<HandlingCharacteristics | null>(null);
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
+  const [compareProfile1, setCompareProfile1] = useState<TuneProfile | null>(null);
+  const [compareProfile2, setCompareProfile2] = useState<TuneProfile | null>(null);
+  const [comparison, setComparison] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const assistantContentRef = useRef('');
@@ -210,6 +213,18 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
       }
     }
   }, [tuneContext?.specs, tuneContext?.currentTune]);
+
+  // Compare two profiles when both are selected
+  useEffect(() => {
+    if (compareProfile1 && compareProfile2 && tuneContext?.specs) {
+      try {
+        const comp = comparePerformance(tuneContext.specs, compareProfile1.settings, compareProfile2.settings);
+        setComparison(comp);
+      } catch (e) {
+        console.error('Error comparing profiles:', e);
+      }
+    }
+  }, [compareProfile1, compareProfile2, tuneContext?.specs]);
 
   // Quick queries based on tune type
   const quickQueries = useMemo(() => {
@@ -750,20 +765,78 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
               {showProfiles && tuneProfiles.length > 0 && (
                 <div className="max-h-[120px] overflow-y-auto space-y-1 p-2 bg-[hsl(220,15%,10%)] rounded border border-[hsl(220,15%,18%)]">
                   {tuneProfiles.map((profile) => (
-                    <div key={profile.id} className="flex items-center justify-between text-[9px] p-1 bg-[hsl(220,15%,15%)] rounded">
-                      <div className="flex-1">
+                    <button
+                      key={profile.id}
+                      onClick={() => {
+                        if (compareProfile1?.id === profile.id) {
+                          setCompareProfile1(null);
+                        } else if (compareProfile2?.id === profile.id) {
+                          setCompareProfile2(null);
+                        } else if (!compareProfile1) {
+                          setCompareProfile1(profile);
+                        } else if (!compareProfile2) {
+                          setCompareProfile2(profile);
+                        } else {
+                          setCompareProfile1(profile);
+                          setCompareProfile2(null);
+                        }
+                      }}
+                      className={`w-full flex items-center justify-between text-[9px] p-1 bg-[hsl(220,15%,15%)] rounded transition-colors ${
+                        compareProfile1?.id === profile.id || compareProfile2?.id === profile.id 
+                          ? 'border border-cyan-500/50 bg-cyan-500/10' 
+                          : 'border border-transparent hover:bg-[hsl(220,15%,20%)]'
+                      }`}
+                    >
+                      <div className="flex-1 text-left">
                         <p className="font-semibold text-foreground">{profile.name}</p>
                         <p className="text-muted-foreground text-[8px]">{profile.carName} • {profile.tuneType}</p>
                       </div>
                       <button
-                        onClick={() => deleteProfile(profile.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteProfile(profile.id);
+                        }}
                         className="ml-1 p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
                         title="Delete profile"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
-                    </div>
+                    </button>
                   ))}
+                </div>
+              )}
+
+              {/* Profile Comparison */}
+              {comparison && compareProfile1 && compareProfile2 && (
+                <div className="p-2 bg-[hsl(220,15%,8%)] rounded border border-[hsl(var(--racing-cyan)/0.3)] space-y-2">
+                  <p className="text-[10px] font-semibold text-[hsl(var(--racing-cyan))] flex items-center gap-1">
+                    <Zap className="w-3 h-3" />
+                    {compareProfile1.name} vs {compareProfile2.name}
+                  </p>
+                  <div className="grid grid-cols-3 gap-1 text-[8px]">
+                    <div className="text-center px-1 py-1 bg-[hsl(220,15%,12%)] rounded">
+                      <p className="text-muted-foreground">0-60</p>
+                      <p className="font-semibold text-cyan-400">{comparison.zeroToSixty1?.toFixed(2)} vs {comparison.zeroToSixty2?.toFixed(2)}s</p>
+                    </div>
+                    <div className="text-center px-1 py-1 bg-[hsl(220,15%,12%)] rounded">
+                      <p className="text-muted-foreground">Top Speed</p>
+                      <p className="font-semibold text-yellow-400">{comparison.topSpeed1?.toFixed(0)} vs {comparison.topSpeed2?.toFixed(0)} mph</p>
+                    </div>
+                    <div className="text-center px-1 py-1 bg-[hsl(220,15%,12%)] rounded">
+                      <p className="text-muted-foreground">Cornering</p>
+                      <p className="font-semibold text-green-400">{comparison.cornering1?.toFixed(1)} vs {comparison.cornering2?.toFixed(1)}G</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCompareProfile1(null);
+                      setCompareProfile2(null);
+                      setComparison(null);
+                    }}
+                    className="w-full text-[9px] py-1 px-2 bg-[hsl(220,15%,12%)] hover:bg-[hsl(220,15%,15%)] rounded text-muted-foreground transition-colors"
+                  >
+                    Clear Comparison
+                  </button>
                 </div>
               )}
 
