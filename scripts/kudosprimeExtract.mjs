@@ -14,7 +14,7 @@ function parseArgs(argv) {
     outPath: 'kudosprime-verified-specs.json',
     delayMs: 1500,
     headed: false,
-    logEvery: 25,
+    logEvery: 5,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -71,15 +71,17 @@ function firstMatch(text, patterns) {
 function extractSpecsFromText(text) {
   const normalized = String(text).replace(/\u00a0/g, ' ');
 
-  const piMatch = firstMatch(normalized, [
-    /\b([A-Z])\s*(\d{2,4})\b/, // e.g. D 100
-    /\bPI\s*(\d{2,4})\b/i,
-  ]);
+  // Stock class + PI appears in the rendered text immediately before the "call_made" link icon,
+  // e.g.
+  //   C\n596\ncall_made\nS2\n922\nMAX
+  // We prefer this to avoid false matches like model names (e.g. A110) or the max class (S2 922).
+  const stockPiMatch = normalized.match(/\n\s*([A-Z](?:\d)?)\s*\n\s*(\d{2,4})\s*\n\s*call_made\b/i);
+  const fallbackPiMatch = normalized.match(/\bPI\s*(\d{2,4})\b/i);
 
-  const piClass = piMatch?.[1] && /^[A-Z]$/.test(piMatch[1]) ? piMatch[1] : null;
-  const defaultPI = piMatch
-    ? Number(piMatch[2] ?? piMatch[1])
-    : null;
+  const piClass = stockPiMatch ? stockPiMatch[1].toUpperCase() : null;
+  const defaultPI = stockPiMatch
+    ? Number(stockPiMatch[2])
+    : (fallbackPiMatch ? Number(fallbackPiMatch[1]) : null);
 
   const driveMatch = firstMatch(normalized, [/\b(AWD|RWD|FWD)\b/]);
   const driveType = driveMatch ? driveMatch[1] : null;
@@ -215,6 +217,9 @@ async function main() {
   const browser = await chromium.launch({ headless: !opts.headed });
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 
+  page.setDefaultNavigationTimeout(60_000);
+  page.setDefaultTimeout(60_000);
+
   const results = {
     generatedAt: new Date().toISOString(),
     source: 'kudosprime.com',
@@ -224,11 +229,16 @@ async function main() {
     errors: [],
   };
 
+  const runStartedAt = Date.now();
+
   for (let i = 0; i < ids.length; i++) {
     const id = ids[i];
-    if (opts.logEvery > 0 && (i % opts.logEvery === 0 || i === ids.length - 1)) {
+    const shouldLog = opts.logEvery > 0 && (i % opts.logEvery === 0 || i === ids.length - 1);
+    const startedAt = Date.now();
+    if (shouldLog) {
       const ok = Object.keys(results.verifiedSpecsByKey).length;
-      console.log(`[${i + 1}/${ids.length}] id=${id} ok=${ok} errors=${results.errors.length}`);
+      const elapsedS = Math.round((Date.now() - runStartedAt) / 1000);
+      console.log(`[${i + 1}/${ids.length}] id=${id} ok=${ok} errors=${results.errors.length} elapsed=${elapsedS}s`);
     }
     try {
       const extracted = await extractOne(page, id);
@@ -256,6 +266,14 @@ async function main() {
       }
     } catch (e) {
       results.errors.push({ id, message: e?.message ?? String(e) });
+      if (shouldLog) {
+        console.log(`  id=${id} failed: ${e?.message ?? String(e)}`);
+      }
+    }
+
+    if (shouldLog) {
+      const tookMs = Date.now() - startedAt;
+      console.log(`  id=${id} done (${tookMs}ms)`);
     }
 
     if (i < ids.length - 1) {

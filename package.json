@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "kudosprime:extract": "node scripts/kudosprimeExtract.mjs",
-    "kudosprime:extract:headed": "node scripts/kudosprimeExtract.mjs --headed"
+    "kudosprime:extract:headed": "node scripts/kudosprimeExtract.mjs --headed",
+    "kudosprime:merge": "node scripts/kudosprimeMergeVerifiedSpecs.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

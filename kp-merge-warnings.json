@@ -1,0 +1,27 @@
+[
+  {
+    "id": "8",
+    "url": "https://www.kudosprime.com/fh5/car_sheet.php?id=8",
+    "reason": "Missing identity fields",
+    "identity": {
+      "year": "2026",
+      "make": "KudosPrime",
+      "model": null
+    }
+  },
+  {
+    "id": "514",
+    "url": "https://www.kudosprime.com/fh5/car_sheet.php?id=514",
+    "reason": "Missing required spec fields",
+    "extracted": {
+      "weight": 2094,
+      "defaultPI": 2023,
+      "driveType": null
+    },
+    "identity": {
+      "year": "1932",
+      "make": "Ford",
+      "model": "De Luxe Five-Window Coupe Forza Edition"
+    }
+  }
+]
