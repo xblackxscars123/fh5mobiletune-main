@@ -14,9 +14,10 @@ import {
   Area,
   Legend,
 } from 'recharts';
-import { TuneType } from '@/lib/tuningCalculator';
+import { TuneSettings, TuneType, type CarSpecs } from '@/lib/tuningCalculator';
 import { cn } from '@/lib/utils';
 import { Gauge, Zap, ArrowUp, TrendingUp, Activity } from 'lucide-react';
+import { calculateTopSpeed, calculateZeroToSixty } from '@/lib/fh5-physics';
 
 interface GearingVisualizerProps {
   gearRatios: number[];
@@ -24,6 +25,8 @@ interface GearingVisualizerProps {
   tuneType: TuneType;
   horsepower?: number;
   redlineRpm?: number;
+  specs?: CarSpecs;
+  tune?: TuneSettings;
 }
 
 type RechartsTooltipPayload<T> = Array<{ payload?: T }> | undefined;
@@ -34,14 +37,23 @@ type RechartsTooltipProps<T> = {
   label?: string | number;
 };
 
+type TradeoffPoint = {
+  label: string;
+  finalDrive: number;
+  zeroToSixty: number;
+  topSpeed: number;
+  isCurrent: boolean;
+  offset: number;
+};
+
 // Calculate simulated shift points and speed estimates
 const calculateGearData = (
   gearRatios: number[],
   finalDrive: number,
   horsepower: number,
-  redlineRpm: number
+  redlineRpm: number,
+  tireCircumference: number
 ) => {
-  const tireCircumference = 2.1; // meters (typical for performance tires)
   const transmissionEfficiency = 0.85;
   
   return gearRatios.map((ratio, index) => {
@@ -82,24 +94,32 @@ const calculateGearData = (
 };
 
 // Calculate acceleration vs top speed tradeoff data
-const calculateTradeoffData = (finalDrive: number, baselineRatios: number[]) => {
-  const variations = [];
+const calculateTradeoffData = (finalDrive: number, specs?: CarSpecs, tune?: TuneSettings) => {
+  const variations: TradeoffPoint[] = [];
+
+  const hasPhysicsInputs = Boolean(specs && tune && specs.weight && specs.horsepower);
   
   for (let i = -4; i <= 4; i++) {
     const fdMultiplier = 1 + (i * 0.05); // -20% to +20%
     const modifiedFD = finalDrive * fdMultiplier;
-    
-    // Simplified acceleration score (higher FD = better accel)
-    const accelScore = Math.min(100, (modifiedFD / 3.0) * 70 + 30);
-    
-    // Simplified top speed score (lower FD = higher top speed)
-    const topSpeedScore = Math.min(100, ((6 - modifiedFD) / 3.0) * 70 + 30);
+
+    let zeroToSixty = 0;
+    let topSpeed = 0;
+
+    if (hasPhysicsInputs && specs && tune) {
+      const modifiedTune: TuneSettings = {
+        ...tune,
+        finalDrive: modifiedFD,
+      };
+      zeroToSixty = calculateZeroToSixty(specs, modifiedTune);
+      topSpeed = calculateTopSpeed(specs, modifiedTune);
+    }
     
     variations.push({
       label: i === 0 ? 'Current' : `${i > 0 ? '+' : ''}${(i * 5)}%`,
       finalDrive: Math.round(modifiedFD * 100) / 100,
-      acceleration: Math.round(accelScore),
-      topSpeed: Math.round(topSpeedScore),
+      zeroToSixty,
+      topSpeed,
       isCurrent: i === 0,
       offset: i,
     });
@@ -167,12 +187,12 @@ const TradeoffTooltip = ({ active, payload }: RechartsTooltipProps<Record<string
       </div>
       <div className="space-y-1 text-xs">
         <div className="flex justify-between gap-4">
-          <span className="text-muted-foreground">Acceleration:</span>
-          <span className="text-neon-cyan font-mono">{data.acceleration as string | number}%</span>
+          <span className="text-muted-foreground">0-60:</span>
+          <span className="text-neon-cyan font-mono">{data.zeroToSixty as string | number}s</span>
         </div>
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">Top Speed:</span>
-          <span className="text-neon-pink font-mono">{data.topSpeed as string | number}%</span>
+          <span className="text-neon-pink font-mono">{data.topSpeed as string | number} mph</span>
         </div>
       </div>
     </div>
@@ -185,16 +205,32 @@ export const GearingVisualizer = ({
   tuneType,
   horsepower = 400,
   redlineRpm = 7500,
+  specs,
+  tune,
 }: GearingVisualizerProps) => {
+  const tireCircumferenceM = specs?.tireCircumference && Number.isFinite(specs.tireCircumference)
+    ? specs.tireCircumference
+    : 2.1;
+
   const gearData = useMemo(
-    () => calculateGearData(gearRatios, finalDrive, horsepower, redlineRpm),
-    [gearRatios, finalDrive, horsepower, redlineRpm]
+    () => calculateGearData(gearRatios, finalDrive, horsepower, redlineRpm, tireCircumferenceM),
+    [gearRatios, finalDrive, horsepower, redlineRpm, tireCircumferenceM]
   );
 
   const tradeoffData = useMemo(
-    () => calculateTradeoffData(finalDrive, gearRatios),
-    [finalDrive, gearRatios]
+    () => calculateTradeoffData(finalDrive, specs, tune),
+    [finalDrive, specs, tune]
   );
+
+  const tradeoffStats = useMemo(() => {
+    const points = tradeoffData.filter((p): p is TradeoffPoint => Number.isFinite(p.zeroToSixty) && p.zeroToSixty > 0);
+    if (points.length === 0) return null;
+    const zMin = Math.min(...points.map((p) => p.zeroToSixty));
+    const zMax = Math.max(...points.map((p) => p.zeroToSixty));
+    const sMin = Math.min(...points.map((p) => p.topSpeed));
+    const sMax = Math.max(...points.map((p) => p.topSpeed));
+    return { zMin, zMax, sMin, sMax };
+  }, [tradeoffData]);
 
   // Get color based on tune type
   const tuneColors = {
@@ -384,11 +420,20 @@ export const GearingVisualizer = ({
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
-              <YAxis 
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-                axisLine={{ stroke: 'hsl(var(--border))' }}
-                domain={[0, 100]}
-                tickFormatter={(v) => `${v}%`}
+              <YAxis
+                yAxisId="time"
+                tick={{ fill: 'hsl(var(--neon-cyan))', fontSize: 10 }}
+                axisLine={{ stroke: 'hsl(var(--neon-cyan) / 0.3)' }}
+                domain={tradeoffStats ? [tradeoffStats.zMin, tradeoffStats.zMax] : [0, 'auto']}
+                tickFormatter={(v) => `${v}s`}
+              />
+              <YAxis
+                yAxisId="speed"
+                orientation="right"
+                tick={{ fill: 'hsl(var(--neon-pink))', fontSize: 10 }}
+                axisLine={{ stroke: 'hsl(var(--neon-pink) / 0.3)' }}
+                domain={tradeoffStats ? [tradeoffStats.sMin, tradeoffStats.sMax] : [0, 'auto']}
+                tickFormatter={(v) => `${v}`}
               />
               <Tooltip content={<TradeoffTooltip />} />
               <ReferenceLine 
@@ -399,7 +444,8 @@ export const GearingVisualizer = ({
               />
               <Area
                 type="monotone"
-                dataKey="acceleration"
+                yAxisId="time"
+                dataKey="zeroToSixty"
                 stroke="hsl(var(--neon-cyan))"
                 fill="url(#accelGradient)"
                 strokeWidth={2}
@@ -417,6 +463,7 @@ export const GearingVisualizer = ({
               />
               <Area
                 type="monotone"
+                yAxisId="speed"
                 dataKey="topSpeed"
                 stroke="hsl(var(--neon-pink))"
                 fill="url(#topSpeedGradient)"
@@ -439,11 +486,11 @@ export const GearingVisualizer = ({
         <div className="flex justify-center gap-6 mt-3 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-neon-cyan" />
-            <span className="text-muted-foreground">Acceleration</span>
+            <span className="text-muted-foreground">0-60 (s)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-neon-pink" />
-            <span className="text-muted-foreground">Top Speed</span>
+            <span className="text-muted-foreground">Top Speed (mph)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-neon-yellow" />
@@ -451,7 +498,7 @@ export const GearingVisualizer = ({
           </div>
         </div>
         <div className="mt-3 text-[10px] text-muted-foreground text-center">
-          Shorter final drive (higher number) = better acceleration • Longer = higher top speed
+          Shorter final drive (higher number) typically improves 0-60 • Longer typically improves top speed
         </div>
       </div>
     </div>

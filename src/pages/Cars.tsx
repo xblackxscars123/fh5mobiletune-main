@@ -19,6 +19,7 @@ export default function Cars() {
   const [makeFilter, setMakeFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [driveFilter, setDriveFilter] = useState<string>('all');
+  const [unverifiedOnly, setUnverifiedOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('name');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
@@ -64,6 +65,11 @@ export default function Cars() {
       cars = cars.filter(car => car.driveType === driveFilter);
     }
 
+    // Verified filter
+    if (unverifiedOnly) {
+      cars = cars.filter(car => !hasVerifiedSpecs(car.year, car.make, car.model));
+    }
+
     // Sort
     switch (sortBy) {
       case 'year-asc':
@@ -80,7 +86,7 @@ export default function Cars() {
     }
 
     return cars;
-  }, [search, makeFilter, categoryFilter, driveFilter, sortBy]);
+  }, [search, makeFilter, categoryFilter, driveFilter, sortBy, unverifiedOnly]);
 
   // Pagination
   const totalPages = Math.ceil(filteredCars.length / itemsPerPage);
@@ -92,7 +98,7 @@ export default function Cars() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, makeFilter, categoryFilter, driveFilter]);
+  }, [search, makeFilter, categoryFilter, driveFilter, unverifiedOnly]);
 
   const handleSelectCar = (car: FH5Car) => {
     // Navigate to home with car data in state
@@ -147,7 +153,7 @@ export default function Cars() {
               <Filter className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium text-muted-foreground">Filters</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
               {/* Search */}
               <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -197,6 +203,18 @@ export default function Cars() {
                   <SelectItem value="AWD">AWD</SelectItem>
                 </SelectContent>
               </Select>
+
+              {/* Unverified only */}
+              <Button
+                variant="outline"
+                onClick={() => setUnverifiedOnly(v => !v)}
+                className={unverifiedOnly
+                  ? 'bg-neon-pink/15 text-neon-pink border border-neon-pink/40'
+                  : 'bg-[hsl(220,15%,12%)] text-muted-foreground border-[hsl(220,15%,20%)]'
+                }
+              >
+                Unverified only
+              </Button>
             </div>
 
             {/* Sort and results count */}

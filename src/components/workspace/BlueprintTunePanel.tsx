@@ -1,5 +1,5 @@
 import { useState, useMemo, ReactNode } from 'react';
-import { TuneSettings, DriveType, TuneType, tuneTypeDescriptions, UnitSystem, convertTuneToUnits, getUnitLabels } from '@/lib/tuningCalculator';
+import { TuneSettings, DriveType, TuneType, tuneTypeDescriptions, UnitSystem, convertTuneToUnits, getUnitLabels, type CarSpecs } from '@/lib/tuningCalculator';
 import { TuningModule, ModuleCategory } from './TuningModule';
 import { BlueprintSlider } from './BlueprintSlider';
 import { FrontRearValue, CompactValue } from './EngineeringTable';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Copy, Check, Gauge, Settings2, Wind, Disc, Cog, Wrench, Compass, Activity, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ModuleLayoutProvider } from '@/contexts/ModuleLayoutContext';
 
 interface BlueprintTunePanelProps {
   tune: TuneSettings;
@@ -16,10 +17,15 @@ interface BlueprintTunePanelProps {
   unitSystem: UnitSystem;
   carName?: string;
   horsepower?: number;
+  specs?: CarSpecs;
 }
 
 export const BlueprintTunePanel = (props: BlueprintTunePanelProps) => {
-  return <BlueprintTunePanelInner {...props} />;
+  return (
+    <ModuleLayoutProvider>
+      <BlueprintTunePanelInner {...props} />
+    </ModuleLayoutProvider>
+  );
 };
 
 interface ModuleConfig {
@@ -36,7 +42,8 @@ const BlueprintTunePanelInner = ({
   tuneType, 
   unitSystem, 
   carName,
-  horsepower = 400 
+  horsepower = 400,
+  specs
 }: BlueprintTunePanelProps) => {
   const [copied, setCopied] = useState(false);
   
@@ -136,6 +143,8 @@ const BlueprintTunePanelInner = ({
             finalDrive={tune.finalDrive}
             tuneType={tuneType}
             horsepower={horsepower}
+            specs={specs}
+            tune={tune}
           />
         );
 

@@ -82,55 +82,76 @@ export function Header({ onShowAuth }: HeaderProps) {
           <rect width="100%" height="100%" fill="url(#circuit)"/>
         </svg>
 
-        {/* Neon city skyline - OUTLINE ONLY (no fill) */}
+        {/* Faint tire tread overlay */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.055]" preserveAspectRatio="none">
+          <defs>
+            <pattern id="tread" x="0" y="0" width="64" height="64" patternUnits="userSpaceOnUse">
+              <path d="M 8 8 L 24 24" stroke="hsl(var(--neon-cyan))" strokeWidth="2" strokeLinecap="round" opacity="0.35" />
+              <path d="M 24 8 L 8 24" stroke="hsl(var(--neon-pink))" strokeWidth="2" strokeLinecap="round" opacity="0.25" />
+              <path d="M 40 40 L 56 56" stroke="hsl(var(--neon-cyan))" strokeWidth="2" strokeLinecap="round" opacity="0.35" />
+              <path d="M 56 40 L 40 56" stroke="hsl(var(--neon-purple))" strokeWidth="2" strokeLinecap="round" opacity="0.22" />
+
+              <path d="M 4 40 H 30" stroke="hsl(var(--sketch-line) / 0.9)" strokeWidth="1" opacity="0.12" />
+              <path d="M 34 24 H 60" stroke="hsl(var(--sketch-line) / 0.9)" strokeWidth="1" opacity="0.12" />
+            </pattern>
+          </defs>
+          <rect
+            width="100%"
+            height="100%"
+            fill="url(#tread)"
+            style={{
+              maskImage: 'radial-gradient(ellipse at 50% 70%, rgba(255,255,255,0.8) 0%, transparent 70%)'
+            }}
+          />
+        </svg>
+
         <svg className="absolute bottom-0 left-0 right-0 h-40 opacity-70" preserveAspectRatio="none" viewBox="0 0 1200 200">
           <defs>
-            <filter id="neonGlow">
+            <filter id="headerNeonGlow">
               <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
               <feMerge>
                 <feMergeNode in="coloredBlur"/>
                 <feMergeNode in="SourceGraphic"/>
               </feMerge>
             </filter>
+            <linearGradient id="headerTrackEdge" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="hsl(var(--neon-pink))" stopOpacity="0.9" />
+              <stop offset="50%" stopColor="hsl(var(--neon-cyan))" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="hsl(var(--neon-purple))" stopOpacity="0.9" />
+            </linearGradient>
           </defs>
-          
-          {/* Building outlines only - no fill */}
-          <g filter="url(#neonGlow)" fill="none">
-            {/* Left buildings */}
-            <rect x="20" y="80" width="60" height="120" stroke="hsl(var(--neon-purple))" strokeWidth="1.5"/>
-            <rect x="90" y="50" width="50" height="150" stroke="hsl(var(--neon-cyan))" strokeWidth="1.5"/>
-            <rect x="150" y="100" width="40" height="100" stroke="hsl(var(--neon-pink))" strokeWidth="1.5"/>
-            
-            {/* Center buildings (taller) */}
-            <rect x="250" y="30" width="80" height="170" stroke="hsl(var(--neon-cyan))" strokeWidth="2"/>
-            <rect x="340" y="60" width="60" height="140" stroke="hsl(var(--neon-purple))" strokeWidth="1.5"/>
-            <rect x="410" y="20" width="100" height="180" stroke="hsl(var(--neon-pink))" strokeWidth="2.5"/>
-            <rect x="520" y="70" width="70" height="130" stroke="hsl(var(--neon-cyan))" strokeWidth="1.5"/>
-            
-            {/* Right side buildings */}
-            <rect x="650" y="40" width="90" height="160" stroke="hsl(var(--neon-purple))" strokeWidth="2"/>
-            <rect x="750" y="90" width="50" height="110" stroke="hsl(var(--neon-pink))" strokeWidth="1.5"/>
-            <rect x="810" y="55" width="70" height="145" stroke="hsl(var(--neon-cyan))" strokeWidth="1.5"/>
-            <rect x="890" y="80" width="55" height="120" stroke="hsl(var(--neon-purple))" strokeWidth="1.5"/>
-            
-            {/* Far buildings */}
-            <rect x="1000" y="60" width="80" height="140" stroke="hsl(var(--neon-pink))" strokeWidth="1.5"/>
-            <rect x="1090" y="100" width="60" height="100" stroke="hsl(var(--neon-cyan))" strokeWidth="1.5"/>
+
+          <g filter="url(#headerNeonGlow)" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <path
+              d="M -40 180 C 140 120, 240 165, 360 145 C 510 120, 660 70, 820 95 C 980 120, 1090 160, 1250 120"
+              stroke="url(#headerTrackEdge)"
+              strokeWidth="4"
+              opacity="0.75"
+            />
+            <path
+              d="M -40 198 C 150 150, 260 185, 380 170 C 530 150, 690 105, 850 125 C 1010 145, 1120 185, 1250 150"
+              stroke="hsl(var(--neon-cyan))"
+              strokeWidth="2"
+              opacity="0.45"
+            />
+            <path
+              d="M -40 160 C 135 105, 235 150, 355 130 C 505 105, 650 55, 810 80 C 970 105, 1080 145, 1250 105"
+              stroke="hsl(var(--neon-pink))"
+              strokeWidth="2"
+              opacity="0.35"
+            />
           </g>
-          
-          {/* LED window lights - glowing dots */}
-          <g className="animate-pulse">
-            <rect x="35" y="95" width="6" height="4" fill="hsl(var(--neon-cyan))" rx="1"/>
-            <rect x="55" y="115" width="6" height="4" fill="hsl(var(--neon-pink))" rx="1"/>
-            <rect x="105" y="65" width="6" height="4" fill="hsl(var(--neon-purple))" rx="1"/>
-            <rect x="270" y="50" width="8" height="5" fill="hsl(var(--neon-pink))" rx="1"/>
-            <rect x="300" y="50" width="8" height="5" fill="hsl(var(--neon-cyan))" rx="1"/>
-            <rect x="435" y="40" width="10" height="6" fill="hsl(var(--neon-cyan))" rx="1"/>
-            <rect x="470" y="40" width="10" height="6" fill="hsl(var(--neon-pink))" rx="1"/>
-            <rect x="435" y="80" width="10" height="6" fill="hsl(var(--neon-purple))" rx="1"/>
-            <rect x="670" y="60" width="8" height="5" fill="hsl(var(--neon-cyan))" rx="1"/>
-            <rect x="830" y="75" width="6" height="4" fill="hsl(var(--neon-pink))" rx="1"/>
-            <rect x="1020" y="85" width="8" height="5" fill="hsl(var(--neon-cyan))" rx="1"/>
+
+          <g className="animate-pulse" opacity="0.8">
+            <path
+              d="M -40 188 C 145 135, 250 175, 370 158 C 520 138, 675 92, 835 112 C 995 132, 1105 172, 1250 135"
+              stroke="hsl(var(--sketch-line) / 0.9)"
+              strokeWidth="1.5"
+              strokeDasharray="10 14"
+            />
+            <circle cx="165" cy="150" r="3" fill="hsl(var(--neon-cyan))" />
+            <circle cx="520" cy="138" r="3" fill="hsl(var(--neon-pink))" />
+            <circle cx="860" cy="122" r="3" fill="hsl(var(--neon-purple))" />
           </g>
         </svg>
 

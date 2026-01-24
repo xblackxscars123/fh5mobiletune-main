@@ -6,6 +6,7 @@ import { CarSpecsForm } from '@/components/CarSpecsForm';
 import { SimpleModeForm } from '@/components/SimpleModeForm';
 import { CarSelector } from '@/components/CarSelector';
 import { BlueprintTunePanel } from '@/components/workspace/BlueprintTunePanel';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SavedTunesManager } from '@/components/SavedTunesManager';
 import { ShopPromoPopup } from '@/components/ShopPromoPopup';
 import { ThemeBackground } from '@/components/ThemeBackground';
@@ -335,7 +336,9 @@ export default function Index() {
           {/* Right Panel - Results */}
           <div>
             {showResults ? (
-              <BlueprintTunePanel tune={tuneSettings} driveType={specs.driveType} tuneType={tuneType} unitSystem={unitSystem} carName={carName} horsepower={specs.horsepower} />
+              <ErrorBoundary fallbackTitle="Tune Results Crashed">
+                <BlueprintTunePanel tune={tuneSettings} driveType={specs.driveType} tuneType={tuneType} unitSystem={unitSystem} carName={carName} horsepower={specs.horsepower} specs={specs} />
+              </ErrorBoundary>
             ) : (
               <div className="module-block p-8 text-center h-full flex flex-col items-center justify-center min-h-[400px]">
                 <div className="w-20 h-20 rounded-full mb-4 flex items-center justify-center" style={{ background: 'hsl(var(--neon-pink) / 0.1)', border: '2px dashed hsl(var(--neon-pink) / 0.3)' }}>

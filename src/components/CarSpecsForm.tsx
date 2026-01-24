@@ -33,6 +33,11 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
   const displayPower = unitSystem === 'imperial' 
     ? (specs.horsepower || 400) 
     : unitConversions.hpToKw(specs.horsepower || 400);
+  const tireCircumferenceM = specs.tireCircumference ?? 2.1;
+  const tireCircumferenceLabel = unitSystem === 'imperial' ? 'in' : 'm';
+  const displayTireCircumference = unitSystem === 'imperial'
+    ? Math.round(tireCircumferenceM * 39.3701 * 10) / 10
+    : Math.round(tireCircumferenceM * 100) / 100;
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -320,6 +325,29 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
                 </Button>
               ))}
             </div>
+          </div>
+
+          {/* Tire Circumference */}
+          <div className="space-y-2 md:space-y-3">
+            <Label className="flex items-center gap-2 text-sm md:text-base font-display">
+              <Settings2 className="w-4 h-4 md:w-5 md:h-5 text-[hsl(var(--racing-cyan))]" />
+              Tire Circumference ({tireCircumferenceLabel})
+            </Label>
+            <Input
+              type="number"
+              value={displayTireCircumference}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                const metersValue = unitSystem === 'imperial' ? value / 39.3701 : value;
+                updateSpec('tireCircumference', Math.max(1.5, Math.min(3.0, metersValue)));
+              }}
+              className="bg-muted border-border focus:border-primary text-base md:text-lg font-body h-10 md:h-12"
+              min={unitSystem === 'imperial' ? 59.1 : 1.5}
+              max={unitSystem === 'imperial' ? 118.1 : 3.0}
+            />
+            <p className="text-xs text-muted-foreground">
+              Used for the gearing speed charts (speed at redline / shift). Default is 2.10m.
+            </p>
           </div>
 
           {/* PI Class */}

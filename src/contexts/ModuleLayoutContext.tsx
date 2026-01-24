@@ -88,7 +88,17 @@ export function ModuleLayoutProvider({ children }: { children: ReactNode }) {
 export function useModuleLayout() {
   const context = useContext(ModuleLayoutContext);
   if (!context) {
-    throw new Error('useModuleLayout must be used within a ModuleLayoutProvider');
+    // Fail-safe: don't crash the app if provider isn't mounted.
+    // Drag/drop will be disabled, but the tuning UI will still render.
+    return {
+      moduleOrder: DEFAULT_MODULE_ORDER,
+      draggedId: null,
+      dropTargetId: null,
+      setDraggedId: () => {},
+      setDropTargetId: () => {},
+      reorderModules: () => {},
+      resetLayout: () => {},
+    };
   }
   return context;
 }

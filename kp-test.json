@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-01-24T12:37:22.949Z",
+  "source": "kudosprime.com",
+  "game": "fh5",
+  "items": [
+    {
+      "id": "732",
+      "url": "https://www.kudosprime.com/fh5/car_sheet.php?id=732",
+      "identity": {
+        "year": "1968",
+        "make": "Abarth",
+        "model": "Abarth 595"
+      },
+      "specs": {
+        "defaultPI": 100,
+        "piClass": "D",
+        "driveType": "RWD",
+        "weightLbs": 1257,
+        "weightDistribution": null
+      },
+      "rawTextSample": "Forza Motorsport\nF7\nF6\nF5\nF4\nF3\nF. Horizon 5\nFH4\nFH3\nFH2\nFH\nGran Turismo 7\nGTS\nGT6\nGT5\nNFS MW\nGTA 5\nNot connected\nSign in\nNew account\nContact\nhome\nmap250 Boards\ndrive_etaCars\nstarsPerks\ntrending_upStats\npublicExport\nsearch\ndrive_eta\nKudosprime // FH5 Car Database // Abarth\n\n 1968 Abarth\n\n595 Esseesse\n\nadd_a_photo\nAdd your own FH5 photo(s) for this car.\n\nAbarth 595 '68\n\nAlternate Name(s)\n\nOther Abarth cars\n2017 124 Spider\n2016 695 Biposto\n1980 Fiat 131\nIf you want to contact me about Forza Horizon 5 on K', you can use the Contact button on top of the current page. Milouse\n \n35,000 Cr\nCULT CARS\nD\n100\ncall_made\nS2\n949\nMAX\n28HP RWD 1257lbs 0.022HP/lbs +15.4%\n\nAutoshow & Wheelspin\n2.6SPEED+0.2\n3.7HANDLING+0.4\n1.7ACCELERATION+0.2\n2.6LAUNCH\n2.0BRAKING-0.2\n5.1OFFROAD-1\n\nTop Speed:73.9 Mph+7.7% Lat. G @60 Mph:0.73+4.3%\n\n0 to...60 Mph:28.227 s-0.5% 100 Mph:??? s\n\nLateral G@60 Mph:0.73+4.3%\n\nData compared to 18 cars from PI 100 to PI 110\n\nCar data contributors: Milouse FH5GAMER Fred-104 Oween\nLink to this car in all Forza games since 2009:\nFM\tFH5\tFH4\tF7\tFH3\tF6\tFH2XO\tF5\tFH\tF4\tF3\n-\t732\t249\t216\t148\t4\t206\t-\t1\t-\t-\n\nCar Masteries\n\nList cars having the exact same Car Mastery grid (non-exhaustive)\n20\n5 p\n20\n5 p\n5\n3 p\n15\n3 p\n5\n3 p\n25 p\n1.25\n1 p\n10\n1 p\n2000\n1 p\nClean Racing Skill Score: +20 %\n5 sp\n+20 % XP for the next 10 road races\n5 sp\nInstant 5 Forza Points\n3 sp\n+15 % XP from banked Skills in Freeroam\n3 sp\nIn convoy: +5 % XP from Skills\n3 sp\nThe first collision doesn't break the current Skill Chain\n25 sp\nSkill Multiplier built 1.25 times faster during Skill Songs\n1 sp\nHead-to-Head Credits: +10 %\n1 sp\nInstant 2000 XP\n1 sp\n You need to be connected to post comment\nmessage #1 | Tuesday July 02, 2024 | u1719898042424  | Report\nths mana sas\n\n \nDiscover more\ngames\nHorizon 5\nfh5\nfh3\nForza\nfh4\ncar\nMX-5\nForza Horizon 3\nRX-7\nCopyright 2010-2026 KudosPrime.com. \"Forza Motorsport\" is a trademark of Microsoft    u(0.0001) a(0.0175) m(940K) l(2592000) 2fr - Privacy Policy\n\nhelper text"
+    }
+  ],
+  "verifiedSpecsByKey": {
+    "1968-abarth-abarth-595": {
+      "sourceUrl": "https://www.kudosprime.com/fh5/car_sheet.php?id=732",
+      "defaultPI": 100,
+      "driveType": "RWD",
+      "weightLbs": 1257,
+      "weightDistribution": null
+    }
+  },
+  "errors": []
+}
