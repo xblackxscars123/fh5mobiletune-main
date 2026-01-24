@@ -143,7 +143,7 @@ export function calculateTuneImpact(
 ): PerformanceImpact {
   const warnings: string[] = [];
   const improvements: string[] = [];
-  let handling = 0;
+  const handling = 0;
   let grip = 0;
   let stability = 0;
   let responsiveness = 0;

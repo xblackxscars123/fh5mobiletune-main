@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { JDMStickerBombBackground } from '@/components/JDMStickerBombBackground';
@@ -90,7 +90,7 @@ export default function Cars() {
   );
 
   // Reset page when filters change
-  useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [search, makeFilter, categoryFilter, driveFilter]);
 

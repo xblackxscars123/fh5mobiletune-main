@@ -17,7 +17,8 @@ import { TuneCompare } from '@/components/TuneCompare';
 import { AuthModal } from '@/components/AuthModal';
 import { TuneTemplate } from '@/data/tuneTemplates';
 import { Button } from '@/components/ui/button';
-import { CarSpecs, TuneType, calculateTune, UnitSystem, TuneSettings } from '@/lib/tuningCalculator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CarSpecs, TuneType, TuneVariant, calculateTune, UnitSystem, TuneSettings, tuneVariantsByType, defaultTuneVariantByType } from '@/lib/tuningCalculator';
 import { parseTuneFromCurrentURL, copyShareURLToClipboard } from '@/lib/tuneShare';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
 import { SavedTune, useSavedTunes } from '@/hooks/useSavedTunes';
@@ -41,6 +42,7 @@ export default function Index() {
   const { user } = useAuth();
   const { savedTunes, syncLocalTunesToCloud } = useSavedTunes();
   const [tuneType, setTuneType] = useState<TuneType>('grip');
+  const [variant, setVariant] = useState<TuneVariant>(defaultTuneVariantByType.grip);
   const [specs, setSpecs] = useState<CarSpecs>(defaultSpecs);
   const [showResults, setShowResults] = useState(false);
   const [selectedCar, setSelectedCar] = useState<FH5Car | null>(null);
@@ -72,6 +74,7 @@ export default function Index() {
       const { specs: tuneSpecs, tuneType: loadedTuneType, carName: loadedCarName } = location.state.loadTune;
       setSpecs(tuneSpecs);
       setTuneType(loadedTuneType);
+      setVariant(defaultTuneVariantByType[loadedTuneType]);
       setShowResults(true);
       setSelectedCar(null);
       setBalance(0);
@@ -87,11 +90,16 @@ export default function Index() {
     if (sharedTune) {
       setSpecs(sharedTune.specs);
       setTuneType(sharedTune.tuneType);
+      setVariant(defaultTuneVariantByType[sharedTune.tuneType]);
       setShowResults(true);
       toast.success('Loaded shared tune!');
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
+
+  useEffect(() => {
+    setVariant(defaultTuneVariantByType[tuneType]);
+  }, [tuneType]);
 
   useEffect(() => {
     if (user) {
@@ -100,12 +108,12 @@ export default function Index() {
   }, [user, syncLocalTunesToCloud]);
 
   const tuneSettings = useMemo(() => {
-    const baseTune = calculateTune(specs, tuneType);
+    const baseTune = calculateTune(specs, tuneType, { variant });
     const { arbFront, arbRear, springsFront, springsRear } = applyBalanceStiffness(
       baseTune.arbFront, baseTune.arbRear, baseTune.springsFront, baseTune.springsRear, balance, stiffness
     );
     return { ...baseTune, arbFront, arbRear, springsFront, springsRear, ...manualOverrides };
-  }, [specs, tuneType, balance, stiffness, manualOverrides]);
+  }, [specs, tuneType, variant, balance, stiffness, manualOverrides]);
 
   const carName = selectedCar ? getCarDisplayName(selectedCar) : 'Custom Car';
 
@@ -116,6 +124,7 @@ export default function Index() {
   const handleCarSelect = (car: FH5Car) => {
     setSelectedCar(car);
     setSpecs({ ...specs, weight: car.weight, weightDistribution: car.weightDistribution, driveType: car.driveType });
+    setVariant(defaultTuneVariantByType[tuneType]);
     setBalance(0);
     setStiffness(50);
     setManualOverrides({});
@@ -130,6 +139,7 @@ export default function Index() {
   const handleReset = () => {
     setSpecs(defaultSpecs);
     setTuneType('grip');
+    setVariant(defaultTuneVariantByType.grip);
     setShowResults(false);
     setSelectedCar(null);
     setBalance(0);
@@ -140,6 +150,7 @@ export default function Index() {
   const handleLoadTune = (tune: SavedTune) => {
     setSpecs(tune.specs);
     setTuneType(tune.tuneType);
+    setVariant(defaultTuneVariantByType[tune.tuneType]);
     setShowResults(true);
     setSelectedCar(null);
     setBalance(0);
@@ -223,6 +234,26 @@ export default function Index() {
             <div className="module-block module-gearing p-3 md:p-4">
               <TuneTypeSelector selected={tuneType} onChange={setTuneType} />
             </div>
+
+            {showResults && (
+              <div className="module-block module-gearing p-3 md:p-4">
+                <h3 className="font-display text-sm mb-3 uppercase tracking-wider" style={{ color: 'hsl(var(--module-gearing))' }}>
+                  Variant
+                </h3>
+                <Select value={variant} onValueChange={(v) => setVariant(v as TuneVariant)}>
+                  <SelectTrigger className="bg-[hsl(220,15%,12%)] border-[hsl(220,15%,20%)]">
+                    <SelectValue placeholder="Select variant..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tuneVariantsByType[tuneType].map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             {!isSimpleMode && (
               <div className="module-block module-aero p-3 md:p-4">

@@ -20,6 +20,60 @@ import {
 export type DriveType = 'RWD' | 'FWD' | 'AWD';
 export type TuneType = 'grip' | 'drift' | 'offroad' | 'drag' | 'rally' | 'street';
 
+ export type TuneVariant =
+  | 'balanced'
+  | 'technical'
+  | 'highSpeed'
+  | 'powerbuild'
+  | 'highAngle'
+  | 'smooth'
+  | 'bumpy'
+  | 'mixed'
+  | 'traction'
+  | 'topSpeed';
+
+ export const tuneVariantsByType: Record<TuneType, { value: TuneVariant; label: string }[]> = {
+  grip: [
+    { value: 'balanced', label: 'Balanced' },
+    { value: 'technical', label: 'Technical Tracks' },
+    { value: 'highSpeed', label: 'High Speed' },
+    { value: 'powerbuild', label: 'Powerbuild Traction' },
+  ],
+  street: [
+    { value: 'balanced', label: 'Balanced' },
+    { value: 'highSpeed', label: 'High Speed' },
+    { value: 'traction', label: 'Traction / Stability' },
+  ],
+  drift: [
+    { value: 'balanced', label: 'Balanced' },
+    { value: 'highAngle', label: 'High Angle' },
+    { value: 'smooth', label: 'Smooth / Consistent' },
+  ],
+  rally: [
+    { value: 'mixed', label: 'Mixed Surface' },
+    { value: 'bumpy', label: 'Bumpy / Jumps' },
+    { value: 'traction', label: 'Loose Traction' },
+  ],
+  offroad: [
+    { value: 'bumpy', label: 'Bumpy / Jumps' },
+    { value: 'traction', label: 'Traction / Stability' },
+    { value: 'mixed', label: 'Mixed Terrain' },
+  ],
+  drag: [
+    { value: 'traction', label: 'Launch / 0-60' },
+    { value: 'topSpeed', label: 'Top Speed / Trap' },
+  ],
+ };
+
+ export const defaultTuneVariantByType: Record<TuneType, TuneVariant> = {
+  grip: 'balanced',
+  street: 'balanced',
+  drift: 'balanced',
+  rally: 'mixed',
+  offroad: 'bumpy',
+  drag: 'traction',
+ };
+
 export interface CarSpecs {
   weight: number; // in lbs or kg depending on unitSystem
   weightDistribution: number; // front weight percentage (0-100)
@@ -33,6 +87,27 @@ export interface CarSpecs {
   gearCount?: number; // 4-10 gears
   drivingStyle?: number; // -2 (stable/understeer) to +2 (loose/oversteer)
 }
+
+ export interface CalculateTuneOptions {
+  variant?: TuneVariant;
+ }
+
+ function normalizePiClass(raw: string | undefined): keyof typeof piClassScaling {
+  const str = String(raw ?? '').toUpperCase();
+  if (str.includes('S1')) return 'S1';
+  if (str.includes('S2')) return 'S2';
+  if (str.includes('X')) return 'X';
+  if (str.includes('A')) return 'A';
+  if (str.includes('B')) return 'B';
+  if (str.includes('C')) return 'C';
+  if (str.includes('D')) return 'D';
+  return 'A';
+ }
+
+ function clampNumber(v: number, min: number, max: number) {
+  if (!Number.isFinite(v)) return min;
+  return Math.max(min, Math.min(max, v));
+ }
 
 export type UnitSystem = 'imperial' | 'metric';
 
@@ -728,7 +803,7 @@ export function getSimpleModeDefaults(tuneType: TuneType): {
 // Implements the holistic system integration from ForzaTune Pro
 // All settings calculated as a cohesive unit to prevent "chasing balance"
 // ==========================================
-export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings {
+export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: CalculateTuneOptions = {}): TuneSettings {
   const { 
     weight, 
     weightDistribution, 
@@ -741,17 +816,21 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
     piClass = 'A',
     drivingStyle = 0
   } = specs;
+
+  const normalizedPI = normalizePiClass(piClass);
+  const variant = options.variant ?? defaultTuneVariantByType[tuneType];
+  const gearCount = clampNumber(specs.gearCount ?? 6, 4, 10);
   
   // Get modifiers
   const tireMod = tireCompoundModifiers[tireCompound] || tireCompoundModifiers['sport'];
-  const piMod = piClassScaling[piClass] || piClassScaling['A'];
+  const piMod = piClassScaling[normalizedPI] || piClassScaling['A'];
   const powerWeight = getPowerToWeightMultiplier(horsepower, weight);
   
   // Combined modifier (gentler scaling than before)
   const combinedStiffness = powerWeight.multiplier * (piMod.springScale * 0.55 + 0.45) * tireMod.springMod;
   
   // Modifiers will be enhanced with physics data after spring/damping calculation
-  let modifiers: TuneModifiers = {
+  const modifiers: TuneModifiers = {
     powerToWeight: powerWeight,
     tireCompound: tireMod,
     piClass: { name: piMod.name, stiffnessMod: piMod.springScale, diffAggression: piMod.diffAggression },
@@ -791,7 +870,7 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   // ==========================================
   // ANTI-ROLL BARS - Weight distribution based
   // ==========================================
-  let arbs = calculateARB_Enhanced(weightDistribution, tuneType, driveType, piClass);
+  const arbs = calculateARB_Enhanced(weightDistribution, tuneType, driveType, normalizedPI);
   
   // Apply driving style offset (±4 per style point)
   arbs.front = Math.max(1, Math.min(65, arbs.front + drivingStyle * 3));
@@ -821,11 +900,34 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
     S2: 1.15,
     X: 1.22,
   };
-  const piFreqScale = piFrequencyScale[piClass] || 1.0;
+  const piFreqScale = piFrequencyScale[normalizedPI] || 1.0;
   
   // Calculate physics-based spring rates
-  const frontFreqHz = freqTargets.front * piFreqScale;
-  const rearFreqHz = freqTargets.rear * piFreqScale;
+  // Variant frequency scaling applied here so it influences the physics spring calculation.
+  const variantFrequencyScale = (() => {
+    if (tuneType === 'grip') {
+      if (variant === 'technical') return 1.03;
+      if (variant === 'highSpeed') return 0.98;
+      if (variant === 'powerbuild') return 1.02;
+    }
+    if (tuneType === 'street') {
+      if (variant === 'highSpeed') return 0.98;
+      if (variant === 'traction') return 1.01;
+    }
+    if (tuneType === 'drift') {
+      if (variant === 'highAngle') return 1.02;
+      if (variant === 'smooth') return 0.98;
+    }
+    if (tuneType === 'rally' || tuneType === 'offroad') {
+      if (variant === 'bumpy') return 0.92;
+      if (variant === 'traction') return 0.96;
+      if (variant === 'mixed') return 0.97;
+    }
+    return 1.0;
+  })();
+
+  const frontFreqHz = freqTargets.front * piFreqScale * variantFrequencyScale;
+  const rearFreqHz = freqTargets.rear * piFreqScale * variantFrequencyScale;
   
   const frontSpringResult = calculateSpringFromFrequency({
     cornerWeightLbs: frontCornerWeight,
@@ -860,7 +962,7 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   }
   
   // Clamp to FH5 valid ranges (use PI-aware bounds as sanity check)
-  const springRange = springRangesByPI[piClass]?.[tuneType] || springRangesByPI['A'][tuneType];
+  const springRange = springRangesByPI[normalizedPI]?.[tuneType] || springRangesByPI['A'][tuneType];
   const minSpring = Math.round(springRange.min * 0.7);
   const maxSpring = Math.round(springRange.max * 1.5);
   springsFront = Math.max(minSpring, Math.min(maxSpring, springsFront));
@@ -888,7 +990,7 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
     frontCornerWeight,
     rearCornerWeight,
     tuneType,
-    piClass
+    normalizedPI
   );
   
   // ==========================================
@@ -955,8 +1057,8 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   let diffAccelRear = Math.round((diff.accelR || 0) * (1 + piMod.diffAggression));
   let diffDecelRear = Math.round((diff.decelR || 0) * (1 + piMod.diffAggression * 0.5));
   let diffAccelFront = diff.accelF ? Math.round(diff.accelF * (1 + piMod.diffAggression)) : undefined;
-  let diffDecelFront = diff.decelF;
-  let centerBalance = diff.center;
+  const diffDecelFront = diff.decelF;
+  const centerBalance = diff.center;
   
   // Driving style: loose = more aggressive diff
   diffAccelRear = Math.round(diffAccelRear + (drivingStyle * 4));
@@ -987,7 +1089,6 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   // GEARING - Geometric progression
   // ==========================================
   const gearing = gearingPresets[tuneType];
-  const gearCount = specs.gearCount || 6;
   const gearRatios = calculateGearRatios(gearing.first, gearing.last, gearCount);
   const finalDrive = calculateDynamicFinalDrive(gearing.finalDrive, horsepower, tuneType);
   
@@ -1003,17 +1104,64 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
   // ==========================================
   // RETURN FINAL TUNE (holistically calculated)
   // ==========================================
+  const variantMods: Partial<{
+    frequencyScale: number;
+    diffAccelRearOffset: number;
+    diffDecelRearOffset: number;
+    targetFrontBiasOffset: number;
+    finalDriveScale: number;
+    toeFrontOffset: number;
+  }> = (() => {
+    if (tuneType === 'grip') {
+      if (variant === 'technical') return { frequencyScale: 1.03, diffDecelRearOffset: 6, targetFrontBiasOffset: 2, finalDriveScale: 1.02, toeFrontOffset: 0.05 };
+      if (variant === 'highSpeed') return { frequencyScale: 0.98, diffDecelRearOffset: 8, targetFrontBiasOffset: 4, finalDriveScale: 0.96 };
+      if (variant === 'powerbuild') return { frequencyScale: 1.02, diffAccelRearOffset: 8, targetFrontBiasOffset: 2, finalDriveScale: 1.06 };
+      return { frequencyScale: 1.0 };
+    }
+    if (tuneType === 'street') {
+      if (variant === 'highSpeed') return { frequencyScale: 0.98, diffDecelRearOffset: 6, targetFrontBiasOffset: 3, finalDriveScale: 0.96 };
+      if (variant === 'traction') return { frequencyScale: 1.01, diffAccelRearOffset: -4, diffDecelRearOffset: 6, targetFrontBiasOffset: 3 };
+      return { frequencyScale: 1.0 };
+    }
+    if (tuneType === 'drift') {
+      if (variant === 'highAngle') return { frequencyScale: 1.02, toeFrontOffset: 0.2, diffAccelRearOffset: 0, diffDecelRearOffset: 0 };
+      if (variant === 'smooth') return { frequencyScale: 0.98, toeFrontOffset: -0.2, diffDecelRearOffset: -10 };
+      return { frequencyScale: 1.0 };
+    }
+    if (tuneType === 'rally' || tuneType === 'offroad') {
+      if (variant === 'bumpy') return { frequencyScale: 0.92, diffAccelRearOffset: 6, diffDecelRearOffset: 4, targetFrontBiasOffset: -2, finalDriveScale: 1.04 };
+      if (variant === 'traction') return { frequencyScale: 0.96, diffAccelRearOffset: 10, diffDecelRearOffset: 6, targetFrontBiasOffset: -1 };
+      if (variant === 'mixed') return { frequencyScale: 0.97, diffAccelRearOffset: 6, diffDecelRearOffset: 4 };
+      return { frequencyScale: 1.0 };
+    }
+    if (tuneType === 'drag') {
+      if (variant === 'topSpeed') return { finalDriveScale: 0.88, diffAccelRearOffset: -2, targetFrontBiasOffset: 2 };
+      return { finalDriveScale: 1.0 };
+    }
+    return { frequencyScale: 1.0 };
+  })();
+
+  // Apply variant modifications (guardrails applied after)
+  const finalTargetFrontBias = clampNumber(targetFrontBias + (variantMods.targetFrontBiasOffset ?? 0), 45, 70);
+  const finalBrakeBalance = 100 - finalTargetFrontBias;
+  const finalBrakeBalanceNote = `Set slider to ${finalBrakeBalance}% to achieve ${finalTargetFrontBias}% front bias (FH5 slider is inverted)`;
+
+  const finalDiffAccelRear = clampNumber(diffAccelRear + (variantMods.diffAccelRearOffset ?? 0), 0, 100);
+  const finalDiffDecelRear = clampNumber(diffDecelRear + (variantMods.diffDecelRearOffset ?? 0), 0, 100);
+
+  const finalFinalDrive = clampNumber(finalDrive * (variantMods.finalDriveScale ?? 1.0), 2.5, 5.5);
+
   return {
     tirePressureFront: tirePressures.front,
     tirePressureRear: tirePressures.rear,
-    finalDrive: Math.round(finalDrive * 100) / 100,
+    finalDrive: Math.round(finalFinalDrive * 100) / 100,
     gearRatios,
     gearingNote: gearingNotes[tuneType],
-    camberFront,
-    camberRear,
-    toeFront: Math.round(alignment.toeF * 10) / 10,
-    toeRear: Math.round(alignment.toeR * 10) / 10,
-    caster: Math.round(alignment.caster * 10) / 10,
+    camberFront: clampNumber(camberFront, -10, 1),
+    camberRear: clampNumber(camberRear, -10, 1),
+    toeFront: clampNumber(Math.round((alignment.toeF + (variantMods.toeFrontOffset ?? 0)) * 10) / 10, -5, 5),
+    toeRear: clampNumber(Math.round(alignment.toeR * 10) / 10, -5, 5),
+    caster: clampNumber(Math.round(alignment.caster * 10) / 10, 0, 10),
     arbFront: arbs.front,
     arbRear: arbs.rear,
     springsFront,
@@ -1028,12 +1176,12 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType): TuneSettings
     aeroRear,
     diffAccelFront,
     diffDecelFront,
-    diffAccelRear,
-    diffDecelRear,
+    diffAccelRear: finalDiffAccelRear,
+    diffDecelRear: finalDiffDecelRear,
     centerBalance,
     brakePressure: brakes.pressure,
-    brakeBalance,
-    brakeBalanceNote,
+    brakeBalance: finalBrakeBalance,
+    brakeBalanceNote: finalBrakeBalanceNote,
     modifiers: {
       ...modifiers,
       physics: {

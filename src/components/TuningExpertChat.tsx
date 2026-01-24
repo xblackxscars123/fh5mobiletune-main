@@ -138,7 +138,7 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
   const [compareProfile1, setCompareProfile1] = useState<TuneProfile | null>(null);
   const [compareProfile2, setCompareProfile2] = useState<TuneProfile | null>(null);
-  const [comparison, setComparison] = useState<any>(null);
+  const [comparison, setComparison] = useState<ReturnType<typeof comparePerformance> | null>(null);
   const [showTips, setShowTips] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -293,9 +293,11 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
       notes: notes || '',
     };
 
-    const updated = [profile, ...tuneProfiles].slice(0, 10);
-    setTuneProfiles(updated);
-    localStorage.setItem('tune-profiles', JSON.stringify(updated));
+    setTuneProfiles(prev => {
+      const updated = [profile, ...prev].slice(0, 10);
+      localStorage.setItem('tune-profiles', JSON.stringify(updated));
+      return updated;
+    });
     toast.success(`Saved tune: ${name}`);
   }, [tuneContext]);
 
@@ -553,36 +555,28 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
 
                     {/* Tire & Braking Analysis */}
                     <div className="grid grid-cols-2 gap-2 text-[9px]">
-                      {performancePrediction.tireBehavior && (
-                        <div className="bg-[hsl(220,15%,5%)] rounded p-1.5 space-y-0.5">
-                          <p className="text-green-400 text-[8px] font-semibold">Tire Performance</p>
-                          <div className="text-[8px] space-y-0.5">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Front Grip</span>
-                              <span className={performancePrediction.tireBehavior.frontGrip > 1.0 ? 'text-green-300' : 'text-yellow-300'}>
-                                {performancePrediction.tireBehavior.frontGrip.toFixed(2)}G
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Temp</span>
-                              <span className={performancePrediction.tireBehavior.temperature === 'hot' ? 'text-red-300' : 'text-green-300'}>
-                                {performancePrediction.tireBehavior.temperature}
-                              </span>
-                            </div>
+                      <div className="bg-[hsl(220,15%,5%)] rounded p-1.5 space-y-0.5">
+                        <p className="text-green-400 text-[8px] font-semibold">Tire Grip</p>
+                        <div className="text-[8px] space-y-0.5">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Overall</span>
+                            <span className={performancePrediction.tireGrip > 1.0 ? 'text-green-300' : 'text-yellow-300'}>
+                              {performancePrediction.tireGrip.toFixed(2)}G
+                            </span>
                           </div>
                         </div>
-                      )}
+                      </div>
                       <div className="bg-[hsl(220,15%,5%)] rounded p-1.5 space-y-0.5">
                         <p className="text-red-400 text-[8px] font-semibold">Braking</p>
                         <div className="text-[8px] space-y-0.5">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">60→0 ft</span>
-                            <span className="text-red-300">{performancePrediction.brakingDistance.toFixed(0)}</span>
+                            <span className="text-red-300">{performancePrediction.brakeDistance.toFixed(0)}</span>
                           </div>
                           <div className="w-full bg-[hsl(220,15%,10%)] rounded h-1.5 overflow-hidden border border-[hsl(220,15%,20%)]">
                             <div 
                               className="h-full bg-red-500"
-                              style={{width: `${Math.min(100, (100 / 400) * performancePrediction.brakingDistance)}%`}}
+                              style={{width: `${Math.min(100, (100 / 400) * performancePrediction.brakeDistance)}%`}}
                             />
                           </div>
                         </div>
@@ -594,12 +588,12 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
                       <p className="text-yellow-400 text-[8px] font-semibold">Weight Transfer</p>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground text-[8px]">Suspension Response</span>
-                        <span className="text-yellow-300">{performancePrediction.weightTransferPercent.toFixed(1)}%</span>
+                        <span className="text-yellow-300">{performancePrediction.weightTransfer.toFixed(1)}%</span>
                       </div>
                       <div className="w-full bg-[hsl(220,15%,10%)] rounded h-1.5 overflow-hidden border border-[hsl(220,15%,20%)]">
                         <div 
                           className="h-full bg-yellow-500"
-                          style={{width: `${performancePrediction.weightTransferPercent}%`}}
+                          style={{width: `${Math.min(100, Math.max(0, performancePrediction.weightTransfer))}%`}}
                         />
                       </div>
                     </div>
@@ -635,11 +629,11 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
                   {tuneContext.currentTune && (
                     <div className="mt-3 pt-3 border-t border-[hsl(220,15%,18%)] space-y-1">
                       <p className="text-[9px] font-semibold text-cyan-400">Quick Adjustments to Try:</p>
-                      {['grip', 'speed', 'stability', 'drift'].slice(0, 2).map((target) => (
+                      {(['grip', 'speed'] as const).map((target) => (
                         <div key={target} className="text-[8px] text-muted-foreground">
                           <span className="capitalize font-semibold text-cyan-300">{target}:</span>
-                          {getQuickAdjustments(tuneContext.currentTune, target as any).length > 0 ? (
-                            getQuickAdjustments(tuneContext.currentTune, target as any).map((adj, aidx) => (
+                          {getQuickAdjustments(tuneContext.currentTune, target).length > 0 ? (
+                            getQuickAdjustments(tuneContext.currentTune, target).map((adj, aidx) => (
                               <p key={aidx} className="ml-2">
                                 {adj.setting}: {adj.adjustment > 0 ? '+' : ''}{adj.adjustment} ({adj.reason})
                               </p>
@@ -864,15 +858,15 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
                   <div className="grid grid-cols-3 gap-1 text-[8px]">
                     <div className="text-center px-1 py-1 bg-[hsl(220,15%,12%)] rounded">
                       <p className="text-muted-foreground">0-60</p>
-                      <p className="font-semibold text-cyan-400">{comparison.zeroToSixty1?.toFixed(2)} vs {comparison.zeroToSixty2?.toFixed(2)}s</p>
+                      <p className="font-semibold text-cyan-400">{comparison.zeroToSixty.before?.toFixed(2)} vs {comparison.zeroToSixty.after?.toFixed(2)}s</p>
                     </div>
                     <div className="text-center px-1 py-1 bg-[hsl(220,15%,12%)] rounded">
                       <p className="text-muted-foreground">Top Speed</p>
-                      <p className="font-semibold text-yellow-400">{comparison.topSpeed1?.toFixed(0)} vs {comparison.topSpeed2?.toFixed(0)} mph</p>
+                      <p className="font-semibold text-yellow-400">{comparison.topSpeed.before?.toFixed(0)} vs {comparison.topSpeed.after?.toFixed(0)} mph</p>
                     </div>
                     <div className="text-center px-1 py-1 bg-[hsl(220,15%,12%)] rounded">
                       <p className="text-muted-foreground">Cornering</p>
-                      <p className="font-semibold text-green-400">{comparison.cornering1?.toFixed(1)} vs {comparison.cornering2?.toFixed(1)}G</p>
+                      <p className="font-semibold text-green-400">{comparison.corneringG.before?.toFixed(1)} vs {comparison.corneringG.after?.toFixed(1)}G</p>
                     </div>
                   </div>
                   <button

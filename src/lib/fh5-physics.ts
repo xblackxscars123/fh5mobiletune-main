@@ -154,7 +154,6 @@ export function calculateAccelerationCurve(specs: CarSpecs, tune: TuneSettings):
   const zeroToSixty = calculateZeroToSixty(specs, tune);
 
   let currentTime = 0;
-  let currentSpeed = 0;
   const timeStep = 0.1; // seconds
 
   // Simulate acceleration through speed ranges

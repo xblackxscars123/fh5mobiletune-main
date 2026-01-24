@@ -984,7 +984,7 @@ function parseRawCarData(): FH5Car[] {
     const specs = typeSpecs[carType] || typeSpecs['Modern Sports Cars'];
     
     // Generate unique ID
-    let baseId = generateCarId(year, make, model);
+    const baseId = generateCarId(year, make, model);
     let id = baseId;
     let counter = 1;
     while (seenIds.has(id)) {

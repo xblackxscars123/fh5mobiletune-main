@@ -26,6 +26,14 @@ interface GearingVisualizerProps {
   redlineRpm?: number;
 }
 
+type RechartsTooltipPayload<T> = Array<{ payload?: T }> | undefined;
+
+type RechartsTooltipProps<T> = {
+  active?: boolean;
+  payload?: RechartsTooltipPayload<T>;
+  label?: string | number;
+};
+
 // Calculate simulated shift points and speed estimates
 const calculateGearData = (
   gearRatios: number[],
@@ -101,37 +109,37 @@ const calculateTradeoffData = (finalDrive: number, baselineRatios: number[]) => 
 };
 
 // Custom tooltip component
-const GearTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload || !payload.length) return null;
-  
+const GearTooltip = ({ active, payload, label }: RechartsTooltipProps<Record<string, unknown>>) => {
+  if (!active || !payload || payload.length === 0) return null;
+
   const data = payload[0]?.payload;
   if (!data) return null;
   
   return (
     <div className="bg-background/95 backdrop-blur-sm border border-neon-cyan/30 rounded-lg p-3 shadow-lg">
       <div className="font-display text-neon-cyan text-sm mb-2">
-        {data.gearLabel || label} Gear
+        {(data.gearLabel as string | undefined) || label} Gear
       </div>
       <div className="space-y-1 text-xs">
-        {data.ratio && (
+        {typeof data.ratio === 'number' && (
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Ratio:</span>
             <span className="text-foreground font-mono">{data.ratio.toFixed(2)}</span>
           </div>
         )}
-        {data.speedAtRedline && (
+        {typeof data.speedAtRedline === 'number' && (
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Max Speed:</span>
             <span className="text-neon-pink font-mono">{data.speedAtRedline} km/h</span>
           </div>
         )}
-        {data.shiftRpm && (
+        {typeof data.shiftRpm === 'number' && (
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Shift Point:</span>
             <span className="text-neon-yellow font-mono">{Math.round(data.shiftRpm)} RPM</span>
           </div>
         )}
-        {data.dropRatio > 0 && (
+        {typeof data.dropRatio === 'number' && data.dropRatio > 0 && (
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Drop to next:</span>
             <span className="text-module-suspension font-mono">{data.dropRatio}%</span>
@@ -142,26 +150,29 @@ const GearTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-const TradeoffTooltip = ({ active, payload }: any) => {
-  if (!active || !payload || !payload.length) return null;
-  
+const TradeoffTooltip = ({ active, payload }: RechartsTooltipProps<Record<string, unknown>>) => {
+  if (!active || !payload || payload.length === 0) return null;
+
   const data = payload[0]?.payload;
   if (!data) return null;
   
   return (
     <div className="bg-background/95 backdrop-blur-sm border border-neon-pink/30 rounded-lg p-3 shadow-lg">
-      <div className="font-display text-sm mb-2" style={{ color: data.isCurrent ? 'hsl(var(--neon-cyan))' : 'hsl(var(--foreground))' }}>
-        Final Drive: {data.finalDrive}
-        {data.isCurrent && <span className="ml-2 text-xs">(Current)</span>}
+      <div
+        className="font-display text-sm mb-2"
+        style={{ color: data.isCurrent ? 'hsl(var(--neon-cyan))' : 'hsl(var(--foreground))' }}
+      >
+        Final Drive: {data.finalDrive as string | number | undefined}
+        {data.isCurrent ? <span className="ml-2 text-xs">(Current)</span> : null}
       </div>
       <div className="space-y-1 text-xs">
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">Acceleration:</span>
-          <span className="text-neon-cyan font-mono">{data.acceleration}%</span>
+          <span className="text-neon-cyan font-mono">{data.acceleration as string | number}%</span>
         </div>
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">Top Speed:</span>
-          <span className="text-neon-pink font-mono">{data.topSpeed}%</span>
+          <span className="text-neon-pink font-mono">{data.topSpeed as string | number}%</span>
         </div>
       </div>
     </div>
