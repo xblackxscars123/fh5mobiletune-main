@@ -438,6 +438,7 @@ export const GearingVisualizer = ({
               <Tooltip content={<TradeoffTooltip />} />
               <ReferenceLine 
                 x="Current" 
+                yAxisId="time"
                 stroke="hsl(var(--neon-yellow))" 
                 strokeDasharray="5 5"
                 strokeWidth={2}
