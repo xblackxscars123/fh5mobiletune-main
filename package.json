@@ -1,13 +1,15 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "fh5mobiletune",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "ci": "npm run lint && npm run typecheck && npm run build",
     "preview": "vite preview",
     "kudosprime:extract": "node scripts/kudosprimeExtract.mjs",
     "kudosprime:extract:headed": "node scripts/kudosprimeExtract.mjs --headed",
