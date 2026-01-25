@@ -7,98 +7,99 @@
 
 @layer base {
   :root {
-    /* Blueprint workspace theme */
-    --background: 220 45% 12%;
+    /* Modern Coherent Theme - Cyan/Pink/Purple with high saturation */
+    --background: 217 32% 10%;
     --foreground: 210 40% 98%;
 
-    --card: 220 45% 16%;
+    --card: 217 32% 14%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 220 45% 14%;
+    --popover: 217 32% 12%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 220 80% 60%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 186 100% 52%;
+    --primary-foreground: 217 32% 10%;
 
-    --secondary: 280 60% 55%;
+    --secondary: 270 70% 50%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 220 30% 25%;
-    --muted-foreground: 220 20% 65%;
+    --muted: 217 20% 28%;
+    --muted-foreground: 217 15% 55%;
 
-    --accent: 330 85% 60%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 325 100% 55%;
+    --accent-foreground: 217 32% 10%;
 
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 85% 97%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 217 32% 10%;
 
-    --border: 220 40% 25%;
-    --input: 220 40% 20%;
-    --ring: 330 85% 60%;
+    --border: 217 32% 22%;
+    --input: 217 32% 18%;
+    --ring: 186 100% 52%;
 
     --radius: 0.5rem;
 
-    /* Module category colors */
-    --module-suspension: 145 65% 35%;
-    --module-aero: 200 85% 50%;
-    --module-gearing: 45 90% 50%;
-    --module-tires: 20 85% 50%;
-    --module-differential: 280 70% 50%;
-    --module-brakes: 0 75% 50%;
-    --module-alignment: 170 70% 45%;
-    --module-damping: 260 60% 55%;
+    /* Module category colors - Cohesive and saturated */
+    --module-suspension: 162 85% 45%;
+    --module-aero: 186 100% 52%;
+    --module-gearing: 39 95% 55%;
+    --module-tires: 15 100% 54%;
+    --module-differential: 270 70% 50%;
+    --module-brakes: 0 100% 58%;
+    --module-alignment: 160 90% 48%;
+    --module-damping: 260 75% 55%;
 
-    /* Neon accents */
-    --neon-pink: 330 100% 65%;
-    --neon-cyan: 185 100% 50%;
-    --neon-purple: 280 100% 70%;
-    --neon-blue: 220 100% 65%;
+    /* Neon accents - Coherent with primary colors */
+    --neon-pink: 325 100% 55%;
+    --neon-cyan: 186 100% 52%;
+    --neon-purple: 270 70% 50%;
+    --neon-blue: 210 100% 55%;
+    --neon-yellow: 39 95% 55%;
 
-    /* Blueprint specific */
-    --blueprint-bg: 220 50% 10%;
-    --blueprint-grid: 220 60% 25%;
-    --blueprint-line: 200 80% 50%;
-    --sketch-line: 45 10% 85%;
+    /* Blueprint specific - Darker and more cohesive */
+    --blueprint-bg: 217 40% 8%;
+    --blueprint-grid: 217 35% 20%;
+    --blueprint-line: 186 100% 52%;
+    --sketch-line: 39 90% 75%;
 
     /* Paper effects */
-    --paper-edge: 35 30% 85%;
-    --paper-shadow: 220 40% 8%;
-    --paper-highlight: 45 20% 95%;
+    --paper-edge: 39 85% 80%;
+    --paper-shadow: 217 32% 5%;
+    --paper-highlight: 39 20% 92%;
 
-    /* Shadows */
-    --shadow-glow-pink: 0 0 30px hsl(var(--neon-pink) / 0.5);
-    --shadow-glow-cyan: 0 0 30px hsl(var(--neon-cyan) / 0.5);
-    --shadow-module: 0 8px 32px hsl(var(--paper-shadow) / 0.6);
+    /* Glow effects */
+    --shadow-glow-pink: 0 0 30px hsl(var(--neon-pink) / 0.6);
+    --shadow-glow-cyan: 0 0 30px hsl(var(--neon-cyan) / 0.6);
+    --shadow-module: 0 8px 32px hsl(var(--paper-shadow) / 0.7);
 
     /* Sidebar */
-    --sidebar-background: 220 45% 8%;
+    --sidebar-background: 217 32% 9%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 330 85% 60%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 280 60% 55%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 220 40% 20%;
-    --sidebar-ring: 330 85% 60%;
+    --sidebar-primary: 186 100% 52%;
+    --sidebar-primary-foreground: 217 32% 10%;
+    --sidebar-accent: 325 100% 55%;
+    --sidebar-accent-foreground: 217 32% 10%;
+    --sidebar-border: 217 32% 20%;
+    --sidebar-ring: 186 100% 52%;
 
     --font-sans: 'Rajdhani', sans-serif;
     --font-serif: 'Caveat', cursive;
     --font-mono: 'JetBrains Mono', monospace;
 
-    --chart-1: 200 85% 50%;
-    --chart-2: 145 65% 35%;
-    --chart-3: 45 90% 50%;
-    --chart-4: 280 70% 50%;
-    --chart-5: 20 85% 50%;
+    --chart-1: 186 100% 52%;
+    --chart-2: 162 85% 45%;
+    --chart-3: 39 95% 55%;
+    --chart-4: 270 70% 50%;
+    --chart-5: 15 100% 54%;
 
-    --sidebar: 220 45% 8%;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.1);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.1);
-    --shadow-sm: 0 2px 6px 0px hsl(0 0% 0% / 0.15);
-    --shadow: 0 4px 12px 0px hsl(0 0% 0% / 0.2);
-    --shadow-md: 0 6px 20px 0px hsl(0 0% 0% / 0.25);
-    --shadow-lg: 0 10px 30px 0px hsl(0 0% 0% / 0.3);
-    --shadow-xl: 0 15px 40px 0px hsl(0 0% 0% / 0.35);
-    --shadow-2xl: 0 25px 50px 0px hsl(0 0% 0% / 0.4);
+    --sidebar: 217 32% 9%;
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.15);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.15);
+    --shadow-sm: 0 2px 6px 0px hsl(0 0% 0% / 0.2);
+    --shadow: 0 4px 12px 0px hsl(0 0% 0% / 0.25);
+    --shadow-md: 0 6px 20px 0px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 10px 30px 0px hsl(0 0% 0% / 0.35);
+    --shadow-xl: 0 15px 40px 0px hsl(0 0% 0% / 0.4);
+    --shadow-2xl: 0 25px 50px 0px hsl(0 0% 0% / 0.5);
     --tracking-normal: 0em;
     --spacing: 0.25rem;
   }
@@ -1077,4 +1078,4 @@
     0% { transform: translateY(0); }
     100% { transform: translateY(10px); }
   }
-  .animate-scanlines { animation: scanlines 8s linear infinite; }
+  .animate-scanlines { animation: scanlines 8s linear infinite; }}

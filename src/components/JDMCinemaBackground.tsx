@@ -163,20 +163,6 @@ export const JDMCinemaBackground = () => {
       >
         <defs>
           <linearGradient id="cityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="hsl(280 100% 60%)" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="hsl(280 100% 40%)" stopOpacity="0.3" />
-          </linearGradient>
-          <linearGradient id="windowGlow" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="hsl(185 100% 70%)" />
-            <stop offset="100%" stopColor="hsl(45 100% 60%)" />
-          </linearGradient>
-        </defs>
-        
-        {/* Buildings silhouette */}
-        <path 
-          d="M0,120 L0,80 L60,80 L60,50 L120,50 L120,70 L180,70 L180,40 L220,40 L220,60 L280,60 L280,30 L340,30 L340,55 L400,55 L400,25 L450,25 L450,45 L500,45 L500,20 L550,20 L550,50 L620,50 L620,35 L680,35 L680,60 L750,60 L750,25 L820,25 L820,55 L880,55 L880,40 L950,40 L950,65 L1020,65 L1020,45 L1080,45 L1080,70 L1140,70 L1140,55 L1200,55 L1200,120 Z"
-        <defs>
-          <linearGradient id="cityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="hsl(280 100% 60%)" stopOpacity="0.8" />
             <stop offset="100%" stopColor="hsl(280 100% 40%)" stopOpacity="0.4" />
           </linearGradient>

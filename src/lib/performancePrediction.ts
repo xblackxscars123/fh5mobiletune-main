@@ -13,9 +13,7 @@
  * @param horsepower - Engine power (hp)
  * @param weight - Vehicle weight (lbs)
  * @param dragCoefficient - Aerodynamic drag coefficient (0.2-0.5 typical)
- * @param frontalAreaOrMaxGearRatio - Either frontal area (sq ft) OR max gear ratio
- *                                     If number < 5: treated as frontal area
- *                                     If number >= 5: treated as gear ratio (legacy compatibility)
+ * @param frontalAreaOrMaxGearRatio - Either frontal area (sq ft) OR final drive ratio
  * @returns Estimated top speed in mph
  */
 export function estimateTopSpeed(
@@ -25,18 +23,29 @@ export function estimateTopSpeed(
   frontalAreaOrMaxGearRatio: number = 20
 ): number {
   // CONSOLIDATION: Unified master function replacing 3 duplicate implementations
-  // Supports both: pure physics mode AND gear-ratio-effect mode
+  // Supports both: pure physics mode AND final-drive-effect mode
   
-  // Determine if legacy gear ratio mode (for gearRatioOptimization compatibility)
-  const isGearRatioMode = frontalAreaOrMaxGearRatio >= 5;
-  const frontalArea = isGearRatioMode ? (weight / 100) * 0.5 : frontalAreaOrMaxGearRatio;
-  const maxGearRatio = isGearRatioMode ? frontalAreaOrMaxGearRatio : undefined;
+  // Check if this is a final drive ratio call (from gearRatioOptimization)
+  // Final drive ranges: 2.0-5.5 in FH5
+  // Frontal area ranges: typically 15-30 sq ft
+  const isFinalDriveMode = frontalAreaOrMaxGearRatio >= 2.0 && frontalAreaOrMaxGearRatio <= 5.5 
+    && (frontalAreaOrMaxGearRatio * 10) % 1 === 0; // Check if it's likely a gear ratio (usually X.Y format)
   
-  // Pure physics calculation (most accurate)
-  // Power required = Drag Force × Speed
-  // Drag Force = 0.5 × ρ × v² × Cd × A
-  // Where ρ = air density (~0.002377 slugs/ft³)
+  if (isFinalDriveMode) {
+    // Use simplified gear-ratio-aware calculation for final drive mode
+    // Base top speed from power: ~1.8 mph per hp (empirical average)
+    const baseTopSpeed = horsepower * 1.8;
+    
+    // Final drive impact: lower ratio = higher top speed, higher ratio = lower top speed
+    // FH5 range: 2.0-5.5, where 2.0 is long gears (high speed) and 5.5 is short gears (low speed)
+    const finalDriveImpact = (5.5 - frontalAreaOrMaxGearRatio) * 8;
+    
+    const topSpeed = baseTopSpeed + finalDriveImpact;
+    return Math.max(80, Math.min(250, Math.round(topSpeed)));
+  }
   
+  // Pure physics calculation for frontal area mode
+  const frontalArea = frontalAreaOrMaxGearRatio;
   const airDensity = 0.002377; // slugs/ft³
   const hpToFtLbs = 550; // ft-lbs/sec per hp
   const secPerHour = 3600;
@@ -46,12 +55,6 @@ export function estimateTopSpeed(
   for (let i = 0; i < 10; i++) {
     const dragForce = 0.5 * airDensity * (speed * 1.46667) ** 2 * dragCoefficient * frontalArea;
     speed = (horsepower * hpToFtLbs * secPerHour) / (dragForce * 1.46667);
-  }
-  
-  // Apply gearing effect modifier if in gear ratio mode (legacy compatibility)
-  if (isGearRatioMode && maxGearRatio) {
-    const gearEffect = Math.pow(maxGearRatio, 0.3);
-    speed = speed / gearEffect; // Shorter gears = lower top speed
   }
   
   // Clamp to realistic range

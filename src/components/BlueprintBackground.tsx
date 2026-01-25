@@ -316,7 +316,6 @@ export const BlueprintBackground = () => {
               left: `${15 + i * 12}%`,
               top: '50%',
               animationDelay: `${i * 0.4}s`,
-              boxShadow: 'drop-shadow(0 0 6px hsl(185 100% 50% / 0.8))',
               boxShadow: '0 0 6px hsl(185 100% 50%)',
             }}
           />

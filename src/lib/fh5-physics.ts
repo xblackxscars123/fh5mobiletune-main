@@ -67,31 +67,41 @@ function getPowerMultiplierByGear(gearNumber: number, totalGears: number): numbe
 export function calculateZeroToSixty(specs: CarSpecs, tune: TuneSettings): number {
   if (!specs.horsepower || !specs.weight) return 0;
 
-  // Base acceleration factor
-  const powerToWeight = specs.horsepower / (specs.weight / 1000); // hp per 1000 lbs
-  const baseAccel = 0.5 + (powerToWeight * 0.08);
+  // Power-to-weight ratio (hp per 1000 lbs)
+  const powerToWeight = specs.horsepower / (specs.weight / 1000);
+  
+  // Base 0-60 time from power-to-weight ratio
+  // Empirical calibration: 
+  // - 100 hp/1000lbs car does ~8 seconds (typical sedan)
+  // - 200 hp/1000lbs car does ~5 seconds (sports car)
+  // - 300+ hp/1000lbs car does ~3-4 seconds (fast car)
+  // Formula: baseTime = 60 / (powerToWeight * 0.075)
+  let baseTime = 60 / (Math.max(0.1, powerToWeight) * 0.075);
 
-  // Drivetrain traction multiplier
+  // Drivetrain traction multiplier (affects launch traction)
   const driveTrainMult: Record<string, number> = {
-    RWD: Math.max(0.7, (tune.diffAccelRear / 100) * 0.95), // Wheelspin risk
-    AWD: 0.95 + (tune.diffAccelRear / 100) * 0.04, // More grip
+    RWD: Math.max(0.7, (tune.diffAccelRear / 100) * 0.95), // Wheelspin risk reduces grip
+    AWD: 0.95 + (tune.diffAccelRear / 100) * 0.04, // More consistent grip
     FWD: 0.85 + (tune.diffAccelFront / 100) * 0.10, // Torque steer effect
   };
 
   const tractionMult = driveTrainMult[specs.driveType || 'RWD'] || 0.85;
 
   // Tire pressure affects launch grip (FH5 uses tire deformation physics)
-  const tirePressureGrip = Math.max(0.8, Math.min(1.2, tune.tirePressureFront / 30));
+  // Optimal is around 32 PSI, deviation reduces grip
+  const tirePressureDeviation = Math.abs(tune.tirePressureFront - 32);
+  const tirePressureGrip = Math.max(0.8, 1.0 - (tirePressureDeviation * 0.01)); // -1% per PSI away from optimal
 
   // Spring stiffness helps with weight transfer in launch
   const springRating = (tune.springsFront + tune.springsRear) / 40;
-  const springMult = Math.max(0.7, Math.min(1.15, springRating));
+  const springMult = Math.max(0.85, Math.min(1.2, springRating * 0.05 + 0.8)); // Subtle but positive effect
 
-  // Calculate 0-60 time
-  const adjustedAccel = baseAccel * tractionMult * tirePressureGrip * springMult;
-  const zeroToSixty = Math.max(2.0, 12 / adjustedAccel);
+  // Calculate adjusted time
+  const tractionAdjustment = Math.max(0.75, Math.min(1.3, tractionMult * tirePressureGrip * springMult));
+  const zeroToSixty = baseTime / tractionAdjustment;
 
-  return parseFloat(zeroToSixty.toFixed(2));
+  // Clamp to realistic range (2.0s minimum for top hypercars, 12s+ for slow cars)
+  return Math.max(2.0, Math.min(12.0, parseFloat(zeroToSixty.toFixed(2))));
 }
 
 /**
@@ -139,7 +149,7 @@ export function calculateTopSpeed(specs: CarSpecs, tune: TuneSettings): number {
   const tireLoss = Math.abs(tune.tirePressureRear - 32) * 0.3;
 
   const topSpeed = baseTopSpeed + finalDriveImpact + penalty - tireLoss;
-  return Math.max(50, parseFloat(topSpeed.toFixed(1)));
+  return Math.max(50, Math.min(250, parseFloat(topSpeed.toFixed(1))));
 }
 
 /**
