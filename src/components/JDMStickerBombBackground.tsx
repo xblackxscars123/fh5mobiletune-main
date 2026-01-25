@@ -92,18 +92,28 @@ export const JDMStickerBombBackground = () => {
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-      {/* Base gradient - darker in center for content readability */}
+      {/* Base gradient - darker in center for content readability - enhanced */}
       <div 
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse 80% 60% at 50% 50%, 
-              hsl(220, 20%, 4%) 0%, 
-              hsl(220, 20%, 6%) 40%, 
-              hsl(220, 22%, 8%) 100%
+            radial-gradient(ellipse 85% 70% at 50% 50%, 
+              hsl(220 25% 6%) 0%, 
+              hsl(220 20% 8%) 40%, 
+              hsl(220 22% 10%) 100%
             )
           `
         }}
+      />
+
+      {/* Dynamic glow background spots */}
+      <div 
+        className="absolute top-1/3 left-1/4 w-96 h-96 rounded-full blur-[120px] opacity-8"
+        style={{ background: 'hsl(330 100% 60%)', animation: 'glowPulse 6s ease-in-out infinite' }}
+      />
+      <div 
+        className="absolute bottom-1/4 right-1/3 w-80 h-80 rounded-full blur-[100px] opacity-8"
+        style={{ background: 'hsl(185 100% 50%)', animation: 'glowPulse 7s ease-in-out infinite', animationDelay: '-2s' }}
       />
       
       {/* Sticker images with parallax layers */}

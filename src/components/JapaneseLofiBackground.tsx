@@ -99,7 +99,7 @@ export function JapaneseLofiBackground() {
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-      {/* Dynamic sky gradient */}
+      {/* Dynamic sky gradient - enhanced */}
       <div 
         className="absolute inset-0 transition-colors [transition-duration:5000ms]"
         style={{
@@ -107,7 +107,7 @@ export function JapaneseLofiBackground() {
         }}
       />
 
-      {/* Stars with twinkling */}
+      {/* Stars with twinkling - enhanced glow */}
       <div className="absolute inset-0" style={{ opacity: starOpacity, transition: 'opacity 3s' }}>
         {stars.map((star, i) => (
           <div
@@ -120,133 +120,142 @@ export function JapaneseLofiBackground() {
               height: `${star.size}px`,
               animation: `starTwinkle ${star.twinkleDuration}s ease-in-out infinite`,
               animationDelay: `${star.delay}s`,
+              boxShadow: `0 0 ${star.size * 1.5}px rgba(255, 255, 255, 0.8), 0 0 ${star.size * 3}px rgba(147, 197, 253, 0.4)`,
             }}
           />
         ))}
       </div>
 
-      {/* Moon with position based on time */}
+      {/* Moon with position based on time - enhanced glow */}
       <div 
         className="absolute w-20 h-20 rounded-full transition-all [transition-duration:10000ms]"
         style={{
           top: `${8 + Math.sin(timeProgress * Math.PI) * 5}%`,
           right: `${15 + Math.cos(timeProgress * Math.PI * 2) * 10}%`,
-          background: 'radial-gradient(circle at 30% 30%, hsl(45, 80%, 95%) 0%, hsl(45, 60%, 85%) 50%, hsl(45, 50%, 75%) 100%)',
-          boxShadow: '0 0 60px hsl(45, 60%, 80% / 0.4), 0 0 120px hsl(45, 50%, 70% / 0.2)',
-          opacity: timeOfDay === 'dawn' ? 0.5 : 1,
+          background: 'radial-gradient(circle at 30% 30%, hsl(45, 90%, 98%) 0%, hsl(45, 70%, 88%) 50%, hsl(45, 60%, 75%) 100%)',
+          boxShadow: '0 0 80px hsl(45 100% 70% / 0.6), 0 0 120px hsl(45 85% 60% / 0.3), 0 0 180px hsl(45 80% 55% / 0.15)',
+          opacity: timeOfDay === 'dawn' ? 0.6 : 1,
         }}
       />
 
-      {/* Distant mountains silhouette */}
+      {/* Distant mountains silhouette - with glow */}
       <svg
         className="absolute bottom-[25%] left-0 w-full h-[30%]"
         viewBox="0 0 100 30"
         preserveAspectRatio="xMidYMax slice"
       >
+        <defs>
+          <filter id="mountainGlow">
+            <feGaussianBlur stdDeviation="1.5" />
+          </filter>
+        </defs>
         <path
           d="M0,30 L0,20 Q10,8 20,18 Q30,5 40,15 Q50,2 60,14 Q70,6 80,16 Q90,10 100,18 L100,30 Z"
-          fill="hsl(260, 25%, 12%)"
-          opacity="0.8"
+          fill="hsl(260, 30%, 15%)"
+          opacity="0.9"
+          filter="url(#mountainGlow)"
         />
         <path
           d="M0,30 L0,22 Q15,12 25,20 Q35,8 50,18 Q65,10 75,20 Q85,14 100,22 L100,30 Z"
-          fill="hsl(240, 20%, 10%)"
-          opacity="0.9"
+          fill="hsl(240, 25%, 12%)"
+          opacity="1"
+          filter="url(#mountainGlow)"
         />
       </svg>
 
-      {/* Torii gate silhouette */}
+      {/* Torii gate silhouette - enhanced */}
       <div className="absolute bottom-[28%] left-[12%]">
         <svg width="60" height="50" viewBox="0 0 60 50" fill="none">
-          <rect x="8" y="10" width="4" height="40" fill="hsl(0, 60%, 25%)" />
-          <rect x="48" y="10" width="4" height="40" fill="hsl(0, 60%, 25%)" />
-          <rect x="0" y="0" width="60" height="5" rx="1" fill="hsl(0, 65%, 30%)" />
-          <rect x="3" y="8" width="54" height="3" fill="hsl(0, 60%, 28%)" />
-          <rect x="6" y="18" width="48" height="2" fill="hsl(0, 55%, 25%)" />
+          <rect x="8" y="10" width="4" height="40" fill="hsl(0 65% 30%)" style={{ filter: 'drop-shadow(0 0 8px hsl(0 60% 20% / 0.6))' }} />
+          <rect x="48" y="10" width="4" height="40" fill="hsl(0 65% 30%)" style={{ filter: 'drop-shadow(0 0 8px hsl(0 60% 20% / 0.6))' }} />
+          <rect x="0" y="0" width="60" height="5" rx="1" fill="hsl(0 70% 35%)" style={{ filter: 'drop-shadow(0 0 6px hsl(0 60% 20% / 0.5))' }} />
+          <rect x="3" y="8" width="54" height="3" fill="hsl(0 65% 32%)" />
+          <rect x="6" y="18" width="48" height="2" fill="hsl(0 60% 28%)" />
         </svg>
       </div>
 
-      {/* Japanese pagoda with window flicker */}
+      {/* Japanese pagoda with window flicker - enhanced */}
       <div className="absolute bottom-[26%] right-[8%]">
         <svg width="50" height="60" viewBox="0 0 50 60" fill="none">
-          <rect x="15" y="50" width="20" height="10" fill="hsl(220, 20%, 8%)" />
-          <polygon points="5,50 45,50 40,42 10,42" fill="hsl(220, 20%, 10%)" />
-          <polygon points="10,42 40,42 35,34 15,34" fill="hsl(220, 20%, 9%)" />
-          <polygon points="15,34 35,34 30,26 20,26" fill="hsl(220, 20%, 8%)" />
-          <rect x="23" y="16" width="4" height="10" fill="hsl(220, 20%, 12%)" />
-          <polygon points="25,6 22,16 28,16" fill="hsl(220, 20%, 10%)" />
-          {/* Flickering windows */}
-          <rect x="22" y="44" width="6" height="4" fill="hsl(45, 80%, 60%)" opacity="0.6" className="animate-flicker" />
-          <rect x="20" y="36" width="4" height="3" fill="hsl(45, 70%, 55%)" opacity="0.5" style={{ animationDelay: '0.3s' }} className="animate-flicker" />
+          <rect x="15" y="50" width="20" height="10" fill="hsl(220 25% 12%)" />
+          <polygon points="5,50 45,50 40,42 10,42" fill="hsl(220 20% 14%)" />
+          <polygon points="10,42 40,42 35,34 15,34" fill="hsl(220 22% 11%)" />
+          <polygon points="15,34 35,34 30,26 20,26" fill="hsl(220 20% 10%)" />
+          <rect x="23" y="16" width="4" height="10" fill="hsl(220 20% 14%)" />
+          <polygon points="25,6 22,16 28,16" fill="hsl(220 22% 12%)" />
+          {/* Flickering windows - glowing */}
+          <rect x="22" y="44" width="6" height="4" fill="hsl(45 100% 70%)" opacity="0.8" className="animate-flicker" style={{ filter: 'drop-shadow(0 0 6px hsl(45 100% 65% / 0.8))' }} />
+          <rect x="20" y="36" width="4" height="3" fill="hsl(45 90% 65%)" opacity="0.7" style={{ animationDelay: '0.3s', filter: 'drop-shadow(0 0 4px hsl(45 90% 60% / 0.7))' }} className="animate-flicker" />
         </svg>
       </div>
 
-      {/* Cherry blossom tree with animated clusters */}
+      {/* Cherry blossom tree with animated clusters - enhanced */}
       <div className="absolute bottom-[22%] left-[65%]">
         <svg width="80" height="70" viewBox="0 0 80 70" fill="none">
-          <path d="M38,70 Q35,50 40,35 Q38,30 42,25" stroke="hsl(20, 30%, 15%)" strokeWidth="4" fill="none" />
-          <path d="M40,35 Q55,25 65,20" stroke="hsl(20, 30%, 15%)" strokeWidth="2" fill="none" />
-          <path d="M40,35 Q25,20 15,15" stroke="hsl(20, 30%, 15%)" strokeWidth="2" fill="none" />
-          <path d="M42,28 Q50,15 55,10" stroke="hsl(20, 30%, 15%)" strokeWidth="1.5" fill="none" />
-          {/* Animated blossom clusters */}
-          <circle cx="65" cy="18" r="12" fill="hsl(340, 60%, 25%)" opacity="0.5" className="animate-blossom-glow" />
-          <circle cx="15" cy="12" r="10" fill="hsl(340, 60%, 25%)" opacity="0.4" className="animate-blossom-glow" style={{ animationDelay: '1s' }} />
-          <circle cx="55" cy="8" r="8" fill="hsl(340, 60%, 30%)" opacity="0.5" className="animate-blossom-glow" style={{ animationDelay: '2s' }} />
-          <circle cx="35" cy="18" r="9" fill="hsl(340, 60%, 25%)" opacity="0.4" className="animate-blossom-glow" style={{ animationDelay: '0.5s' }} />
+          <path d="M38,70 Q35,50 40,35 Q38,30 42,25" stroke="hsl(20 40% 18%)" strokeWidth="4" fill="none" style={{ filter: 'drop-shadow(0 0 4px hsl(20 40% 10% / 0.5))' }} />
+          <path d="M40,35 Q55,25 65,20" stroke="hsl(20 35% 16%)" strokeWidth="2" fill="none" />
+          <path d="M40,35 Q25,20 15,15" stroke="hsl(20 35% 16%)" strokeWidth="2" fill="none" />
+          <path d="M42,28 Q50,15 55,10" stroke="hsl(20 30% 14%)" strokeWidth="1.5" fill="none" />
+          {/* Animated blossom clusters with glow */}
+          <circle cx="65" cy="18" r="12" fill="hsl(340 70% 35%)" opacity="0.7" className="animate-blossom-glow" style={{ filter: 'drop-shadow(0 0 12px hsl(340 100% 50% / 0.5))' }} />
+          <circle cx="15" cy="12" r="10" fill="hsl(340 70% 32%)" opacity="0.6" className="animate-blossom-glow" style={{ animationDelay: '1s', filter: 'drop-shadow(0 0 10px hsl(340 100% 45% / 0.4))' }} />
+          <circle cx="55" cy="8" r="8" fill="hsl(340 75% 38%)" opacity="0.7" className="animate-blossom-glow" style={{ animationDelay: '2s', filter: 'drop-shadow(0 0 8px hsl(340 100% 50% / 0.5))' }} />
+          <circle cx="35" cy="18" r="9" fill="hsl(340 70% 34%)" opacity="0.6" className="animate-blossom-glow" style={{ animationDelay: '0.5s', filter: 'drop-shadow(0 0 10px hsl(340 100% 45% / 0.4))' }} />
         </svg>
       </div>
 
-      {/* Ground/street area */}
+      {/* Ground/street area - enhanced */}
       <div 
         className="absolute bottom-0 left-0 right-0 h-[22%]"
         style={{
-          background: 'linear-gradient(to bottom, hsl(220, 25%, 10%) 0%, hsl(220, 20%, 8%) 100%)',
+          background: 'linear-gradient(to bottom, hsl(220 30% 14%) 0%, hsl(220 25% 10%) 100%)',
         }}
       />
 
-      {/* Wet street with rain reflection */}
+      {/* Wet street with rain reflection - enhanced */}
       <div 
         className="absolute bottom-0 left-0 right-0 h-[18%]"
         style={{
           background: `linear-gradient(to bottom, 
-            hsl(220, 20%, ${isRaining ? 14 : 12}%) 0%, 
-            hsl(220, 15%, 8%) 100%)`,
-          opacity: 0.9,
+            hsl(220 25% ${isRaining ? 18 : 14}%) 0%, 
+            hsl(220 20% 10%) 100%)`,
+          opacity: 0.95,
           transition: 'background 2s',
         }}
       />
 
-      {/* Rain effect */}
+      {/* Rain effect - enhanced */}
       {isRaining && (
         <div className="absolute inset-0 overflow-hidden">
           {rainDrops.map((drop, i) => (
             <div
               key={i}
-              className="absolute w-px bg-gradient-to-b from-transparent via-blue-300 to-transparent"
+              className="absolute w-px bg-gradient-to-b from-transparent via-blue-200 to-transparent"
               style={{
                 left: `${drop.left}%`,
-                height: '20px',
+                height: '25px',
                 animation: `rainFall ${drop.duration}s linear infinite`,
                 animationDelay: `${drop.delay}s`,
-                opacity: 0.3,
+                opacity: 0.5,
+                boxShadow: `0 0 3px rgba(147, 197, 253, 0.6)`,
               }}
             />
           ))}
         </div>
       )}
 
-      {/* Puddle reflections when raining */}
+      {/* Puddle reflections when raining - enhanced */}
       {isRaining && (
         <div 
-          className="absolute bottom-0 left-0 right-0 h-[12%] opacity-40"
+          className="absolute bottom-0 left-0 right-0 h-[12%] opacity-50"
           style={{
-            background: 'linear-gradient(to bottom, hsl(200, 50%, 30%) 0%, transparent 100%)',
+            background: 'linear-gradient(to bottom, hsl(200 60% 40%) 0%, transparent 100%)',
           }}
         />
       )}
 
-      {/* Smoke from distant buildings */}
-      <div className="absolute bottom-[30%] left-[40%] opacity-20">
+      {/* Smoke from distant buildings - enhanced */}
+      <div className="absolute bottom-[30%] left-[40%] opacity-30">
         <div 
           className="w-8 h-20 animate-smoke"
           style={{

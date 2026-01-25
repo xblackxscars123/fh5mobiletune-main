@@ -141,9 +141,23 @@ export const JDMCinemaBackground = () => {
         }}
       />
 
+      {/* Horizon glow line */}
+      <div 
+        className="absolute bottom-24 left-0 right-0 h-[2px]"
+        style={{
+          background: `linear-gradient(90deg, 
+            transparent 0%, 
+            hsl(330 100% 65% / 0.6) 20%,
+            hsl(185 100% 50% / 0.8) 50%,
+            hsl(330 100% 65% / 0.6) 80%,
+            transparent 100%)`,
+          boxShadow: '0 0 30px hsl(330 100% 65% / 0.5), 0 0 60px hsl(185 100% 50% / 0.3)',
+        }}
+      />
+
       {/* Neon city skyline at bottom */}
       <svg 
-        className="absolute bottom-0 left-0 right-0 h-32 opacity-60"
+        className="absolute bottom-0 left-0 right-0 h-32"
         viewBox="0 0 1200 120" 
         preserveAspectRatio="none"
       >
@@ -161,10 +175,28 @@ export const JDMCinemaBackground = () => {
         {/* Buildings silhouette */}
         <path 
           d="M0,120 L0,80 L60,80 L60,50 L120,50 L120,70 L180,70 L180,40 L220,40 L220,60 L280,60 L280,30 L340,30 L340,55 L400,55 L400,25 L450,25 L450,45 L500,45 L500,20 L550,20 L550,50 L620,50 L620,35 L680,35 L680,60 L750,60 L750,25 L820,25 L820,55 L880,55 L880,40 L950,40 L950,65 L1020,65 L1020,45 L1080,45 L1080,70 L1140,70 L1140,55 L1200,55 L1200,120 Z"
+        <defs>
+          <linearGradient id="cityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="hsl(280 100% 60%)" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="hsl(280 100% 40%)" stopOpacity="0.4" />
+          </linearGradient>
+          <linearGradient id="windowGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="hsl(185 100% 70%)" />
+            <stop offset="100%" stopColor="hsl(45 100% 60%)" />
+          </linearGradient>
+          <filter id="cityGlow">
+            <feGaussianBlur stdDeviation="2" />
+          </filter>
+        </defs>
+        
+        {/* Buildings silhouette with glow */}
+        <path 
+          d="M0,120 L0,80 L60,80 L60,50 L120,50 L120,70 L180,70 L180,40 L220,40 L220,60 L280,60 L280,30 L340,30 L340,55 L400,55 L400,25 L450,25 L450,45 L500,45 L500,20 L550,20 L550,50 L620,50 L620,35 L680,35 L680,60 L750,60 L750,25 L820,25 L820,55 L880,55 L880,40 L950,40 L950,65 L1020,65 L1020,45 L1080,45 L1080,70 L1140,70 L1140,55 L1200,55 L1200,120 Z"
           fill="url(#cityGradient)"
+          filter="url(#cityGlow)"
         />
         
-        {/* Window lights */}
+        {/* Window lights - animated */}
         <g fill="url(#windowGlow)" className="animate-pulse">
           <rect x="75" y="60" width="3" height="4" rx="0.5" opacity="0.8" />
           <rect x="135" y="55" width="3" height="4" rx="0.5" opacity="0.6" />
@@ -179,20 +211,6 @@ export const JDMCinemaBackground = () => {
         </g>
       </svg>
 
-      {/* Horizon glow line */}
-      <div 
-        className="absolute bottom-24 left-0 right-0 h-[2px]"
-        style={{
-          background: `linear-gradient(90deg, 
-            transparent 0%, 
-            hsl(330 100% 65% / 0.6) 20%,
-            hsl(185 100% 50% / 0.8) 50%,
-            hsl(330 100% 65% / 0.6) 80%,
-            transparent 100%)`,
-          boxShadow: '0 0 30px hsl(330 100% 65% / 0.5), 0 0 60px hsl(185 100% 50% / 0.3)',
-        }}
-      />
-
       {/* Blueprint grid overlay - subtle */}
       <div 
         className="absolute inset-0 blueprint-bg opacity-20"
@@ -201,7 +219,7 @@ export const JDMCinemaBackground = () => {
 
       {/* Retro scanlines */}
       <div 
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none animate-scanlines"
         style={{
           backgroundImage: `repeating-linear-gradient(
             0deg,
@@ -215,25 +233,24 @@ export const JDMCinemaBackground = () => {
 
       {/* Noise texture overlay */}
       <div 
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           mixBlendMode: 'overlay',
         }}
       />
 
-      {/* Light leak effect (occasional) */}
+      {/* Light leak effect - warm glow */}
       <div 
-        className="absolute inset-0 pointer-events-none animate-light-leak"
+        className="absolute top-0 right-0 w-96 h-96 pointer-events-none"
         style={{
-          background: `radial-gradient(ellipse 30% 50% at 85% 20%, 
-            hsl(40 100% 70% / 0.08) 0%, 
-            transparent 50%)`,
+          background: `radial-gradient(circle at 100% 0%, 
+            hsl(40 100% 60% / 0.12) 0%, 
+            hsl(20 100% 50% / 0.04) 40%,
+            transparent 70%)`,
+          animation: 'lightLeakPulse 8s ease-in-out infinite',
         }}
       />
-
-      {/* Animated scan line */}
-      <div className="scan-line" />
     </div>
   );
 };

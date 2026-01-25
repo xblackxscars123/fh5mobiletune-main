@@ -10,10 +10,10 @@ interface ThemeInfo {
 }
 
 export const UI_THEMES: ThemeInfo[] = [
-  { id: 'cinema', name: 'JDM Cinema', description: 'Cinematic slideshow with Ken Burns', icon: '🎬' },
-  { id: 'blueprint', name: 'Blueprint', description: 'Technical engineering paper', icon: '📐' },
-  { id: 'lofi', name: 'Japanese Lofi', description: 'Chill night vibes with pagoda', icon: '🌸' },
-  { id: 'sticker', name: 'Sticker Bomb', description: 'JDM sticker explosion', icon: '🏎️' },
+  { id: 'cinema', name: 'Neon Dreams', description: 'Cinematic vaporwave aesthetic with smooth transitions', icon: '🎬' },
+  { id: 'blueprint', name: 'Tech Grid', description: 'Advanced engineering visualization with pulsing effects', icon: '📐' },
+  { id: 'lofi', name: 'Twilight Zone', description: 'Serene animated night sky with living elements', icon: '🌸' },
+  { id: 'sticker', name: 'Chaos Garage', description: 'Dynamic layered JDM culture with parallax depth', icon: '🏎️' },
 ];
 
 const STORAGE_KEY = 'fh5-ui-theme';

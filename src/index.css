@@ -1065,4 +1065,16 @@
     50% { opacity: 0.25; }
   }
   .animate-glow-pulse { animation: glowPulse 4s ease-in-out infinite; }
-}
+
+  /* Light leak pulse */
+  @keyframes lightLeakPulse {
+    0%, 100% { opacity: 0.08; }
+    50% { opacity: 0.15; }
+  }
+  
+  /* Scanlines animation */
+  @keyframes scanlines {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(10px); }
+  }
+  .animate-scanlines { animation: scanlines 8s linear infinite; }
