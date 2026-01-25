@@ -15,6 +15,8 @@ function parseArgs(argv) {
     delayMs: 1500,
     headed: false,
     logEvery: 5,
+    retries: 2,
+    failedIdsPath: 'kp-failed-ids.txt',
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -37,6 +39,10 @@ function parseArgs(argv) {
       out.headed = true;
     } else if (a === '--log-every') {
       out.logEvery = Number(args[++i] ?? out.logEvery);
+    } else if (a === '--retries') {
+      out.retries = Number(args[++i] ?? out.retries);
+    } else if (a === '--failed-ids') {
+      out.failedIdsPath = String(args[++i] ?? out.failedIdsPath);
     }
   }
 
@@ -229,6 +235,13 @@ async function main() {
     errors: [],
   };
 
+  const failedIds = [];
+  const failedIdsPath = opts.failedIdsPath ? path.resolve(opts.failedIdsPath) : null;
+  if (failedIdsPath) {
+    // Create/truncate so the file exists immediately during long runs.
+    fs.writeFileSync(failedIdsPath, '', 'utf8');
+  }
+
   const runStartedAt = Date.now();
 
   for (let i = 0; i < ids.length; i++) {
@@ -241,7 +254,24 @@ async function main() {
       console.log(`[${i + 1}/${ids.length}] id=${id} ok=${ok} errors=${results.errors.length} elapsed=${elapsedS}s`);
     }
     try {
-      const extracted = await extractOne(page, id);
+      let extracted;
+      let lastErr;
+      const attempts = Math.max(0, Math.floor(Number.isFinite(opts.retries) ? opts.retries : 0)) + 1;
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+          extracted = await extractOne(page, id);
+          lastErr = null;
+          break;
+        } catch (e) {
+          lastErr = e;
+          if (attempt < attempts) {
+            await sleep(500 * attempt);
+          }
+        }
+      }
+      if (!extracted) {
+        throw lastErr ?? new Error('Unknown extraction failure');
+      }
       const key = buildKey(extracted.identity);
 
       results.items.push(extracted);
@@ -266,6 +296,14 @@ async function main() {
       }
     } catch (e) {
       results.errors.push({ id, message: e?.message ?? String(e) });
+      failedIds.push(id);
+      if (failedIdsPath) {
+        try {
+          fs.appendFileSync(failedIdsPath, `${id}\n`, 'utf8');
+        } catch {
+          // ignore
+        }
+      }
       if (shouldLog) {
         console.log(`  id=${id} failed: ${e?.message ?? String(e)}`);
       }
@@ -285,6 +323,9 @@ async function main() {
 
   fs.writeFileSync(opts.outPath, JSON.stringify(results, null, 2), 'utf8');
   console.log(`Wrote ${opts.outPath}`);
+  if (failedIdsPath) {
+    console.log(`Wrote ${failedIdsPath}`);
+  }
   console.log(`Extracted ${Object.keys(results.verifiedSpecsByKey).length} verified entries (${results.errors.length} errors)`);
 }
 

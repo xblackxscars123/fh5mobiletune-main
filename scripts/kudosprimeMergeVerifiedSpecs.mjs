@@ -74,6 +74,87 @@ function formatEntry(key, { weight, weightDistribution, driveType, defaultPI, no
     `  },`;
 }
 
+function normalizeLoose(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[^a-z0-9 ]+/g, '')
+    .replace(/\s+/g, '');
+}
+
+function readTypeSpecsDistributionMap(repoRoot) {
+  const carDbPath = path.resolve(repoRoot, 'src', 'data', 'carDatabase.ts');
+  if (!fs.existsSync(carDbPath)) return { carDbPath, distByCarType: {}, rawLines: [] };
+
+  const content = fs.readFileSync(carDbPath, 'utf8');
+
+  // Parse: 'Hot Hatch': { weight: 2800, distribution: 62, ... }
+  const distByCarType = {};
+  const typeRe = /\n\s*['"]([^'"]+)['"]:\s*\{[^\n}]*?distribution:\s*(\d+)/g;
+  let m;
+  while ((m = typeRe.exec(content))) {
+    distByCarType[m[1]] = Number(m[2]);
+  }
+
+  // Parse rawCarData template literal (tab-separated): first column is "YYYY Make Model", second is car type.
+  const rawRe = /const rawCarData = `([\s\S]*?)`\s*;/m;
+  const rawMatch = content.match(rawRe);
+  const rawLines = [];
+
+  if (rawMatch) {
+    const raw = rawMatch[1];
+    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      const cols = line.split(/\t/);
+      const fullName = cols[0];
+      const carType = cols[1];
+      if (!fullName || !carType) continue;
+      rawLines.push({ fullName, carType });
+    }
+  }
+
+  return { carDbPath, distByCarType, rawLines };
+}
+
+function findEstimatedDistribution({ year, make, model }, rawLines, distByCarType) {
+  const y = String(year || '').trim();
+  if (!y) return 50;
+
+  const makeN = normalizeLoose(make);
+  const modelN = normalizeLoose(model);
+  if (!makeN || !modelN) return 50;
+
+  let best = null;
+  let bestScore = -1;
+
+  for (const row of rawLines) {
+    // row.fullName example: "2017 Abarth 124 Spider"
+    if (!row.fullName.startsWith(y + ' ')) continue;
+    const rest = row.fullName.slice(y.length + 1);
+    const restN = normalizeLoose(rest);
+    if (!restN.includes(makeN)) continue;
+
+    // score based on how much of model matches
+    let score = 0;
+    if (restN.includes(modelN)) score += 100;
+    // partial overlap boost
+    const slice = modelN.slice(0, Math.min(10, modelN.length));
+    if (slice && restN.includes(slice)) score += slice.length;
+    // prefer tighter matches
+    score -= Math.abs(restN.length - (makeN.length + modelN.length));
+
+    if (score > bestScore) {
+      bestScore = score;
+      best = row;
+    }
+  }
+
+  const carType = best?.carType;
+  const dist = carType != null ? distByCarType[carType] : null;
+  return Number.isFinite(dist) ? dist : 50;
+}
+
 function main() {
   const args = process.argv.slice(2);
   const inJson = args[0] || 'kp-all.json';
@@ -94,6 +175,9 @@ function main() {
   const json = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
   const ts = fs.readFileSync(tsPath, 'utf8');
   const existingKeys = readExistingKeys(ts);
+
+  const repoRoot = process.cwd();
+  const { distByCarType, rawLines } = readTypeSpecsDistributionMap(repoRoot);
 
   const items = Array.isArray(json.items) ? json.items : [];
 
@@ -125,11 +209,13 @@ function main() {
       continue;
     }
 
+    const estimatedDist = findEstimatedDistribution(identity, rawLines, distByCarType);
+
     newEntries.push({
       key,
       entry: {
         weight,
-        weightDistribution: 50,
+        weightDistribution: estimatedDist,
         driveType,
         defaultPI,
         notes: 'Verified via KudosPrime (weight/drive/PI); weight distribution not provided',

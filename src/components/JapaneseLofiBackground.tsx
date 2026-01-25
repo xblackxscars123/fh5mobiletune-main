@@ -101,7 +101,7 @@ export function JapaneseLofiBackground() {
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
       {/* Dynamic sky gradient */}
       <div 
-        className="absolute inset-0 transition-colors duration-[5000ms]"
+        className="absolute inset-0 transition-colors [transition-duration:5000ms]"
         style={{
           background: `linear-gradient(to bottom, ${colors.from} 0%, ${colors.via} 50%, ${colors.to} 100%)`
         }}
@@ -127,7 +127,7 @@ export function JapaneseLofiBackground() {
 
       {/* Moon with position based on time */}
       <div 
-        className="absolute w-20 h-20 rounded-full transition-all duration-[10000ms]"
+        className="absolute w-20 h-20 rounded-full transition-all [transition-duration:10000ms]"
         style={{
           top: `${8 + Math.sin(timeProgress * Math.PI) * 5}%`,
           right: `${15 + Math.cos(timeProgress * Math.PI * 2) * 10}%`,

@@ -12,7 +12,10 @@ dist
 dist-ssr
 *.local
 
- .env
+.env
+
+kp-*.json
+kp-*.txt
 
 # Editor directories and files
 .vscode/*
