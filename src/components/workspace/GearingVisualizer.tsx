@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
-import { TuneSettings, TuneType, type CarSpecs } from '@/lib/tuningCalculator';
+import { TuneSettings, TuneType, type CarSpecs, UnitSystem } from '@/lib/tuningCalculator';
 import { cn } from '@/lib/utils';
 import { Gauge, ArrowUp, Activity, TrendingUp } from 'lucide-react';
 import { calculateTopSpeed, calculateZeroToSixty } from '@/lib/fh5-physics';
@@ -23,6 +23,7 @@ interface GearingVisualizerProps {
   redlineRpm?: number;
   specs?: CarSpecs;
   tune?: TuneSettings;
+  unitSystem?: UnitSystem;
 }
 
 type RechartsTooltipPayload<T> = Array<{ payload?: T }> | undefined;
@@ -39,7 +40,8 @@ const calculateGearData = (
   finalDrive: number,
   horsepower: number,
   redlineRpm: number,
-  tireCircumference: number
+  tireCircumference: number,
+  unitSystem: UnitSystem = 'imperial'
 ) => {
   const transmissionEfficiency = 0.85;
   
@@ -48,7 +50,12 @@ const calculateGearData = (
     const peakPowerRpm = redlineRpm * 0.82; // Peak power at ~82% of redline
     
     // Speed at redline for this gear (km/h)
-    const speedAtRedline = (redlineRpm * tireCircumference * 60) / (overallRatio * 1000);
+    let speedAtRedline = (redlineRpm * tireCircumference * 60) / (overallRatio * 1000);
+
+    // Convert to mph if imperial
+    if (unitSystem === 'imperial') {
+      speedAtRedline = speedAtRedline * 0.621371;
+    }
     
     // Relative acceleration force (higher ratio = more torque multiplication)
     const accelerationForce = (ratio / gearRatios[0]) * 100;
@@ -74,15 +81,15 @@ const calculateGearData = (
   });
 };
 
-
-
 // Custom tooltip component
-const GearTooltip = ({ active, payload, label }: RechartsTooltipProps<Record<string, unknown>>) => {
+const GearTooltip = ({ active, payload, label, unitSystem = 'imperial' }: RechartsTooltipProps<Record<string, unknown>> & { unitSystem?: UnitSystem }) => {
   if (!active || !payload || payload.length === 0) return null;
 
   const data = payload[0]?.payload;
   if (!data) return null;
   
+  const speedUnit = unitSystem === 'imperial' ? 'MPH' : 'km/h';
+
   return (
     <div className="bg-background/95 backdrop-blur-sm border border-neon-cyan/30 rounded-lg p-3 shadow-lg">
       <div className="font-display text-neon-cyan text-sm mb-2">
@@ -98,7 +105,7 @@ const GearTooltip = ({ active, payload, label }: RechartsTooltipProps<Record<str
         {typeof data.speedAtRedline === 'number' && (
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Max Speed:</span>
-            <span className="text-neon-pink font-mono">{data.speedAtRedline} km/h</span>
+            <span className="text-neon-pink font-mono">{data.speedAtRedline} {speedUnit}</span>
           </div>
         )}
         {typeof data.shiftRpm === 'number' && (
@@ -118,8 +125,6 @@ const GearTooltip = ({ active, payload, label }: RechartsTooltipProps<Record<str
   );
 };
 
-
-
 export const GearingVisualizer = ({
   gearRatios,
   finalDrive,
@@ -128,14 +133,15 @@ export const GearingVisualizer = ({
   redlineRpm = 7500,
   specs,
   tune,
+  unitSystem = 'imperial',
 }: GearingVisualizerProps) => {
   const tireCircumferenceM = specs?.tireCircumference && Number.isFinite(specs.tireCircumference)
     ? specs.tireCircumference
     : 2.1;
 
   const gearData = useMemo(
-    () => calculateGearData(gearRatios, finalDrive, horsepower, redlineRpm, tireCircumferenceM),
-    [gearRatios, finalDrive, horsepower, redlineRpm, tireCircumferenceM]
+    () => calculateGearData(gearRatios, finalDrive, horsepower, redlineRpm, tireCircumferenceM, unitSystem),
+    [gearRatios, finalDrive, horsepower, redlineRpm, tireCircumferenceM, unitSystem]
   );
 
   // Get color based on tune type - coherent neon palette
@@ -149,6 +155,7 @@ export const GearingVisualizer = ({
   };
 
   const primaryColor = tuneColors[tuneType] || tuneColors.grip;
+  const speedUnit = unitSystem === 'imperial' ? 'MPH' : 'km/h';
 
   return (
     <div className="space-y-6">
@@ -167,7 +174,7 @@ export const GearingVisualizer = ({
         <div className="module-block p-3 text-center">
           <ArrowUp className="w-5 h-5 mx-auto mb-1 text-neon-yellow" />
           <div className="text-lg font-display text-foreground">{gearData[gearData.length - 1]?.speedAtRedline || 0}</div>
-          <div className="text-[10px] text-muted-foreground uppercase">Top km/h</div>
+          <div className="text-[10px] text-muted-foreground uppercase">Top {speedUnit}</div>
         </div>
         <div className="module-block p-3 text-center">
           <Activity className="w-5 h-5 mx-auto mb-1 text-neon-purple" />
@@ -216,7 +223,7 @@ export const GearingVisualizer = ({
                 domain={[0, 'auto']}
                 tickFormatter={(v) => `${v}`}
               />
-              <Tooltip content={<GearTooltip />} />
+              <Tooltip content={(props) => <GearTooltip {...props} unitSystem={unitSystem} />} />
               <Bar 
                 yAxisId="ratio"
                 dataKey="ratio" 
@@ -251,7 +258,7 @@ export const GearingVisualizer = ({
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-neon-pink" />
-            <span className="text-muted-foreground">Max Speed (km/h)</span>
+            <span className="text-muted-foreground">Max Speed ({speedUnit})</span>
           </div>
         </div>
       </div>

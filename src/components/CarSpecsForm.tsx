@@ -101,81 +101,6 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
           </p>
         </div>
 
-        {/* Weight Input */}
-        <div className="space-y-2 md:space-y-3">
-          <TuningTooltip explanation={inputExplanations.weight} showIcon>
-            <Label className="flex items-center gap-2 text-sm md:text-base font-display">
-              <Scale className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-              Vehicle Weight ({weightLabel})
-            </Label>
-          </TuningTooltip>
-          <Input
-            type="number"
-            value={displayWeight}
-            onChange={(e) => {
-              const value = Number(e.target.value);
-              const lbsValue = unitSystem === 'imperial' ? value : Math.round(value * 2.20462);
-              updateSpec('weight', lbsValue);
-            }}
-            className="bg-muted border-border focus:border-primary text-base md:text-lg font-body h-10 md:h-12"
-            min={unitSystem === 'imperial' ? 1000 : 454}
-            max={unitSystem === 'imperial' ? 10000 : 4536}
-          />
-          <Slider
-            value={[displayWeight]}
-            onValueChange={([v]) => {
-              const lbsValue = unitSystem === 'imperial' ? v : Math.round(v * 2.20462);
-              updateSpec('weight', lbsValue);
-            }}
-            min={unitSystem === 'imperial' ? 1000 : 454}
-            max={unitSystem === 'imperial' ? 6000 : 2722}
-            step={unitSystem === 'imperial' ? 10 : 5}
-          />
-        </div>
-
-        {/* Weight Distribution - THE most important! */}
-        <div className="space-y-2 md:space-y-3 p-3 rounded-lg border-2 border-[hsl(var(--racing-yellow)/0.3)] bg-[hsl(var(--racing-yellow)/0.05)]">
-          <TuningTooltip explanation={inputExplanations.weightDistribution} showIcon>
-            <Label className="flex items-center gap-2 text-sm md:text-base font-display text-[hsl(var(--racing-yellow))]">
-              <Compass className="w-4 h-4 md:w-5 md:h-5" />
-              Weight Distribution (Front %) ⭐ MOST IMPORTANT
-            </Label>
-          </TuningTooltip>
-          
-          {/* Direct Input - Primary */}
-          <div className="flex items-center gap-3">
-            <Input
-              type="number"
-              value={specs.weightDistribution}
-              onChange={(e) => updateSpec('weightDistribution', Math.max(35, Math.min(65, Number(e.target.value))))}
-              className="w-20 text-center text-lg font-bold bg-background border-[hsl(var(--racing-yellow)/0.5)]"
-              min={35}
-              max={65}
-            />
-            <span className="text-sm text-muted-foreground">% Front</span>
-            <span className="text-sm text-muted-foreground mx-1">|</span>
-            <span className="text-lg font-bold text-[hsl(var(--racing-cyan))]">{100 - specs.weightDistribution}%</span>
-            <span className="text-sm text-muted-foreground">Rear</span>
-          </div>
-          
-          {/* Slider - Secondary */}
-          <div className="flex items-center gap-2 sm:gap-4">
-            <span className="text-xs sm:text-sm text-muted-foreground w-10 sm:w-16">Front</span>
-            <Slider
-              value={[specs.weightDistribution]}
-              onValueChange={([v]) => updateSpec('weightDistribution', v)}
-              min={35}
-              max={65}
-              step={1}
-              className="flex-1"
-            />
-            <span className="text-xs sm:text-sm text-muted-foreground w-10 sm:w-16 text-right">Rear</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            📊 Find this in your car's stats screen. This determines springs, ARBs, and damping!
-          </p>
-        </div>
-
         {/* Aero Options */}
         <div className="space-y-3 md:space-y-4 p-3 md:p-4 rounded-lg border border-border bg-muted/30">
           <div className="flex items-center justify-between">
@@ -248,6 +173,81 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
             <span>Advanced Settings</span>
           </div>
 
+          {/* Weight Input */}
+          <div className="space-y-2 md:space-y-3">
+            <TuningTooltip explanation={inputExplanations.weight} showIcon>
+              <Label className="flex items-center gap-2 text-sm md:text-base font-display">
+                <Scale className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                Vehicle Weight ({weightLabel})
+              </Label>
+            </TuningTooltip>
+            <Input
+              type="number"
+              value={displayWeight}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                const lbsValue = unitSystem === 'imperial' ? value : Math.round(value * 2.20462);
+                updateSpec('weight', lbsValue);
+              }}
+              className="bg-muted border-border focus:border-primary text-base md:text-lg font-body h-10 md:h-12"
+              min={unitSystem === 'imperial' ? 1000 : 454}
+              max={unitSystem === 'imperial' ? 10000 : 4536}
+            />
+            <Slider
+              value={[displayWeight]}
+              onValueChange={([v]) => {
+                const lbsValue = unitSystem === 'imperial' ? v : Math.round(v * 2.20462);
+                updateSpec('weight', lbsValue);
+              }}
+              min={unitSystem === 'imperial' ? 1000 : 454}
+              max={unitSystem === 'imperial' ? 6000 : 2722}
+              step={unitSystem === 'imperial' ? 10 : 5}
+            />
+          </div>
+
+          {/* Weight Distribution - THE most important! */}
+          <div className="space-y-2 md:space-y-3 p-3 rounded-lg border-2 border-[hsl(var(--racing-yellow)/0.3)] bg-[hsl(var(--racing-yellow)/0.05)]">
+            <TuningTooltip explanation={inputExplanations.weightDistribution} showIcon>
+              <Label className="flex items-center gap-2 text-sm md:text-base font-display text-[hsl(var(--racing-yellow))]">
+                <Compass className="w-4 h-4 md:w-5 md:h-5" />
+                Weight Distribution (Front %) ⭐ MOST IMPORTANT
+              </Label>
+            </TuningTooltip>
+            
+            {/* Direct Input - Primary */}
+            <div className="flex items-center gap-3">
+              <Input
+                type="number"
+                value={specs.weightDistribution}
+                onChange={(e) => updateSpec('weightDistribution', Math.max(35, Math.min(65, Number(e.target.value))))}
+                className="w-20 text-center text-lg font-bold bg-background border-[hsl(var(--racing-yellow)/0.5)]"
+                min={35}
+                max={65}
+              />
+              <span className="text-sm text-muted-foreground">% Front</span>
+              <span className="text-sm text-muted-foreground mx-1">|</span>
+              <span className="text-lg font-bold text-[hsl(var(--racing-cyan))]">{100 - specs.weightDistribution}%</span>
+              <span className="text-sm text-muted-foreground">Rear</span>
+            </div>
+            
+            {/* Slider - Secondary */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              <span className="text-xs sm:text-sm text-muted-foreground w-10 sm:w-16">Front</span>
+              <Slider
+                value={[specs.weightDistribution]}
+                onValueChange={([v]) => updateSpec('weightDistribution', v)}
+                min={35}
+                max={65}
+                step={1}
+                className="flex-1"
+              />
+              <span className="text-xs sm:text-sm text-muted-foreground w-10 sm:w-16 text-right">Rear</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              📊 Find this in your car's stats screen. This determines springs, ARBs, and damping!
+            </p>
+          </div>
+
           {/* Driving Style Slider */}
           <div className="space-y-2 md:space-y-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
             <Label className="flex items-center gap-2 text-sm md:text-base font-display">
@@ -304,6 +304,47 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
             </p>
           </div>
 
+          {/* Torque Input */}
+          <div className="space-y-2 md:space-y-3">
+            <Label className="flex items-center gap-2 text-sm md:text-base font-display">
+              <Zap className="w-4 h-4 md:w-5 md:h-5 text-[hsl(var(--racing-yellow))]" />
+              Torque ({unitSystem === 'imperial' ? 'ft-lb' : 'N-m'})
+            </Label>
+            <Input
+              type="number"
+              value={unitSystem === 'imperial' 
+                ? (specs.torque || '') 
+                : (specs.torque ? unitConversions.ftLbToNm(specs.torque) : '')}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (!value) {
+                  updateSpec('torque', undefined);
+                  return;
+                }
+                const torqueValue = unitSystem === 'imperial' ? value : unitConversions.nmToFtLb(value);
+                updateSpec('torque', torqueValue);
+              }}
+              className="bg-muted border-border focus:border-primary text-base md:text-lg font-body h-10 md:h-12"
+              placeholder={unitSystem === 'imperial' ? "e.g. 350" : "e.g. 475"}
+            />
+          </div>
+
+          {/* Displacement Input */}
+          <div className="space-y-2 md:space-y-3">
+            <Label className="flex items-center gap-2 text-sm md:text-base font-display">
+              <Settings2 className="w-4 h-4 md:w-5 md:h-5 text-[hsl(var(--racing-cyan))]" />
+              Displacement (L)
+            </Label>
+            <Input
+              type="number"
+              value={specs.displacement || ''}
+              onChange={(e) => updateSpec('displacement', Number(e.target.value))}
+              className="bg-muted border-border focus:border-primary text-base md:text-lg font-body h-10 md:h-12"
+              step={0.1}
+              placeholder="e.g. 3.0"
+            />
+          </div>
+
           {/* Gear Count */}
           <div className="space-y-2 md:space-y-3">
             <TuningTooltip explanation={inputExplanations.gearCount} showIcon>
@@ -335,12 +376,24 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
             </Label>
             
             <div className="flex flex-wrap gap-2 md:gap-4 items-end">
-              {/* Width */}
+              {/* Front Width */}
               <div className="flex-1 min-w-[80px]">
-                <Label className="text-xs text-muted-foreground mb-1 block">Width (mm)</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">Front Width (mm)</Label>
                 <Input
                   type="number"
-                  value={specs.tireWidth || 245}
+                  value={specs.frontTireWidth || 245}
+                  onChange={(e) => updateSpec('frontTireWidth', Number(e.target.value))}
+                  className="bg-muted border-border focus:border-primary"
+                  step={10}
+                />
+              </div>
+
+              {/* Rear Width */}
+              <div className="flex-1 min-w-[80px]">
+                <Label className="text-xs text-muted-foreground mb-1 block">Rear Width (mm)</Label>
+                <Input
+                  type="number"
+                  value={specs.rearTireWidth || 245}
                   onChange={(e) => {
                     const width = Number(e.target.value);
                     const profile = specs.tireProfile || 40;
@@ -351,7 +404,7 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
                     
                     onChange({ 
                       ...specs, 
-                      tireWidth: width,
+                      rearTireWidth: width,
                       tireCircumference: circumferenceM
                     });
                   }}

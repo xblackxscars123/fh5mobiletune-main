@@ -8,6 +8,9 @@ export interface FH5Car {
   year: number;
   weight: number; // in lbs
   weightDistribution: number; // front percentage
+  horsepower?: number; // HP
+  torque?: number; // lb-ft
+  displacement?: number; // Liters
   driveType: 'RWD' | 'FWD' | 'AWD';
   defaultPI: number;
   category: 'retro' | 'modern' | 'super' | 'hyper' | 'muscle' | 'jdm' | 'euro' | 'offroad' | 'truck' | 'classic' | 'rally' | 'formula' | 'drift' | 'hot-hatch' | 'gt' | 'suv' | 'van' | 'buggy' | 'track';
@@ -17,42 +20,42 @@ export interface FH5Car {
 }
 
 // Spec estimation based on car type
-const typeSpecs: Record<string, { weight: number; distribution: number; driveType: 'RWD' | 'FWD' | 'AWD'; pi: number; category: FH5Car['category'] }> = {
-  'Modern Sports Cars': { weight: 3200, distribution: 48, driveType: 'RWD', pi: 720, category: 'modern' },
-  'Hot Hatch': { weight: 2800, distribution: 62, driveType: 'FWD', pi: 550, category: 'hot-hatch' },
-  'Classic Rally': { weight: 2200, distribution: 52, driveType: 'RWD', pi: 480, category: 'rally' },
-  'Cult Cars': { weight: 2400, distribution: 50, driveType: 'RWD', pi: 350, category: 'classic' },
-  'Modern Supercars': { weight: 3400, distribution: 44, driveType: 'AWD', pi: 850, category: 'super' },
-  'Retro Hot Hatch': { weight: 2600, distribution: 60, driveType: 'FWD', pi: 520, category: 'jdm' },
-  'Super Saloons': { weight: 3800, distribution: 54, driveType: 'AWD', pi: 780, category: 'modern' },
-  'GT Cars': { weight: 3600, distribution: 50, driveType: 'RWD', pi: 760, category: 'gt' },
-  'Retro Saloons': { weight: 3400, distribution: 54, driveType: 'RWD', pi: 620, category: 'retro' },
-  'Classic Racers': { weight: 2000, distribution: 48, driveType: 'RWD', pi: 550, category: 'classic' },
-  'Rare Classics': { weight: 2600, distribution: 50, driveType: 'RWD', pi: 520, category: 'classic' },
-  'Unlimited Offroad': { weight: 4500, distribution: 52, driveType: 'AWD', pi: 750, category: 'offroad' },
-  'Unlimited Buggies': { weight: 2200, distribution: 48, driveType: 'AWD', pi: 700, category: 'buggy' },
-  'Classic Muscle': { weight: 3600, distribution: 54, driveType: 'RWD', pi: 520, category: 'muscle' },
-  'Extreme Track Toys': { weight: 2800, distribution: 45, driveType: 'RWD', pi: 920, category: 'track' },
-  'Hypercars': { weight: 3200, distribution: 44, driveType: 'AWD', pi: 980, category: 'hyper' },
-  'Sports Utility Heroes': { weight: 4800, distribution: 54, driveType: 'AWD', pi: 720, category: 'suv' },
-  'Super GT': { weight: 3700, distribution: 50, driveType: 'RWD', pi: 820, category: 'gt' },
-  'Track Toys': { weight: 2900, distribution: 47, driveType: 'RWD', pi: 850, category: 'track' },
-  'Retro Supercars': { weight: 3200, distribution: 45, driveType: 'RWD', pi: 750, category: 'super' },
-  'Vintage Racers': { weight: 1800, distribution: 50, driveType: 'RWD', pi: 280, category: 'classic' },
-  'Retro Muscle': { weight: 3500, distribution: 54, driveType: 'RWD', pi: 620, category: 'muscle' },
-  'Modern Muscle': { weight: 3900, distribution: 53, driveType: 'RWD', pi: 780, category: 'muscle' },
-  'Pickups & 4x4s': { weight: 5200, distribution: 56, driveType: 'AWD', pi: 650, category: 'truck' },
-  'Vans & Utility': { weight: 4200, distribution: 55, driveType: 'RWD', pi: 480, category: 'van' },
-  'Rods and Customs': { weight: 3200, distribution: 52, driveType: 'RWD', pi: 450, category: 'classic' },
-  'Super Hot Hatch': { weight: 3100, distribution: 60, driveType: 'AWD', pi: 680, category: 'hot-hatch' },
-  'Rally Monsters': { weight: 2800, distribution: 50, driveType: 'AWD', pi: 780, category: 'rally' },
-  'Retro Rally': { weight: 2600, distribution: 52, driveType: 'AWD', pi: 650, category: 'rally' },
-  'Retro Sports Cars': { weight: 2900, distribution: 48, driveType: 'RWD', pi: 600, category: 'retro' },
-  'Classic Sports Cars': { weight: 2400, distribution: 50, driveType: 'RWD', pi: 420, category: 'classic' },
-  'Drift Cars': { weight: 3000, distribution: 52, driveType: 'RWD', pi: 700, category: 'drift' },
-  'Offroad': { weight: 3800, distribution: 52, driveType: 'AWD', pi: 680, category: 'offroad' },
-  'Buggies': { weight: 1800, distribution: 48, driveType: 'RWD', pi: 550, category: 'buggy' },
-  "UTV's": { weight: 1600, distribution: 50, driveType: 'AWD', pi: 500, category: 'offroad' },
+const typeSpecs: Record<string, { weight: number; distribution: number; driveType: 'RWD' | 'FWD' | 'AWD'; pi: number; torque: number; displacement: number; category: FH5Car['category'] }> = {
+  'Modern Sports Cars': { weight: 3200, distribution: 48, driveType: 'RWD', pi: 720, torque: 350, displacement: 3.0, category: 'modern' },
+  'Hot Hatch': { weight: 2800, distribution: 62, driveType: 'FWD', pi: 550, torque: 250, displacement: 2.0, category: 'hot-hatch' },
+  'Classic Rally': { weight: 2200, distribution: 52, driveType: 'RWD', pi: 480, torque: 180, displacement: 2.0, category: 'rally' },
+  'Cult Cars': { weight: 2400, distribution: 50, driveType: 'RWD', pi: 350, torque: 100, displacement: 1.6, category: 'classic' },
+  'Modern Supercars': { weight: 3400, distribution: 44, driveType: 'AWD', pi: 850, torque: 500, displacement: 4.0, category: 'super' },
+  'Retro Hot Hatch': { weight: 2600, distribution: 60, driveType: 'FWD', pi: 520, torque: 150, displacement: 1.8, category: 'jdm' },
+  'Super Saloons': { weight: 3800, distribution: 54, driveType: 'AWD', pi: 780, torque: 450, displacement: 4.0, category: 'modern' },
+  'GT Cars': { weight: 3600, distribution: 50, driveType: 'RWD', pi: 760, torque: 400, displacement: 4.0, category: 'gt' },
+  'Retro Saloons': { weight: 3400, distribution: 54, driveType: 'RWD', pi: 620, torque: 280, displacement: 3.0, category: 'retro' },
+  'Classic Racers': { weight: 2000, distribution: 48, driveType: 'RWD', pi: 550, torque: 300, displacement: 3.0, category: 'classic' },
+  'Rare Classics': { weight: 2600, distribution: 50, driveType: 'RWD', pi: 520, torque: 250, displacement: 3.0, category: 'classic' },
+  'Unlimited Offroad': { weight: 4500, distribution: 52, driveType: 'AWD', pi: 750, torque: 600, displacement: 6.2, category: 'offroad' },
+  'Unlimited Buggies': { weight: 2200, distribution: 48, driveType: 'AWD', pi: 700, torque: 300, displacement: 2.5, category: 'buggy' },
+  'Classic Muscle': { weight: 3600, distribution: 54, driveType: 'RWD', pi: 520, torque: 400, displacement: 6.0, category: 'muscle' },
+  'Extreme Track Toys': { weight: 2800, distribution: 45, driveType: 'RWD', pi: 920, torque: 500, displacement: 4.0, category: 'track' },
+  'Hypercars': { weight: 3200, distribution: 44, driveType: 'AWD', pi: 980, torque: 700, displacement: 6.0, category: 'hyper' },
+  'Sports Utility Heroes': { weight: 4800, distribution: 54, driveType: 'AWD', pi: 720, torque: 500, displacement: 5.0, category: 'suv' },
+  'Super GT': { weight: 3700, distribution: 50, driveType: 'RWD', pi: 820, torque: 550, displacement: 5.2, category: 'gt' },
+  'Track Toys': { weight: 2900, distribution: 47, driveType: 'RWD', pi: 850, torque: 400, displacement: 3.8, category: 'track' },
+  'Retro Supercars': { weight: 3200, distribution: 45, driveType: 'RWD', pi: 750, torque: 380, displacement: 3.5, category: 'super' },
+  'Vintage Racers': { weight: 1800, distribution: 50, driveType: 'RWD', pi: 280, torque: 150, displacement: 2.0, category: 'classic' },
+  'Retro Muscle': { weight: 3500, distribution: 54, driveType: 'RWD', pi: 620, torque: 350, displacement: 5.7, category: 'muscle' },
+  'Modern Muscle': { weight: 3900, distribution: 53, driveType: 'RWD', pi: 780, torque: 450, displacement: 6.2, category: 'muscle' },
+  'Pickups & 4x4s': { weight: 5200, distribution: 56, driveType: 'AWD', pi: 650, torque: 400, displacement: 5.0, category: 'truck' },
+  'Vans & Utility': { weight: 4200, distribution: 55, driveType: 'RWD', pi: 480, torque: 250, displacement: 2.5, category: 'van' },
+  'Rods and Customs': { weight: 3200, distribution: 52, driveType: 'RWD', pi: 450, torque: 300, displacement: 5.0, category: 'classic' },
+  'Super Hot Hatch': { weight: 3100, distribution: 60, driveType: 'AWD', pi: 680, torque: 300, displacement: 2.0, category: 'hot-hatch' },
+  'Rally Monsters': { weight: 2800, distribution: 50, driveType: 'AWD', pi: 780, torque: 400, displacement: 2.0, category: 'rally' },
+  'Retro Rally': { weight: 2600, distribution: 52, driveType: 'AWD', pi: 650, torque: 200, displacement: 2.0, category: 'rally' },
+  'Retro Sports Cars': { weight: 2900, distribution: 48, driveType: 'RWD', pi: 600, torque: 220, displacement: 2.5, category: 'retro' },
+  'Classic Sports Cars': { weight: 2400, distribution: 50, driveType: 'RWD', pi: 420, torque: 150, displacement: 2.0, category: 'classic' },
+  'Drift Cars': { weight: 3000, distribution: 52, driveType: 'RWD', pi: 700, torque: 400, displacement: 3.0, category: 'drift' },
+  'Offroad': { weight: 3800, distribution: 52, driveType: 'AWD', pi: 680, torque: 350, displacement: 4.0, category: 'offroad' },
+  'Buggies': { weight: 1800, distribution: 48, driveType: 'RWD', pi: 550, torque: 150, displacement: 1.6, category: 'buggy' },
+  "UTV's": { weight: 1600, distribution: 50, driveType: 'AWD', pi: 500, torque: 120, displacement: 1.0, category: 'offroad' },
 };
 
 // Parse car data from the user's provided list

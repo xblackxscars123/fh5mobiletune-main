@@ -14,13 +14,16 @@ import {
   calculateSpringFromFrequency,
   calculateDampingFromRatio,
   calculateLLTD,
+  applySurfaceModifiers,
+  surfaceModifiers,
   type LLTDResult,
+  type SurfaceType,
 } from './physicsCalculations';
 
 export type DriveType = 'RWD' | 'FWD' | 'AWD';
 export type TuneType = 'grip' | 'drift' | 'offroad' | 'drag' | 'rally' | 'street';
 
- export type TuneVariant =
+export type TuneVariant =
   | 'balanced'
   | 'technical'
   | 'highSpeed'
@@ -30,40 +33,70 @@ export type TuneType = 'grip' | 'drift' | 'offroad' | 'drag' | 'rally' | 'street
   | 'bumpy'
   | 'mixed'
   | 'traction'
-  | 'topSpeed';
+  | 'topSpeed'
+  | 'rain'
+  | 'snow'
+  | 'gymkhana'
+  | 'noPrep'
+  | 'nordschleife'
+  | 'touge'
+  | 'endurance'
+  | 'vintage'
+  | 'show'
+  | 'awd_drift'
+  | 'rock_crawl'
+  | 'desert'
+  | 'wheelie';
 
- export const tuneVariantsByType: Record<TuneType, { value: TuneVariant; label: string }[]> = {
+export const tuneVariantsByType: Record<TuneType, { value: TuneVariant; label: string }[]> = {
   grip: [
     { value: 'balanced', label: 'Balanced' },
-    { value: 'technical', label: 'Technical Tracks' },
-    { value: 'highSpeed', label: 'High Speed' },
-    { value: 'powerbuild', label: 'Powerbuild Traction' },
+    { value: 'technical', label: 'Technical / Handling' },
+    { value: 'highSpeed', label: 'High Speed / Aero' },
+    { value: 'nordschleife', label: 'Nordschleife / Bumpy' },
+    { value: 'endurance', label: 'Endurance / Consistent' },
+    { value: 'powerbuild', label: 'Powerbuild / RWD Swap' },
+    { value: 'vintage', label: 'Vintage / Classic Racer' },
+    { value: 'rain', label: 'Rain / Wet Track' },
   ],
   street: [
     { value: 'balanced', label: 'Balanced' },
-    { value: 'highSpeed', label: 'High Speed' },
+    { value: 'touge', label: 'Touge / Tight Roads' },
+    { value: 'highSpeed', label: 'Highway / Top Speed' },
     { value: 'traction', label: 'Traction / Stability' },
+    { value: 'vintage', label: 'Classic Muscle / Retro' },
+    { value: 'rain', label: 'Wet Streets' },
   ],
   drift: [
     { value: 'balanced', label: 'Balanced' },
-    { value: 'highAngle', label: 'High Angle' },
-    { value: 'smooth', label: 'Smooth / Consistent' },
+    { value: 'highAngle', label: 'High Angle / Points' },
+    { value: 'smooth', label: 'Smooth / Tandem' },
+    { value: 'gymkhana', label: 'Gymkhana / AWD Powerslide' },
+    { value: 'show', label: 'Show / Smoke / Low Grip' },
+    { value: 'awd_drift', label: 'AWD Powerslide (Specific)' },
   ],
   rally: [
-    { value: 'mixed', label: 'Mixed Surface' },
+    { value: 'mixed', label: 'Mixed Surface (Gravel/Tarmac)' },
     { value: 'bumpy', label: 'Bumpy / Jumps' },
     { value: 'traction', label: 'Loose Traction' },
+    { value: 'vintage', label: 'Vintage Rally' },
+    { value: 'snow', label: 'Snow / Ice' },
   ],
   offroad: [
-    { value: 'bumpy', label: 'Bumpy / Jumps' },
+    { value: 'bumpy', label: 'Bumpy / Cross Country' },
+    { value: 'rock_crawl', label: 'Rock Crawl / Technical' },
+    { value: 'desert', label: 'Desert / Baja / High Speed' },
     { value: 'traction', label: 'Traction / Stability' },
     { value: 'mixed', label: 'Mixed Terrain' },
+    { value: 'snow', label: 'Snow / Ice' },
   ],
   drag: [
     { value: 'traction', label: 'Launch / 0-60' },
     { value: 'topSpeed', label: 'Top Speed / Trap' },
+    { value: 'wheelie', label: 'Wheelie / Show' },
+    { value: 'noPrep', label: 'No Prep (Softer Rear)' },
   ],
- };
+};
 
  export const defaultTuneVariantByType: Record<TuneType, TuneVariant> = {
   grip: 'balanced',
@@ -84,10 +117,13 @@ export interface CarSpecs {
   rearDownforce?: number;
   tireCompound: 'street' | 'sport' | 'semi-slick' | 'slick' | 'rally' | 'offroad' | 'drag';
   horsepower?: number;
+  torque?: number; // ft-lb or N-m
+  displacement?: number; // liters or cc
   gearCount?: number; // 4-10 gears
   drivingStyle?: number; // -2 (stable/understeer) to +2 (loose/oversteer)
   tireCircumference?: number; // meters
-  tireWidth?: number; // mm
+  frontTireWidth?: number; // mm
+  rearTireWidth?: number; // mm
   tireProfile?: number; // %
   rimSize?: number; // inches
 }
@@ -184,6 +220,27 @@ export interface TuneModifiers {
     bumpRatioRear: number;
     lltd: LLTDResult;
   };
+  surface?: {
+    type: SurfaceType;
+    description: string;
+    mods: any;
+  };
+}
+
+function getSurfaceFromVariant(tuneType: TuneType, variant: TuneVariant): SurfaceType {
+  if (variant === 'rain') return 'wet';
+  if (variant === 'snow') return 'snow';
+  
+  if (tuneType === 'offroad') {
+    if (variant === 'traction') return 'mud'; // Treat traction-focused offroad as mud/heavy
+    return 'gravel'; // default for offroad (dirt/gravel)
+  }
+  
+  if (tuneType === 'rally') {
+    return 'gravel'; // Rally is mixed/gravel
+  }
+  
+  return 'tarmac';
 }
 
 // ==========================================
@@ -685,6 +742,8 @@ export const unitConversions = {
   nToLbs: (n: number) => Math.round(n / 4.44822),
   hpToKw: (hp: number) => Math.round(hp * 0.7457),
   kwToHp: (kw: number) => Math.round(kw / 0.7457),
+  ftLbToNm: (ftLb: number) => Math.round(ftLb * 1.35582),
+  nmToFtLb: (nm: number) => Math.round(nm / 1.35582),
 };
 
 export function convertTuneToUnits(tune: TuneSettings, toSystem: UnitSystem): TuneSettings {
@@ -818,7 +877,9 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
     horsepower = 400,
     tireCompound = 'sport',
     piClass = 'A',
-    drivingStyle = 0
+    drivingStyle = 0,
+    frontTireWidth = 245,
+    rearTireWidth = 245
   } = specs;
 
   const normalizedPI = normalizePiClass(piClass);
@@ -913,19 +974,35 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
       if (variant === 'technical') return 1.03;
       if (variant === 'highSpeed') return 0.98;
       if (variant === 'powerbuild') return 1.02;
+      if (variant === 'endurance') return 0.96; // Softer for consistency/tire wear
+      if (variant === 'vintage') return 0.88; // Period correct body roll
+      if (variant === 'rain') return 0.94; // Softer for wet
     }
     if (tuneType === 'street') {
       if (variant === 'highSpeed') return 0.98;
       if (variant === 'traction') return 1.01;
+      if (variant === 'vintage') return 0.85; // Classic muscle feel
+      if (variant === 'rain') return 0.95;
     }
     if (tuneType === 'drift') {
       if (variant === 'highAngle') return 1.02;
       if (variant === 'smooth') return 0.98;
+      if (variant === 'gymkhana') return 1.05; // Stiff/Snappy
+      if (variant === 'show') return 0.95; // Softer for exaggerated motion
+      if (variant === 'awd_drift') return 1.08; // Stiffer for AWD sliding
     }
     if (tuneType === 'rally' || tuneType === 'offroad') {
       if (variant === 'bumpy') return 0.92;
       if (variant === 'traction') return 0.96;
       if (variant === 'mixed') return 0.97;
+      if (variant === 'rock_crawl') return 0.60; // Extremely soft
+      if (variant === 'desert') return 1.10; // Stiff for high speed impacts
+      if (variant === 'vintage') return 0.85;
+      if (variant === 'snow') return 0.90; // Very soft
+    }
+    if (tuneType === 'drag') {
+      if (variant === 'noPrep') return 0.90; // Softer for weight transfer on bad surface
+      if (variant === 'wheelie') return 0.80; // Soft for squat
     }
     return 1.0;
   })();
@@ -945,6 +1022,15 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
   
   let springsFront = frontSpringResult.springRateLbIn;
   let springsRear = rearSpringResult.springRateLbIn;
+
+  // Tire Width Adjustment (New)
+  // Wider tires = more grip potential = stiffer springs needed to control roll
+  // Formula: +10% stiffness per 50mm over 225mm baseline
+  const frontTireScale = 1 + (Math.max(0, frontTireWidth - 225) / 500);
+  const rearTireScale = 1 + (Math.max(0, rearTireWidth - 225) / 500);
+  
+  springsFront = Math.round(springsFront * frontTireScale);
+  springsRear = Math.round(springsRear * rearTireScale);
   
   // Apply tire compound modifier (compound affects grip, needs spring adjustment)
   springsFront = Math.round(springsFront * tireMod.springMod);
@@ -966,8 +1052,10 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
   }
   
   // Clamp to FH5 valid ranges (use PI-aware bounds as sanity check)
+  // Research Note: Users report "limit is usually 350lb" for race suspension.
+  // We respect this but allow lighter cars (lower PI) to go lower.
   const springRange = springRangesByPI[normalizedPI]?.[tuneType] || springRangesByPI['A'][tuneType];
-  const minSpring = Math.round(springRange.min * 0.7);
+  const minSpring = Math.round(springRange.min * 0.9); // Tighter floor (was 0.7) to respect limits
   const maxSpring = Math.round(springRange.max * 1.5);
   springsFront = Math.max(minSpring, Math.min(maxSpring, springsFront));
   springsRear = Math.max(minSpring, Math.min(maxSpring, springsRear));
@@ -1067,6 +1155,12 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
   // Driving style: loose = more aggressive diff
   diffAccelRear = Math.round(diffAccelRear + (drivingStyle * 4));
   
+  // Engine character: High torque = more lock needed
+  diffAccelRear = Math.round(diffAccelRear + engineChar.diffAccelOffset);
+  if (diffAccelFront !== undefined) {
+    diffAccelFront = Math.round(diffAccelFront + (engineChar.diffAccelOffset * 0.7)); // Front needs less lock change
+  }
+
   // Clamp diff values
   diffAccelRear = Math.max(0, Math.min(100, diffAccelRear));
   diffDecelRear = Math.max(0, Math.min(100, diffDecelRear));
@@ -1106,8 +1200,23 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
   };
   
   // ==========================================
-  // RETURN FINAL TUNE (holistically calculated)
+  // SURFACE & VARIANT MODIFIERS
   // ==========================================
+  
+  // 1. Surface Modifiers (Physics-based)
+  const surfaceType = getSurfaceFromVariant(tuneType, variant);
+  const surfaceMods = applySurfaceModifiers(
+    { front: springsFront, rear: springsRear },
+    { front: tirePressures.front, rear: tirePressures.rear },
+    { accel: diffAccelRear, decel: diffDecelRear },
+    surfaceType
+  );
+  
+  // Apply surface mods
+  springsFront = surfaceMods.springs.front;
+  springsRear = surfaceMods.springs.rear;
+  
+  // 2. Variant Modifiers (Specific character tweaks)
   const variantMods: Partial<{
     frequencyScale: number;
     diffAccelRearOffset: number;
@@ -1115,31 +1224,48 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
     targetFrontBiasOffset: number;
     finalDriveScale: number;
     toeFrontOffset: number;
+    rideHeightOffset: number;
   }> = (() => {
     if (tuneType === 'grip') {
       if (variant === 'technical') return { frequencyScale: 1.03, diffDecelRearOffset: 6, targetFrontBiasOffset: 2, finalDriveScale: 1.02, toeFrontOffset: 0.05 };
       if (variant === 'highSpeed') return { frequencyScale: 0.98, diffDecelRearOffset: 8, targetFrontBiasOffset: 4, finalDriveScale: 0.96 };
       if (variant === 'powerbuild') return { frequencyScale: 1.02, diffAccelRearOffset: 8, targetFrontBiasOffset: 2, finalDriveScale: 1.06 };
+      if (variant === 'nordschleife') return { frequencyScale: 0.96, diffDecelRearOffset: 5, rideHeightOffset: 0.5, finalDriveScale: 0.98 };
+      if (variant === 'endurance') return { frequencyScale: 0.96, diffAccelRearOffset: -5, rideHeightOffset: 0.2, targetFrontBiasOffset: -2 };
+      if (variant === 'vintage') return { frequencyScale: 0.88, diffAccelRearOffset: -10, rideHeightOffset: 0.8, toeFrontOffset: 0, finalDriveScale: 0.95 };
+      if (variant === 'rain') return { frequencyScale: 0.94, diffAccelRearOffset: -10, diffDecelRearOffset: 5, targetFrontBiasOffset: -4 };
       return { frequencyScale: 1.0 };
     }
     if (tuneType === 'street') {
       if (variant === 'highSpeed') return { frequencyScale: 0.98, diffDecelRearOffset: 6, targetFrontBiasOffset: 3, finalDriveScale: 0.96 };
+      if (variant === 'touge') return { frequencyScale: 1.04, diffAccelRearOffset: 5, toeFrontOffset: 0.1, finalDriveScale: 1.05 };
       if (variant === 'traction') return { frequencyScale: 1.01, diffAccelRearOffset: -4, diffDecelRearOffset: 6, targetFrontBiasOffset: 3 };
+      if (variant === 'vintage') return { frequencyScale: 0.85, diffAccelRearOffset: -8, rideHeightOffset: 1.0, finalDriveScale: 0.92 };
+      if (variant === 'rain') return { frequencyScale: 0.95, diffAccelRearOffset: -8, diffDecelRearOffset: 5, targetFrontBiasOffset: -3 };
       return { frequencyScale: 1.0 };
     }
     if (tuneType === 'drift') {
       if (variant === 'highAngle') return { frequencyScale: 1.02, toeFrontOffset: 0.2, diffAccelRearOffset: 0, diffDecelRearOffset: 0 };
       if (variant === 'smooth') return { frequencyScale: 0.98, toeFrontOffset: -0.2, diffDecelRearOffset: -10 };
+      if (variant === 'gymkhana') return { frequencyScale: 1.05, toeFrontOffset: 0.5, diffAccelRearOffset: 0, diffDecelRearOffset: 0, targetFrontBiasOffset: 5 };
+      if (variant === 'show') return { frequencyScale: 0.95, rideHeightOffset: -0.5, toeFrontOffset: 0.3 };
+      if (variant === 'awd_drift') return { frequencyScale: 1.08, diffAccelRearOffset: 0, diffDecelRearOffset: 0, targetFrontBiasOffset: 8 };
       return { frequencyScale: 1.0 };
     }
     if (tuneType === 'rally' || tuneType === 'offroad') {
       if (variant === 'bumpy') return { frequencyScale: 0.92, diffAccelRearOffset: 6, diffDecelRearOffset: 4, targetFrontBiasOffset: -2, finalDriveScale: 1.04 };
       if (variant === 'traction') return { frequencyScale: 0.96, diffAccelRearOffset: 10, diffDecelRearOffset: 6, targetFrontBiasOffset: -1 };
       if (variant === 'mixed') return { frequencyScale: 0.97, diffAccelRearOffset: 6, diffDecelRearOffset: 4 };
+      if (variant === 'rock_crawl') return { frequencyScale: 0.60, diffAccelRearOffset: 25, diffDecelRearOffset: 25, rideHeightOffset: 2.0, finalDriveScale: 1.2 };
+      if (variant === 'desert') return { frequencyScale: 1.10, diffAccelRearOffset: 10, rideHeightOffset: 1.5, finalDriveScale: 0.9 };
+      if (variant === 'vintage') return { frequencyScale: 0.85, rideHeightOffset: 0.5 };
+      if (variant === 'snow') return { frequencyScale: 0.90, diffAccelRearOffset: -5, diffDecelRearOffset: 10, targetFrontBiasOffset: -5 };
       return { frequencyScale: 1.0 };
     }
     if (tuneType === 'drag') {
       if (variant === 'topSpeed') return { finalDriveScale: 0.88, diffAccelRearOffset: -2, targetFrontBiasOffset: 2 };
+      if (variant === 'noPrep') return { frequencyScale: 0.90, finalDriveScale: 1.05, diffAccelRearOffset: -5, targetFrontBiasOffset: -2 };
+      if (variant === 'wheelie') return { frequencyScale: 0.80, rideHeightOffset: 2.0, finalDriveScale: 1.1, diffAccelRearOffset: 0 };
       return { finalDriveScale: 1.0 };
     }
     return { frequencyScale: 1.0 };
@@ -1150,14 +1276,25 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
   const finalBrakeBalance = 100 - finalTargetFrontBias;
   const finalBrakeBalanceNote = `Set slider to ${finalBrakeBalance}% to achieve ${finalTargetFrontBias}% front bias (FH5 slider is inverted)`;
 
-  const finalDiffAccelRear = clampNumber(diffAccelRear + (variantMods.diffAccelRearOffset ?? 0), 0, 100);
-  const finalDiffDecelRear = clampNumber(diffDecelRear + (variantMods.diffDecelRearOffset ?? 0), 0, 100);
+  // Combine surface mods + variant mods for Diff
+  const finalDiffAccelRear = clampNumber(surfaceMods.diff.accel + (variantMods.diffAccelRearOffset ?? 0), 0, 100);
+  const finalDiffDecelRear = clampNumber(surfaceMods.diff.decel + (variantMods.diffDecelRearOffset ?? 0), 0, 100);
+  
+  // Apply surface mods to Front Diff if present (using same delta as rear for now)
+  const diffAccelFrontDelta = surfaceMods.diff.accel - diffAccelRear; // Calculate delta
+  const finalDiffAccelFront = diffAccelFront !== undefined 
+    ? clampNumber(diffAccelFront + diffAccelFrontDelta, 0, 100) 
+    : undefined;
 
-  const finalFinalDrive = clampNumber(finalDrive * (variantMods.finalDriveScale ?? 1.0), 2.5, 5.5);
+  const finalFinalDrive = clampNumber(finalDrive * (variantMods.finalDriveScale ?? 1.0), 2.5, 6.0);
+
+  // Apply ride height offsets (e.g. for Nordschleife)
+  const finalRideHeightFront = Math.round((rideHeightFront + (variantMods.rideHeightOffset ?? 0)) * 10) / 10;
+  const finalRideHeightRear = Math.round((rideHeightRear + (variantMods.rideHeightOffset ?? 0)) * 10) / 10;
 
   return {
-    tirePressureFront: tirePressures.front,
-    tirePressureRear: tirePressures.rear,
+    tirePressureFront: surfaceMods.pressure.front,
+    tirePressureRear: surfaceMods.pressure.rear,
     finalDrive: Math.round(finalFinalDrive * 100) / 100,
     gearRatios,
     gearingNote: gearingNotes[tuneType],
@@ -1170,15 +1307,15 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
     arbRear: arbs.rear,
     springsFront,
     springsRear,
-    rideHeightFront: Math.round(rideHeightFront * 10) / 10,
-    rideHeightRear: Math.round(rideHeightRear * 10) / 10,
+    rideHeightFront: finalRideHeightFront,
+    rideHeightRear: finalRideHeightRear,
     reboundFront: damping.reboundF,
     reboundRear: damping.reboundR,
     bumpFront: damping.bumpF,
     bumpRear: damping.bumpR,
     aeroFront,
     aeroRear,
-    diffAccelFront,
+    diffAccelFront: finalDiffAccelFront,
     diffDecelFront,
     diffAccelRear: finalDiffAccelRear,
     diffDecelRear: finalDiffDecelRear,
@@ -1196,6 +1333,11 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
         bumpRatioFront: damping.ratios.bumpF,
         bumpRatioRear: damping.ratios.bumpR,
         lltd,
+      },
+      surface: {
+        type: surfaceType,
+        description: surfaceMods.surfaceInfo.description,
+        mods: surfaceMods.surfaceInfo,
       },
     },
   };

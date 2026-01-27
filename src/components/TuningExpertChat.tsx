@@ -2,8 +2,8 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { MessageSquare, Send, X, Loader2, Bot, User, Minimize2, Maximize2, Sparkles, AlertCircle, TrendingUp, Save, Trash2, Gauge, Zap, Wind } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { CarSpecs, TuneType, TuneSettings } from '@/lib/tuningCalculator';
-import { supabase } from '@/integrations/supabase/client';
+import { CarSpecs, TuneType, TuneSettings, UnitSystem } from '@/lib/tuningCalculator';
+import { sendGeminiMessage } from '@/lib/gemini';
 import {
   parseSuggestionsWithImpact,
   calculateTuneImpact,
@@ -29,6 +29,7 @@ export interface TuneContext {
   tuneType?: TuneType;
   specs?: CarSpecs;
   currentTune?: TuneSettings;
+  unitSystem?: UnitSystem;
 }
 
 interface TuningExpertChatProps {
@@ -36,90 +37,8 @@ interface TuningExpertChatProps {
   onApplySuggestion?: (setting: string, value: number) => void;
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tuning-expert`;
 const CHAT_HISTORY_KEY = 'tuning-chat-history';
 const MAX_MESSAGES = 100;
-
-async function streamChat({
-  messages,
-  tuneContext,
-  onDelta,
-  onDone,
-  onError,
-}: {
-  messages: Message[];
-  tuneContext?: TuneContext;
-  onDelta: (deltaText: string) => void;
-  onDone: () => void;
-  onError: (error: string) => void;
-}) {
-  try {
-    // Get the current user session for authentication
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !session) {
-      throw new Error("Please sign in to use the AI tuning expert");
-    }
-
-    const resp = await fetch(CHAT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ messages, tuneContext }),
-    });
-
-    if (!resp.ok) {
-      const errorData = await resp.json().catch(() => ({}));
-      throw new Error(errorData.error || `Request failed with status ${resp.status}`);
-    }
-
-    if (!resp.body) throw new Error("No response body");
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let textBuffer = "";
-    let streamDone = false;
-
-    while (!streamDone) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (line.startsWith(":") || line.trim() === "") continue;
-        if (!line.startsWith("data: ")) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") {
-          streamDone = true;
-          break;
-        }
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) onDelta(content);
-        } catch {
-          textBuffer = line + "\n" + textBuffer;
-          break;
-        }
-      }
-    }
-
-    onDone();
-  } catch (error) {
-    onError(error instanceof Error ? error.message : "Failed to connect");
-  }
-}
-
-
 
 export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExpertChatProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -128,7 +47,6 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [tuneProfiles, setTuneProfiles] = useState<TuneProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [showProfiles, setShowProfiles] = useState(false);
@@ -160,22 +78,7 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
       }
     };
 
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-    };
-
     loadChatHistory();
-    checkAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-    });
-
-    return () => {
-      subscription?.unsubscribe();
-    };
   }, []);
 
   // Save messages to localStorage whenever they change
@@ -311,13 +214,6 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    // Check authentication
-    if (!isAuthenticated) {
-      setError('Please sign in to use the AI tuning expert');
-      toast.error('Please sign in to continue');
-      return;
-    }
-
     setError(null);
     const userMessage: Message = { role: 'user', content: input.trim() };
     setMessages(prev => [...prev, userMessage]);
@@ -326,28 +222,34 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
 
     assistantContentRef.current = '';
 
-    await streamChat({
-      messages: [...messages, userMessage],
-      tuneContext,
-      onDelta: updateAssistant,
-      onDone: () => {
-        setIsLoading(false);
-        // Parse suggestions from the assistant response
-        if (tuneContext?.currentTune && tuneContext?.specs) {
-          const suggestions = parseSuggestionsWithImpact(
-            assistantContentRef.current,
-            tuneContext.specs,
-            tuneContext.currentTune
-          );
-          setLastSuggestions(suggestions);
-        }
-      },
-      onError: (errorMsg) => {
-        setIsLoading(false);
-        setError(errorMsg);
-        toast.error(errorMsg);
-      },
-    });
+    try {
+      const stream = await sendGeminiMessage(
+        messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: m.content })),
+        userMessage.content,
+        tuneContext
+      );
+
+      for await (const chunk of stream) {
+        const chunkText = chunk.text();
+        updateAssistant(chunkText);
+      }
+      
+      setIsLoading(false);
+      // Parse suggestions from the assistant response
+      if (tuneContext?.currentTune && tuneContext?.specs) {
+        const suggestions = parseSuggestionsWithImpact(
+          assistantContentRef.current,
+          tuneContext.specs,
+          tuneContext.currentTune
+        );
+        setLastSuggestions(suggestions);
+      }
+    } catch (err) {
+      setIsLoading(false);
+      const errorMsg = err instanceof Error ? err.message : "Failed to connect";
+      setError(errorMsg);
+      toast.error(errorMsg);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -440,15 +342,6 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
 
         {!isMinimized && (
           <>
-            {/* Auth/Context Badge */}
-            {isAuthenticated === false && (
-              <div className="px-3 py-2 bg-red-500/10 border-b border-red-500/30 flex items-center gap-2">
-                <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-                <span className="text-[10px] text-red-300">
-                  Sign in to use the AI tuning expert
-                </span>
-              </div>
-            )}
             
             {tuneContext?.carName && (
               <div className="px-3 py-1.5 bg-[hsl(220,15%,10%)] border-b border-[hsl(220,15%,18%)] flex items-center gap-2">

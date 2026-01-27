@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { TuningTooltip } from '@/components/TuningTooltip';
 import { inputExplanations } from '@/data/tuningGuide';
-import { Car, Compass, Scale, Settings2 } from 'lucide-react';
+import { Car, Compass, Scale, Settings2, Circle } from 'lucide-react';
 
 interface SimpleModeFormProps {
   specs: CarSpecs;
@@ -138,6 +138,53 @@ export function SimpleModeForm({ specs, onChange, unitSystem, onUnitSystemChange
           max={unitSystem === 'imperial' ? 10000 : 4536}
           placeholder={unitSystem === 'imperial' ? "e.g. 3000" : "e.g. 1360"}
         />
+      </div>
+
+      {/* Tire Width - New Section */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2 text-sm font-display">
+          <Circle className="w-4 h-4 text-primary" />
+          Tire Width (mm)
+        </Label>
+        <div className="flex gap-3">
+          {/* Front Width */}
+          <div className="flex-1">
+            <Label className="text-xs text-muted-foreground mb-1 block">Front</Label>
+            <Input
+              type="number"
+              value={specs.frontTireWidth || 245}
+              onChange={(e) => updateSpec('frontTireWidth', Number(e.target.value))}
+              className="bg-muted border-border text-base h-10"
+              step={10}
+            />
+          </div>
+
+          {/* Rear Width */}
+          <div className="flex-1">
+            <Label className="text-xs text-muted-foreground mb-1 block">Rear</Label>
+            <Input
+              type="number"
+              value={specs.rearTireWidth || 245}
+              onChange={(e) => {
+                const width = Number(e.target.value);
+                // Default profile/rim for simple mode updates if needed
+                const profile = specs.tireProfile || 40;
+                const rim = specs.rimSize || 19;
+                
+                const diameterMm = (width * profile / 100 * 2) + (rim * 25.4);
+                const circumferenceM = (diameterMm / 1000) * Math.PI;
+                
+                onChange({ 
+                  ...specs, 
+                  rearTireWidth: width,
+                  tireCircumference: circumferenceM
+                });
+              }}
+              className="bg-muted border-border text-base h-10"
+              step={10}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Quick Info */}

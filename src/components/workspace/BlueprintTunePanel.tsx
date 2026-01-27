@@ -145,6 +145,7 @@ const BlueprintTunePanelInner = ({
             horsepower={horsepower}
             specs={specs}
             tune={tune}
+            unitSystem={unitSystem}
           />
         );
 

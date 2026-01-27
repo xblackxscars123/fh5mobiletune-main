@@ -122,7 +122,7 @@ export default function Index() {
   const carName = selectedCar ? getCarDisplayName(selectedCar) : 'Custom Car';
 
   const tuneContext: TuneContext | undefined = showResults ? {
-    carName, tuneType, specs, currentTune: tuneSettings
+    carName, tuneType, specs, currentTune: tuneSettings, unitSystem
   } : undefined;
 
   const handleCarSelect = (car: FH5Car) => {

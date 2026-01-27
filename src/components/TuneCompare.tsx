@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SavedTune } from '@/hooks/useSavedTunes';
-import { TuneSettings, getUnitLabels, UnitSystem } from '@/lib/tuningCalculator';
+import { TuneSettings, getUnitLabels, UnitSystem, convertTuneToUnits } from '@/lib/tuningCalculator';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -35,12 +35,15 @@ export function TuneCompare({ savedTunes, currentTune, unitSystem }: TuneCompare
   
   const labels = getUnitLabels(unitSystem);
   
-  const tuneA = tuneAId === 'current' && currentTune 
+  const rawTuneA = tuneAId === 'current' && currentTune 
     ? { name: currentTune.name, tune: currentTune.tune }
     : savedTunes.find(t => t.id === tuneAId);
-  const tuneB = tuneBId === 'current' && currentTune
+  const rawTuneB = tuneBId === 'current' && currentTune
     ? { name: currentTune.name, tune: currentTune.tune }
     : savedTunes.find(t => t.id === tuneBId);
+
+  const tuneA = rawTuneA ? { ...rawTuneA, tune: convertTuneToUnits(rawTuneA.tune, unitSystem) } : undefined;
+  const tuneB = rawTuneB ? { ...rawTuneB, tune: convertTuneToUnits(rawTuneB.tune, unitSystem) } : undefined;
 
   const getTuneValues = (tune: TuneSettings): CompareValue[] => {
     return [

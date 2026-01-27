@@ -113,8 +113,13 @@ export function calculateDampingFromRatio(params: DampingRatioParams): DampingRe
   
   // Convert to FH5 1-20 scale
   // Mapping: higher coefficient = higher value
-  // Baseline: c_critical of ~200 maps to roughly 10
-  const baselineCoeff = 200;
+  // We use a mass-normalized baseline so the 1-20 scale represents 
+  // damping RATIO (stiffness relative to mass) rather than absolute force.
+  // This ensures a light car and heavy car both get ~10 for a "Sport" setup.
+  // Formula derived from: c_critical = 4 * pi * mass * freq
+  // Target: Freq 2.0Hz + Ratio 0.7 => ~10.5 on scale
+  const baselineCoeff = massSlug * 16.5; 
+  
   const reboundValue = Math.round((cRebound / baselineCoeff) * 10);
   const bumpValue = Math.round((cBump / baselineCoeff) * 10);
   
