@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TuneTypeSelector } from '@/components/TuneTypeSelector';
@@ -42,6 +42,7 @@ export default function Index() {
   const location = useLocation();
   const { user } = useAuth();
   const { savedTunes, syncLocalTunesToCloud } = useSavedTunes();
+  const advancedSectionRef = useRef<HTMLDivElement>(null);
   const [tuneType, setTuneType] = useState<TuneType>('grip');
   const [variant, setVariant] = useState<TuneVariant>(defaultTuneVariantByType.grip);
   const [specs, setSpecs] = useState<CarSpecs>(defaultSpecs);
@@ -184,6 +185,13 @@ export default function Index() {
     toast.success(`Applied "${template.name}" template`);
   };
 
+  const handleSwitchToAdvanced = () => {
+    setIsSimpleMode(false);
+    setTimeout(() => {
+      advancedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  };
+
   return (
     <div className="min-h-screen pb-8 md:pb-16 relative overflow-x-hidden">
       <ThemeBackground />
@@ -222,7 +230,7 @@ export default function Index() {
             className={isSimpleMode ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40' : 'bg-card/50 text-muted-foreground border border-border'}>
             <Zap className="w-4 h-4 mr-1" /> Simple
           </Button>
-          <Button onClick={() => setIsSimpleMode(false)}
+          <Button onClick={handleSwitchToAdvanced}
             className={!isSimpleMode ? 'bg-neon-pink/20 text-neon-pink border border-neon-pink/40' : 'bg-card/50 text-muted-foreground border border-border'}>
             <Settings className="w-4 h-4 mr-1" /> Advanced
           </Button>
@@ -257,7 +265,7 @@ export default function Index() {
             )}
             
             {!isSimpleMode && (
-              <div className="module-block module-aero p-3 md:p-4">
+              <div ref={advancedSectionRef} className="module-block module-aero p-3 md:p-4">
                 <CarSelector onSelect={handleCarSelect} selectedCar={selectedCar} />
               </div>
             )}

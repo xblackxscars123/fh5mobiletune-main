@@ -30,20 +30,10 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <label className="flex items-center gap-2 text-base font-display text-primary">
-          <Car className="w-5 h-5" />
-          Search Car Database
-        </label>
-
-        <Link
-          to="/cars"
-          className="relative flex items-center gap-2 px-3 py-2 rounded-lg bg-module-suspension/10 hover:bg-module-suspension/20 border border-module-suspension/40 hover:border-module-suspension/60 transition-all text-xs sm:text-sm font-medium text-module-suspension shadow-[0_0_15px_hsl(var(--module-suspension)/0.2)] hover:shadow-[0_0_25px_hsl(var(--module-suspension)/0.4)] backdrop-blur-sm circuit-button overflow-hidden whitespace-nowrap"
-        >
-          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-module-suspension shadow-[0_0_6px_hsl(var(--module-suspension))]" />
-          <span className="relative z-10">Browse Cars</span>
-        </Link>
-      </div>
+      <label className="flex items-center gap-2 text-base font-display text-primary">
+        <Car className="w-5 h-5" />
+        Search Car Database
+      </label>
       
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -56,6 +46,16 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
           onBlur={() => setTimeout(() => setIsFocused(false), 200)}
           className="pl-10 bg-muted border-border focus:border-primary h-12"
         />
+
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <Link
+            to="/cars"
+            className="relative flex items-center gap-2 px-3 py-2 rounded-lg bg-module-suspension/10 hover:bg-module-suspension/20 border border-module-suspension/40 hover:border-module-suspension/60 transition-all text-xs font-medium text-module-suspension shadow-[0_0_15px_hsl(var(--module-suspension)/0.2)] hover:shadow-[0_0_25px_hsl(var(--module-suspension)/0.4)] backdrop-blur-sm circuit-button overflow-hidden whitespace-nowrap"
+          >
+            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-module-suspension shadow-[0_0_6px_hsl(var(--module-suspension))]" />
+            <span className="relative z-10">Browse</span>
+          </Link>
+        </div>
         
         {isFocused && results.length > 0 && (
           <Card className="absolute z-50 w-full mt-1 max-h-64 overflow-y-auto bg-card border-border shadow-xl">

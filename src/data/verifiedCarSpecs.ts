@@ -6392,10 +6392,11 @@ export function getVerifiedSpecs(year: number, make: string, model: string): Ver
     // Check if the key contains all major parts
     const normalizedMake = make.toLowerCase().replace(/[^a-z0-9]/g, '');
     const normalizedModel = model.toLowerCase().replace(/[^a-z0-9]/g, '');
-    
-    if (specKey.includes(String(year)) && 
-        specKey.includes(normalizedMake) && 
-        (specKey.includes(normalizedModel.slice(0, 10)) || normalizedModel.includes(specKey.split('-').slice(2).join('')))) {
+    const normalizedSpecKey = specKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    if (normalizedSpecKey.includes(String(year)) &&
+        normalizedSpecKey.includes(normalizedMake) &&
+        normalizedSpecKey.includes(normalizedModel)) {
       return spec;
     }
   }
