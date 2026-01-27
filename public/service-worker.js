@@ -25,6 +25,11 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -53,7 +58,7 @@ self.addEventListener('fetch', (event) => {
 
             return response;
           }
-        );
+        ).catch(() => fetch(event.request));
       })
   );
 });

@@ -43,7 +43,11 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Login failed');
+      if (error instanceof TypeError && /fetch/i.test(error.message)) {
+        toast.error('Network error while contacting the auth server. Please disable ad blockers/VPN, check your connection, and try again.');
+      } else {
+        toast.error(error instanceof Error ? error.message : 'Login failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -73,7 +77,11 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Signup failed');
+      if (error instanceof TypeError && /fetch/i.test(error.message)) {
+        toast.error('Network error while contacting the auth server. Please disable ad blockers/VPN, check your connection, and try again.');
+      } else {
+        toast.error(error instanceof Error ? error.message : 'Signup failed');
+      }
     } finally {
       setLoading(false);
     }
