@@ -48,6 +48,7 @@ export default function Index() {
   const advancedSectionRef = useRef<HTMLDivElement>(null);
   const setupSectionRef = useRef<HTMLDivElement>(null);
   const resultsSectionRef = useRef<HTMLDivElement>(null);
+  const tuneTypeSectionRef = useRef<HTMLDivElement>(null);
   const [tuneType, setTuneType] = useState<TuneType>('grip');
   const [variant, setVariant] = useState<TuneVariant>(defaultTuneVariantByType.grip);
   const [specs, setSpecs] = useState<CarSpecs>(defaultSpecs);
@@ -84,7 +85,7 @@ export default function Index() {
     if (location.state?.selectedCar) {
       const car = location.state.selectedCar as FH5Car;
       const tuningMode = location.state.tuningMode as 'simple' | 'advanced' | undefined;
-      const scrollTo = location.state.scrollTo as 'specs' | undefined;
+      const scrollTo = location.state.scrollTo as 'specs' | 'tuneType' | undefined;
       const isAdvanced = tuningMode === 'advanced';
 
       if (tuningMode) {
@@ -100,7 +101,11 @@ export default function Index() {
       }));
       toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
 
-      if (scrollTo === 'specs') {
+      if (scrollTo === 'tuneType') {
+        setTimeout(() => {
+          tuneTypeSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+      } else if (scrollTo === 'specs') {
         scrollToFirstSpecsInput();
 
         if (isAdvanced) {
@@ -351,7 +356,7 @@ export default function Index() {
               </div>
             </div>
 
-            <div className="module-block module-gearing p-3 md:p-4">
+            <div ref={tuneTypeSectionRef} className="module-block module-gearing p-3 md:p-4">
               <TuneTypeSelector selected={tuneType} onChange={setTuneType} />
             </div>
 

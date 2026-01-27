@@ -104,7 +104,7 @@ export default function Cars() {
   const handleSelectCar = (car: FH5Car) => {
     const tuningMode = (location.state as any)?.tuningMode as 'simple' | 'advanced' | undefined;
     // Navigate to home with car data in state
-    navigate('/', { state: { selectedCar: car, tuningMode, scrollTo: 'specs' } });
+    navigate('/', { state: { selectedCar: car, tuningMode, scrollTo: 'tuneType' } });
   };
 
   const getCategoryColor = (category: string) => {
