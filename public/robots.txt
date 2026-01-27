@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://fh5mobiletune-main.vercel.app/sitemap.xml

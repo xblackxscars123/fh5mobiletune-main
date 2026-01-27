@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TuneTypeSelector } from '@/components/TuneTypeSelector';
 import { CarSpecsForm } from '@/components/CarSpecsForm';
@@ -16,15 +16,17 @@ import { TemplateSelector } from '@/components/TemplateSelector';
 import { BalanceStiffnessSliders, applyBalanceStiffness } from '@/components/BalanceStiffnessSliders';
 import { TuneCompare } from '@/components/TuneCompare';
 import { AuthModal } from '@/components/AuthModal';
+import { ModeSelection } from '@/components/ModeSelection';
+import { WorkflowIndicator } from '@/components/WorkflowIndicator';
 import { TuneTemplate } from '@/data/tuneTemplates';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CarSpecs, TuneType, TuneVariant, calculateTune, UnitSystem, TuneSettings, tuneVariantsByType, defaultTuneVariantByType } from '@/lib/tuningCalculator';
-import { parseTuneFromCurrentURL, copyShareURLToClipboard } from '@/lib/tuneShare';
+import { parseTuneFromCurrentURL, copyShareURLToClipboard, generateShareURL } from '@/lib/tuneShare';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
 import { SavedTune, useSavedTunes } from '@/hooks/useSavedTunes';
 import { useAuth } from '@/hooks/useAuth';
-import { Calculator, RotateCcw, ShoppingBag, Zap, Settings, Wrench, Share2, Scale, CloudOff } from 'lucide-react';
+import { Calculator, RotateCcw, ShoppingBag, Zap, Settings, Wrench, Share2, Scale, CloudOff, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 const defaultSpecs: CarSpecs = {
@@ -43,8 +45,13 @@ const defaultSpecs: CarSpecs = {
 
 export default function Index() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { savedTunes, syncLocalTunesToCloud } = useSavedTunes();
+  const advancedSectionRef = useRef<HTMLDivElement>(null);
+  const setupSectionRef = useRef<HTMLDivElement>(null);
+  const resultsSectionRef = useRef<HTMLDivElement>(null);
+  const tuneTypeSectionRef = useRef<HTMLDivElement>(null);
   const [tuneType, setTuneType] = useState<TuneType>('grip');
   const [variant, setVariant] = useState<TuneVariant>(defaultTuneVariantByType.grip);
   const [specs, setSpecs] = useState<CarSpecs>(defaultSpecs);
@@ -52,6 +59,7 @@ export default function Index() {
   const [selectedCar, setSelectedCar] = useState<FH5Car | null>(null);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
   const [isSimpleMode, setIsSimpleMode] = useState(true);
+  const [forceShowAdvancedOptions, setForceShowAdvancedOptions] = useState<boolean | undefined>(undefined);
   const [showTroubleshooting, setShowTroubleshooting] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   
@@ -59,9 +67,34 @@ export default function Index() {
   const [stiffness, setStiffness] = useState(50);
   const [manualOverrides, setManualOverrides] = useState<Partial<TuneSettings>>({});
 
+  const scrollToFirstSpecsInput = () => {
+    setTimeout(() => {
+      const el = document.getElementById('specs-first-input') as HTMLInputElement | null;
+      if (!el) {
+        advancedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      try {
+        el.focus({ preventScroll: true });
+      } catch {
+        el.focus();
+      }
+    }, 0);
+  };
+
   useEffect(() => {
     if (location.state?.selectedCar) {
       const car = location.state.selectedCar as FH5Car;
+      const tuningMode = location.state.tuningMode as 'simple' | 'advanced' | undefined;
+      const scrollTo = location.state.scrollTo as 'specs' | 'tuneType' | undefined;
+      const isAdvanced = tuningMode === 'advanced';
+
+      if (tuningMode) {
+        setIsSimpleMode(tuningMode === 'simple');
+      }
+
       setSelectedCar(car);
       setSpecs(prev => ({
         ...prev,
@@ -70,6 +103,22 @@ export default function Index() {
         driveType: car.driveType
       }));
       toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
+
+      if (scrollTo === 'tuneType') {
+        setTimeout(() => {
+          tuneTypeSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+      } else if (scrollTo === 'specs') {
+        scrollToFirstSpecsInput();
+
+        if (isAdvanced) {
+          setForceShowAdvancedOptions(true);
+          setTimeout(() => {
+            setForceShowAdvancedOptions(undefined);
+          }, 0);
+        }
+      }
+
       window.history.replaceState({}, document.title);
     }
     
@@ -138,6 +187,9 @@ export default function Index() {
   const handleCalculate = () => {
     setShowResults(true);
     toast.success('Tune calculated!');
+    setTimeout(() => {
+      resultsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
   };
 
   const handleReset = () => {
@@ -168,6 +220,18 @@ export default function Index() {
     else toast.error('Failed to copy link');
   };
 
+  const handleShareToReddit = () => {
+    const url = generateShareURL({ specs, tuneType, carName });
+    if (!url) {
+      toast.error('Failed to generate share link');
+      return;
+    }
+
+    const title = `FH5 Tune: ${carName} (${tuneType})`;
+    const redditSubmitUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
+    window.open(redditSubmitUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const handleApplyAISuggestion = (setting: string, value: number) => {
     const settingMap: Record<string, keyof TuneSettings> = {
       'arb front': 'arbFront', 'arb rear': 'arbRear', 'front arb': 'arbFront', 'rear arb': 'arbRear',
@@ -186,6 +250,35 @@ export default function Index() {
     setManualOverrides({});
     toast.success(`Applied "${template.name}" template`);
   };
+
+  const handleSwitchToAdvanced = () => {
+    setIsSimpleMode(false);
+    setForceShowAdvancedOptions(true);
+    setTimeout(() => {
+      advancedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+    setTimeout(() => {
+      setForceShowAdvancedOptions(undefined);
+    }, 0);
+  };
+
+  const handleModeChange = (mode: 'simple' | 'advanced') => {
+    setIsSimpleMode(mode === 'simple');
+    navigate('/cars', { state: { tuningMode: mode } });
+  };
+
+  const handleConfigureSpecs = () => {
+    scrollToFirstSpecsInput();
+
+    if (!isSimpleMode) {
+      setForceShowAdvancedOptions(true);
+      setTimeout(() => {
+        setForceShowAdvancedOptions(undefined);
+      }, 0);
+    }
+  };
+
+  const currentStep = showResults ? 3 : selectedCar ? 2 : 1;
 
   return (
     <div className="min-h-screen pb-8 md:pb-16 relative overflow-x-hidden">
@@ -219,23 +312,66 @@ export default function Index() {
           </div>
         </div>
         
-        {/* Mode Toggle */}
-        <div className="mb-4 flex items-center justify-center gap-2">
-          <Button onClick={() => setIsSimpleMode(true)} 
-            className={isSimpleMode ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40' : 'bg-card/50 text-muted-foreground border border-border'}>
-            <Zap className="w-4 h-4 mr-1" /> Simple
-          </Button>
-          <Button onClick={() => setIsSimpleMode(false)}
-            className={!isSimpleMode ? 'bg-neon-pink/20 text-neon-pink border border-neon-pink/40' : 'bg-card/50 text-muted-foreground border border-border'}>
-            <Settings className="w-4 h-4 mr-1" /> Advanced
-          </Button>
+        {/* Step 1: Pick mode */}
+        <div className="module-block p-3 md:p-4 mb-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h2 className="font-display text-sm uppercase tracking-wider" style={{ color: 'hsl(var(--neon-cyan))' }}>
+              Step 1: Pick Mode
+            </h2>
+          </div>
+          <ModeSelection
+            selectedMode={isSimpleMode ? 'simple' : 'advanced'}
+            onModeChange={handleModeChange}
+          />
+        </div>
+
+        <div className="mb-4">
+          <WorkflowIndicator
+            currentStep={currentStep}
+            totalSteps={3}
+            onStepClick={(step) => {
+              if (step === 1) {
+                navigate('/cars', { state: { tuningMode: isSimpleMode ? 'simple' : 'advanced' } });
+                return;
+              }
+              if (step === 2) {
+                handleConfigureSpecs();
+                return;
+              }
+              if (step === 3) {
+                if (showResults) {
+                  setTimeout(() => {
+                    resultsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 0);
+                }
+              }
+            }}
+          />
         </div>
         
         {/* Main Layout */}
         <div className="flex flex-col lg:grid lg:grid-cols-[minmax(320px,400px)_1fr] gap-4 md:gap-6">
           {/* Left Panel */}
           <div className="space-y-3 md:space-y-4">
-            <div className="module-block module-gearing p-3 md:p-4">
+            {/* Step 2: Pick car + enter specs */}
+            <div ref={setupSectionRef} className="module-block p-3 md:p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <h2 className="font-display text-sm uppercase tracking-wider" style={{ color: 'hsl(var(--neon-pink))' }}>
+                  Step 2: Pick Car + Enter Specs
+                </h2>
+                {!isSimpleMode && (
+                  <Button variant="ghost" size="sm" onClick={handleSwitchToAdvanced} className="text-xs h-7 px-2">
+                    <Settings className="w-3.5 h-3.5 mr-1" /> Advanced
+                  </Button>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <CarSelector onSelect={handleCarSelect} selectedCar={selectedCar} />
+              </div>
+            </div>
+
+            <div ref={tuneTypeSectionRef} className="module-block module-gearing p-3 md:p-4">
               <TuneTypeSelector selected={tuneType} onChange={setTuneType} />
             </div>
 
@@ -261,18 +397,23 @@ export default function Index() {
             
             {!isSimpleMode && (
               <div className="module-block module-aero p-3 md:p-4">
-                <CarSelector onSelect={handleCarSelect} selectedCar={selectedCar} />
+                <h3 className="font-display text-sm mb-3 uppercase tracking-wider" style={{ color: 'hsl(var(--module-aero))' }}>
+                  Advanced Inputs
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Switch to Advanced Mode to access extra tuning controls and deeper car selection.
+                </p>
               </div>
             )}
             
-            <div className="module-block module-tires p-3 md:p-4">
+            <div ref={advancedSectionRef} className="module-block module-tires p-3 md:p-4">
               <h3 className="font-display text-sm mb-3 uppercase tracking-wider flex items-center gap-2" style={{ color: 'hsl(var(--module-tires))' }}>
                 {isSimpleMode ? <><Zap className="w-4 h-4" /> Quick Setup</> : 'Car Specifications'}
               </h3>
               {isSimpleMode ? (
                 <SimpleModeForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} />
               ) : (
-                <CarSpecsForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} />
+                <CarSpecsForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} forceShowAdvanced={forceShowAdvancedOptions} />
               )}
             </div>
 
@@ -299,9 +440,14 @@ export default function Index() {
                 <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
               </Button>
               {showResults && (
-                <Button variant="outline" onClick={handleShare} className="h-10 md:h-12 px-3 border-border hover:bg-card">
-                  <Share2 className="w-4 h-4 md:w-5 md:h-5" />
-                </Button>
+                <>
+                  <Button variant="outline" onClick={handleShare} className="h-10 md:h-12 px-3 border-border hover:bg-card">
+                    <Share2 className="w-4 h-4 md:w-5 md:h-5" />
+                  </Button>
+                  <Button variant="outline" onClick={handleShareToReddit} className="h-10 md:h-12 px-3 border-border hover:bg-card">
+                    <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
+                  </Button>
+                </>
               )}
             </div>
 
@@ -338,17 +484,25 @@ export default function Index() {
           
           {/* Right Panel - Results */}
           <div>
+            <div ref={resultsSectionRef} />
             {showResults ? (
-              <ErrorBoundary fallbackTitle="Tune Results Crashed">
-                <BlueprintTunePanel tune={tuneSettings} driveType={specs.driveType} tuneType={tuneType} unitSystem={unitSystem} carName={carName} horsepower={specs.horsepower} specs={specs} />
-              </ErrorBoundary>
+              <div className="space-y-3">
+                <div className="module-block p-3 md:p-4">
+                  <h2 className="font-display text-sm uppercase tracking-wider" style={{ color: 'hsl(var(--neon-cyan))' }}>
+                    Step 3: Results + Save/Share
+                  </h2>
+                </div>
+                <ErrorBoundary fallbackTitle="Tune Results Crashed">
+                  <BlueprintTunePanel tune={tuneSettings} driveType={specs.driveType} tuneType={tuneType} unitSystem={unitSystem} carName={carName} horsepower={specs.horsepower} specs={specs} />
+                </ErrorBoundary>
+              </div>
             ) : (
               <div className="module-block p-8 text-center h-full flex flex-col items-center justify-center min-h-[400px]">
                 <div className="w-20 h-20 rounded-full mb-4 flex items-center justify-center" style={{ background: 'hsl(var(--neon-pink) / 0.1)', border: '2px dashed hsl(var(--neon-pink) / 0.3)' }}>
                   <Calculator className="w-10 h-10" style={{ color: 'hsl(var(--neon-pink) / 0.5)' }} />
                 </div>
-                <h3 className="font-display text-xl mb-2 text-gradient-neon">Ready to Tune</h3>
-                <p className="text-muted-foreground text-sm font-sketch">Enter your car specs and click Calculate</p>
+                <h3 className="font-display text-xl mb-2 text-gradient-neon">Step 3: Results</h3>
+                <p className="text-muted-foreground text-sm font-sketch">Complete Step 2, then click Calculate</p>
               </div>
             )}
           </div>

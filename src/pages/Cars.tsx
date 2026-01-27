@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { JDMStickerBombBackground } from '@/components/JDMStickerBombBackground';
 import { Input } from '@/components/ui/input';
@@ -8,12 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { fh5Cars, FH5Car, getCarDisplayName } from '@/data/carDatabase';
-import { hasVerifiedSpecs } from '@/data/verifiedCarSpecs';
+import { getVerifiedSpecs, hasVerifiedSpecs } from '@/data/verifiedCarSpecs';
 import { Search, ArrowLeft, Car, CheckCircle, Filter } from 'lucide-react';
 
 type SortOption = 'name' | 'year-asc' | 'year-desc' | 'make';
 
 export default function Cars() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [makeFilter, setMakeFilter] = useState<string>('all');
@@ -101,8 +102,9 @@ export default function Cars() {
   }, [search, makeFilter, categoryFilter, driveFilter, unverifiedOnly]);
 
   const handleSelectCar = (car: FH5Car) => {
+    const tuningMode = (location.state as any)?.tuningMode as 'simple' | 'advanced' | undefined;
     // Navigate to home with car data in state
-    navigate('/', { state: { selectedCar: car } });
+    navigate('/', { state: { selectedCar: car, tuningMode, scrollTo: 'tuneType' } });
   };
 
   const getCategoryColor = (category: string) => {
@@ -240,7 +242,12 @@ export default function Cars() {
         {/* Car Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {paginatedCars.map((car) => {
-            const isVerified = hasVerifiedSpecs(car.year, car.make, car.model);
+            const verifiedSpecs = getVerifiedSpecs(car.year, car.make, car.model);
+            const isVerified = verifiedSpecs !== null;
+            const weight = verifiedSpecs?.weight ?? car.weight;
+            const weightDistribution = verifiedSpecs?.weightDistribution ?? car.weightDistribution;
+            const driveType = verifiedSpecs?.driveType ?? car.driveType;
+            const defaultPI = verifiedSpecs?.defaultPI ?? car.defaultPI;
             
             return (
               <Card 
@@ -254,10 +261,12 @@ export default function Cars() {
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">{car.year}</span>
                         {isVerified && (
-                          <span className="flex items-center gap-1 text-xs text-green-400">
-                            <CheckCircle className="w-3 h-3" />
-                            Verified
-                          </span>
+                          <Badge variant="outline" className="h-5 px-2 text-[10px] border-green-500/40 text-green-400 bg-green-500/10">
+                            <span className="flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Verified
+                            </span>
+                          </Badge>
                         )}
                       </div>
                       <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
@@ -272,17 +281,20 @@ export default function Cars() {
                   
                   <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[hsl(220,15%,20%)]">
                     <span className={`text-xs px-2 py-0.5 rounded ${
-                      car.driveType === 'AWD' ? 'bg-blue-500/20 text-blue-400' :
-                      car.driveType === 'RWD' ? 'bg-orange-500/20 text-orange-400' :
+                      driveType === 'AWD' ? 'bg-blue-500/20 text-blue-400' :
+                      driveType === 'RWD' ? 'bg-orange-500/20 text-orange-400' :
                       'bg-green-500/20 text-green-400'
                     }`}>
-                      {car.driveType}
+                      {driveType}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {car.weight.toLocaleString()} lbs
+                      {weight.toLocaleString()} lbs
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {car.weightDistribution}% F
+                      {weightDistribution}% F
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      PI {defaultPI}
                     </span>
                   </div>
                 </CardContent>

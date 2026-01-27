@@ -67,6 +67,7 @@ export function SimpleModeForm({ specs, onChange, unitSystem, onUnitSystemChange
         {/* Direct Input - Primary */}
         <div className="flex items-center gap-3">
           <Input
+            id="specs-first-input"
             type="number"
             value={specs.weightDistribution}
             onChange={(e) => updateSpec('weightDistribution', Math.max(35, Math.min(65, Number(e.target.value))))}
