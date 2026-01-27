@@ -919,6 +919,17 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
   // TIRES - Thermodynamic model
   // ==========================================
   const tirePressures = calculateTirePressure(specs, tuneType);
+
+  // Drift-specific pressure nuances
+  if (tuneType === 'drift') {
+    if (variant === 'smooth') {
+      tirePressures.rear = Math.max(15, tirePressures.rear - 3.0); // Lower pressure for more forward bite/speed
+    } else if (variant === 'gymkhana') {
+      tirePressures.rear = Math.min(55, tirePressures.rear + 5.0); // Higher pressure for easier rotation/sliding
+    } else if (variant === 'show') {
+      tirePressures.front = Math.min(55, tirePressures.front + 2.0); // Less front grip for slower slides
+    }
+  }
   
   // ==========================================
   // ALIGNMENT - PI-scaled aggression
@@ -926,6 +937,17 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
   const alignment = alignmentPresets[tuneType];
   let camberFront = alignment.camberF * piMod.alignmentAggression;
   let camberRear = alignment.camberR * piMod.alignmentAggression;
+  
+  // Drift-specific alignment nuances
+  if (tuneType === 'drift') {
+    if (variant === 'smooth') {
+      camberFront = -3.5; // More contact patch for consistent speed
+      camberRear = -0.5;
+    } else if (variant === 'gymkhana') {
+      camberFront = -4.2; // Compromise for mixed surface sliding
+    }
+    // High Angle stays at -5.0 (max)
+  }
   
   // Adjust for heavy cars (more negative camber needed)
   if (weight > 3600) {
@@ -948,6 +970,18 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
   // ANTI-ROLL BARS - Weight distribution based
   // ==========================================
   const arbs = calculateARB_Enhanced(weightDistribution, tuneType, driveType, normalizedPI);
+  
+  // Drift-specific ARB weight compensation
+  if (tuneType === 'drift') {
+    // If front heavy, soften front ARB to help turn-in
+    if (weightDistribution > 54) {
+      arbs.front = Math.max(1, arbs.front - 5);
+    }
+    // If rear heavy (mid-engine), stiffen front to stabilize
+    else if (weightDistribution < 46) {
+      arbs.front = Math.min(65, arbs.front + 4);
+    }
+  }
   
   // Apply driving style offset (±4 per style point)
   arbs.front = Math.max(1, Math.min(65, arbs.front + drivingStyle * 3));
@@ -1257,11 +1291,11 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
       return { frequencyScale: 1.0 };
     }
     if (tuneType === 'drift') {
-      if (variant === 'highAngle') return { frequencyScale: 1.02, toeFrontOffset: 0.2, diffAccelRearOffset: 0, diffDecelRearOffset: 0 };
-      if (variant === 'smooth') return { frequencyScale: 0.98, toeFrontOffset: -0.2, diffDecelRearOffset: -10 };
-      if (variant === 'gymkhana') return { frequencyScale: 1.05, toeFrontOffset: 0.5, diffAccelRearOffset: 0, diffDecelRearOffset: 0, targetFrontBiasOffset: 5 };
+      if (variant === 'highAngle') return { frequencyScale: 1.02, toeFrontOffset: 0.5, diffAccelRearOffset: 0, diffDecelRearOffset: 0, finalDriveScale: 1.15 }; // Shorter gears for torque
+      if (variant === 'smooth') return { frequencyScale: 0.96, toeFrontOffset: -1.0, diffAccelRearOffset: -10, diffDecelRearOffset: -10, finalDriveScale: 0.95 }; // Longer gears, softer diff
+      if (variant === 'gymkhana') return { frequencyScale: 1.08, toeFrontOffset: 0.5, diffAccelRearOffset: 0, diffDecelRearOffset: 0, targetFrontBiasOffset: 5 };
       if (variant === 'show') return { frequencyScale: 0.95, rideHeightOffset: -0.5, toeFrontOffset: 0.3 };
-      if (variant === 'awd_drift') return { frequencyScale: 1.08, diffAccelRearOffset: 0, diffDecelRearOffset: 0, targetFrontBiasOffset: 8 };
+      if (variant === 'awd_drift') return { frequencyScale: 1.10, diffAccelRearOffset: 0, diffDecelRearOffset: 0, targetFrontBiasOffset: 8 };
       return { frequencyScale: 1.0 };
     }
     if (tuneType === 'rally' || tuneType === 'offroad') {
