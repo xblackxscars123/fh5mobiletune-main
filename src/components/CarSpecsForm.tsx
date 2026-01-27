@@ -235,7 +235,10 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange, 
       <Button
         variant="ghost"
         onClick={() => setShowAdvanced(!showAdvanced)}
-        className="w-full justify-between text-muted-foreground hover:text-foreground"
+        className={cn(
+          "w-full justify-between border border-[hsl(var(--neon-cyan)/0.35)] bg-[hsl(var(--neon-cyan)/0.08)] text-[hsl(var(--neon-cyan))]",
+          "hover:bg-[hsl(var(--neon-cyan)/0.14)] hover:text-[hsl(var(--neon-cyan))]"
+        )}
       >
         <span className="text-xs uppercase tracking-wide">
           {showAdvanced ? 'Hide' : 'Show'} Advanced Options

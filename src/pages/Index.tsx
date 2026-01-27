@@ -22,11 +22,11 @@ import { TuneTemplate } from '@/data/tuneTemplates';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CarSpecs, TuneType, TuneVariant, calculateTune, UnitSystem, TuneSettings, tuneVariantsByType, defaultTuneVariantByType } from '@/lib/tuningCalculator';
-import { parseTuneFromCurrentURL, copyShareURLToClipboard } from '@/lib/tuneShare';
+import { parseTuneFromCurrentURL, copyShareURLToClipboard, generateShareURL } from '@/lib/tuneShare';
 import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
 import { SavedTune, useSavedTunes } from '@/hooks/useSavedTunes';
 import { useAuth } from '@/hooks/useAuth';
-import { Calculator, RotateCcw, ShoppingBag, Zap, Settings, Wrench, Share2, Scale, CloudOff } from 'lucide-react';
+import { Calculator, RotateCcw, ShoppingBag, Zap, Settings, Wrench, Share2, Scale, CloudOff, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 const defaultSpecs: CarSpecs = {
@@ -215,6 +215,18 @@ export default function Index() {
     const success = await copyShareURLToClipboard({ specs, tuneType, carName });
     if (success) toast.success('Share link copied!');
     else toast.error('Failed to copy link');
+  };
+
+  const handleShareToReddit = () => {
+    const url = generateShareURL({ specs, tuneType, carName });
+    if (!url) {
+      toast.error('Failed to generate share link');
+      return;
+    }
+
+    const title = `FH5 Tune: ${carName} (${tuneType})`;
+    const redditSubmitUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
+    window.open(redditSubmitUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleApplyAISuggestion = (setting: string, value: number) => {
@@ -425,9 +437,14 @@ export default function Index() {
                 <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
               </Button>
               {showResults && (
-                <Button variant="outline" onClick={handleShare} className="h-10 md:h-12 px-3 border-border hover:bg-card">
-                  <Share2 className="w-4 h-4 md:w-5 md:h-5" />
-                </Button>
+                <>
+                  <Button variant="outline" onClick={handleShare} className="h-10 md:h-12 px-3 border-border hover:bg-card">
+                    <Share2 className="w-4 h-4 md:w-5 md:h-5" />
+                  </Button>
+                  <Button variant="outline" onClick={handleShareToReddit} className="h-10 md:h-12 px-3 border-border hover:bg-card">
+                    <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
+                  </Button>
+                </>
               )}
             </div>
 
