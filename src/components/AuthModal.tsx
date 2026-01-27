@@ -46,7 +46,29 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
       if (error instanceof TypeError && /fetch/i.test(error.message)) {
         toast.error('Network error while contacting the auth server. Please disable ad blockers/VPN, check your connection, and try again.');
       } else {
-        toast.error(error instanceof Error ? error.message : 'Login failed');
+        const message = error instanceof Error ? error.message : 'Login failed';
+        
+        if (message.includes('Email not confirmed')) {
+          toast.error('Email not confirmed', {
+            description: 'Please check your inbox and verify your email address.',
+            action: {
+              label: 'Resend',
+              onClick: async () => {
+                const { error: resendError } = await supabase.auth.resend({
+                  type: 'signup',
+                  email,
+                  options: {
+                    emailRedirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || `${window.location.origin}/`
+                  }
+                });
+                if (resendError) toast.error(resendError.message);
+                else toast.success('Confirmation email sent!');
+              }
+            }
+          });
+        } else {
+          toast.error(message);
+        }
       }
     } finally {
       setLoading(false);
@@ -60,7 +82,7 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
     try {
       const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -73,9 +95,17 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
 
       if (error) throw error;
 
-      toast.success('Account created! You can now save tunes to the cloud.');
-      onOpenChange(false);
-      onSuccess?.();
+      if (data.session) {
+        toast.success('Account created! You are now logged in.');
+        onOpenChange(false);
+        onSuccess?.();
+      } else {
+        toast.message('Account created!', {
+          description: 'Please check your email to confirm your account before logging in.',
+          duration: 6000,
+        });
+        setActiveTab('login');
+      }
     } catch (error) {
       if (error instanceof TypeError && /fetch/i.test(error.message)) {
         toast.error('Network error while contacting the auth server. Please disable ad blockers/VPN, check your connection, and try again.');
