@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Gauge, Zap, Car, User, LogOut, Radio, Check, Users } from 'lucide-react';
+import { Gauge, Zap, User, LogOut, Radio, Check, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme, UI_THEMES } from '@/contexts/ThemeContext';
@@ -321,15 +321,6 @@ export function Header({ onShowAuth }: HeaderProps) {
             <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-neon-pink shadow-[0_0_6px_hsl(var(--neon-pink))]" />
             <Users className="w-4 h-4 relative z-10" />
             <span className="hidden sm:inline relative z-10">Community</span> <span className="relative z-10 sm:hidden">Tunes</span>
-          </Link>
-          
-          <Link 
-            to="/cars" 
-            className="relative flex items-center gap-2 px-4 py-2.5 rounded-lg bg-module-suspension/10 hover:bg-module-suspension/20 border border-module-suspension/40 hover:border-module-suspension/60 transition-all text-sm font-medium text-module-suspension shadow-[0_0_15px_hsl(var(--module-suspension)/0.2)] hover:shadow-[0_0_25px_hsl(var(--module-suspension)/0.4)] backdrop-blur-sm circuit-button overflow-hidden"
-          >
-            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-module-suspension shadow-[0_0_6px_hsl(var(--module-suspension))]" />
-            <Car className="w-4 h-4 relative z-10" />
-            <span className="hidden sm:inline relative z-10">Browse</span> <span className="relative z-10">Cars</span>
           </Link>
           
           <Link 

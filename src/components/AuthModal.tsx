@@ -54,7 +54,7 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
         email,

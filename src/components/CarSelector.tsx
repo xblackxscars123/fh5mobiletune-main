@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { FH5Car, searchCars, getCarDisplayName } from '@/data/carDatabase';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -29,10 +30,20 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
 
   return (
     <div className="space-y-3">
-      <label className="flex items-center gap-2 text-base font-display text-primary">
-        <Car className="w-5 h-5" />
-        Search Car Database
-      </label>
+      <div className="flex items-center justify-between gap-3">
+        <label className="flex items-center gap-2 text-base font-display text-primary">
+          <Car className="w-5 h-5" />
+          Search Car Database
+        </label>
+
+        <Link
+          to="/cars"
+          className="relative flex items-center gap-2 px-3 py-2 rounded-lg bg-module-suspension/10 hover:bg-module-suspension/20 border border-module-suspension/40 hover:border-module-suspension/60 transition-all text-xs sm:text-sm font-medium text-module-suspension shadow-[0_0_15px_hsl(var(--module-suspension)/0.2)] hover:shadow-[0_0_25px_hsl(var(--module-suspension)/0.4)] backdrop-blur-sm circuit-button overflow-hidden whitespace-nowrap"
+        >
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-module-suspension shadow-[0_0_6px_hsl(var(--module-suspension))]" />
+          <span className="relative z-10">Browse Cars</span>
+        </Link>
+      </div>
       
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
