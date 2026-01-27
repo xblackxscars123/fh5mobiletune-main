@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CarSpecs, DriveType, piClasses, tireCompounds, UnitSystem, unitConversions } from '@/lib/tuningCalculator';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
@@ -15,13 +15,19 @@ interface CarSpecsFormProps {
   onChange: (specs: CarSpecs) => void;
   unitSystem: UnitSystem;
   onUnitSystemChange: (system: UnitSystem) => void;
+  forceShowAdvanced?: boolean;
 }
 
 const driveTypes: DriveType[] = ['RWD', 'FWD', 'AWD'];
 const gearCounts = [4, 5, 6, 7, 8, 9, 10];
 
-export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }: CarSpecsFormProps) {
+export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange, forceShowAdvanced }: CarSpecsFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  useEffect(() => {
+    if (forceShowAdvanced === undefined) return;
+    setShowAdvanced(forceShowAdvanced);
+  }, [forceShowAdvanced]);
   
   const updateSpec = <K extends keyof CarSpecs>(key: K, value: CarSpecs[K]) => {
     onChange({ ...specs, [key]: value });

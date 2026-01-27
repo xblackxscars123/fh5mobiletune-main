@@ -53,6 +53,7 @@ export default function Index() {
   const [selectedCar, setSelectedCar] = useState<FH5Car | null>(null);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
   const [isSimpleMode, setIsSimpleMode] = useState(true);
+  const [forceShowAdvancedOptions, setForceShowAdvancedOptions] = useState<boolean | undefined>(undefined);
   const [showTroubleshooting, setShowTroubleshooting] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   
@@ -193,13 +194,28 @@ export default function Index() {
 
   const handleSwitchToAdvanced = () => {
     setIsSimpleMode(false);
+    setForceShowAdvancedOptions(true);
     setTimeout(() => {
       advancedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+    setTimeout(() => {
+      setForceShowAdvancedOptions(undefined);
     }, 0);
   };
 
   const handleModeChange = (mode: 'simple' | 'advanced') => {
     setIsSimpleMode(mode === 'simple');
+    if (mode === 'advanced') {
+      setForceShowAdvancedOptions(true);
+      setTimeout(() => {
+        setForceShowAdvancedOptions(undefined);
+      }, 0);
+    } else {
+      setForceShowAdvancedOptions(false);
+      setTimeout(() => {
+        setForceShowAdvancedOptions(undefined);
+      }, 0);
+    }
     setTimeout(() => {
       setupSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 0);
@@ -297,7 +313,7 @@ export default function Index() {
             )}
             
             {!isSimpleMode && (
-              <div ref={advancedSectionRef} className="module-block module-aero p-3 md:p-4">
+              <div className="module-block module-aero p-3 md:p-4">
                 <h3 className="font-display text-sm mb-3 uppercase tracking-wider" style={{ color: 'hsl(var(--module-aero))' }}>
                   Advanced Inputs
                 </h3>
@@ -307,14 +323,14 @@ export default function Index() {
               </div>
             )}
             
-            <div className="module-block module-tires p-3 md:p-4">
+            <div ref={advancedSectionRef} className="module-block module-tires p-3 md:p-4">
               <h3 className="font-display text-sm mb-3 uppercase tracking-wider flex items-center gap-2" style={{ color: 'hsl(var(--module-tires))' }}>
                 {isSimpleMode ? <><Zap className="w-4 h-4" /> Quick Setup</> : 'Car Specifications'}
               </h3>
               {isSimpleMode ? (
                 <SimpleModeForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} />
               ) : (
-                <CarSpecsForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} />
+                <CarSpecsForm specs={specs} onChange={setSpecs} unitSystem={unitSystem} onUnitSystemChange={setUnitSystem} forceShowAdvanced={forceShowAdvancedOptions} />
               )}
             </div>
 
