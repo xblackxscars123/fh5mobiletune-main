@@ -12,6 +12,7 @@ export interface TuneContext {
   specs?: CarSpecs;
   currentTune?: TuneSettings;
   unitSystem?: UnitSystem;
+  userName?: string;
 }
 
 export type ChatMessage = {
@@ -48,6 +49,7 @@ export async function sendGeminiMessage(
     const units = getUnitLabels(unitSystem);
     
     if (context.carName) contextStr += `Car: ${context.carName}\n`;
+    if (context.userName) contextStr += `User Name: ${context.userName}\n`;
     if (context.tuneType) contextStr += `Tune Type: ${context.tuneType}\n`;
     
     if (context.specs) {

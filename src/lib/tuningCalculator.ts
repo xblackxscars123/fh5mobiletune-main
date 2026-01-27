@@ -894,6 +894,18 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
   // Combined modifier (gentler scaling than before)
   const combinedStiffness = powerWeight.multiplier * (piMod.springScale * 0.55 + 0.45) * tireMod.springMod;
   
+  // Engine Character Calculation
+  const engineChar = {
+    diffAccelOffset: 0
+  };
+  
+  if (specs.torque && horsepower) {
+     const torqueToPower = specs.torque / horsepower;
+     // High torque engines need more lock
+     if (torqueToPower > 1.2) engineChar.diffAccelOffset = 5;
+     else if (torqueToPower > 1.0) engineChar.diffAccelOffset = 2;
+  }
+
   // Modifiers will be enhanced with physics data after spring/damping calculation
   const modifiers: TuneModifiers = {
     powerToWeight: powerWeight,

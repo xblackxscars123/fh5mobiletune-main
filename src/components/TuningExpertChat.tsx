@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { MessageSquare, Send, X, Loader2, Bot, User, Minimize2, Maximize2, Sparkles, AlertCircle, TrendingUp, Save, Trash2, Gauge, Zap, Wind } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -30,17 +31,19 @@ export interface TuneContext {
   specs?: CarSpecs;
   currentTune?: TuneSettings;
   unitSystem?: UnitSystem;
+  userName?: string;
 }
 
 interface TuningExpertChatProps {
   tuneContext?: TuneContext;
   onApplySuggestion?: (setting: string, value: number) => void;
+  user?: SupabaseUser | null;
 }
 
 const CHAT_HISTORY_KEY = 'tuning-chat-history';
 const MAX_MESSAGES = 100;
 
-export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExpertChatProps) {
+export function TuningExpertChat({ tuneContext, onApplySuggestion, user }: TuningExpertChatProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -223,10 +226,15 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
     assistantContentRef.current = '';
 
     try {
+      const contextWithUser = {
+        ...tuneContext,
+        userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Racer'
+      };
+
       const stream = await sendGeminiMessage(
         messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: m.content })),
         userMessage.content,
-        tuneContext
+        contextWithUser
       );
 
       for await (const chunk of stream) {
@@ -340,7 +348,22 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion }: TuningExper
           </div>
         </div>
 
-        {!isMinimized && (
+        {!isMinimized && !user ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
+            <div className="p-4 rounded-full bg-primary/10 animate-pulse">
+              <Sparkles className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-display text-lg text-foreground mb-2">AI Tuning Expert</h3>
+              <p className="text-sm text-muted-foreground">
+                Sign in to unlock personalized tuning advice powered by Gemini Pro.
+              </p>
+            </div>
+            <div className="text-xs text-[hsl(var(--racing-yellow))] bg-[hsl(var(--racing-yellow))/0.1] px-3 py-1 rounded-full border border-[hsl(var(--racing-yellow))/0.2]">
+              Logged-in users only
+            </div>
+          </div>
+        ) : !isMinimized && (
           <>
             
             {tuneContext?.carName && (
