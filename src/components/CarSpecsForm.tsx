@@ -116,6 +116,7 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange, 
             </Label>
           </TuningTooltip>
           <Input
+            id="specs-first-input"
             type="number"
             value={displayWeight}
             onChange={(e) => {
