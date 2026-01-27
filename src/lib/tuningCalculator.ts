@@ -87,6 +87,9 @@ export interface CarSpecs {
   gearCount?: number; // 4-10 gears
   drivingStyle?: number; // -2 (stable/understeer) to +2 (loose/oversteer)
   tireCircumference?: number; // meters
+  tireWidth?: number; // mm
+  tireProfile?: number; // %
+  rimSize?: number; // inches
 }
 
  export interface CalculateTuneOptions {

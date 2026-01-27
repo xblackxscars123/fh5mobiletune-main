@@ -327,26 +327,105 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange }
             </div>
           </div>
 
-          {/* Tire Circumference */}
-          <div className="space-y-2 md:space-y-3">
+          {/* Tire Size Inputs */}
+          <div className="space-y-3 md:space-y-4">
             <Label className="flex items-center gap-2 text-sm md:text-base font-display">
               <Settings2 className="w-4 h-4 md:w-5 md:h-5 text-[hsl(var(--racing-cyan))]" />
-              Tire Circumference ({tireCircumferenceLabel})
+              Tire Size
             </Label>
-            <Input
-              type="number"
-              value={displayTireCircumference}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                const metersValue = unitSystem === 'imperial' ? value / 39.3701 : value;
-                updateSpec('tireCircumference', Math.max(1.5, Math.min(3.0, metersValue)));
-              }}
-              className="bg-muted border-border focus:border-primary text-base md:text-lg font-body h-10 md:h-12"
-              min={unitSystem === 'imperial' ? 59.1 : 1.5}
-              max={unitSystem === 'imperial' ? 118.1 : 3.0}
-            />
+            
+            <div className="flex flex-wrap gap-2 md:gap-4 items-end">
+              {/* Width */}
+              <div className="flex-1 min-w-[80px]">
+                <Label className="text-xs text-muted-foreground mb-1 block">Width (mm)</Label>
+                <Input
+                  type="number"
+                  value={specs.tireWidth || 245}
+                  onChange={(e) => {
+                    const width = Number(e.target.value);
+                    const profile = specs.tireProfile || 40;
+                    const rim = specs.rimSize || 19;
+                    
+                    const diameterMm = (width * profile / 100 * 2) + (rim * 25.4);
+                    const circumferenceM = (diameterMm / 1000) * Math.PI;
+                    
+                    onChange({ 
+                      ...specs, 
+                      tireWidth: width,
+                      tireCircumference: circumferenceM
+                    });
+                  }}
+                  className="bg-muted border-border focus:border-primary"
+                  min={125}
+                  max={500}
+                  step={10}
+                />
+              </div>
+
+              {/* Profile */}
+              <div className="flex-1 min-w-[80px]">
+                <Label className="text-xs text-muted-foreground mb-1 block">Profile (%)</Label>
+                <Input
+                  type="number"
+                  value={specs.tireProfile || 40}
+                  onChange={(e) => {
+                    const width = specs.tireWidth || 245;
+                    const profile = Number(e.target.value);
+                    const rim = specs.rimSize || 19;
+                    
+                    const diameterMm = (width * profile / 100 * 2) + (rim * 25.4);
+                    const circumferenceM = (diameterMm / 1000) * Math.PI;
+                    
+                    onChange({ 
+                      ...specs, 
+                      tireProfile: profile,
+                      tireCircumference: circumferenceM
+                    });
+                  }}
+                  className="bg-muted border-border focus:border-primary"
+                  min={15}
+                  max={85}
+                  step={5}
+                />
+              </div>
+
+              {/* Rim Size */}
+              <div className="flex-1 min-w-[80px]">
+                <Label className="text-xs text-muted-foreground mb-1 block">Rim Size (in)</Label>
+                <Input
+                  type="number"
+                  value={specs.rimSize || 19}
+                  onChange={(e) => {
+                    const width = specs.tireWidth || 245;
+                    const profile = specs.tireProfile || 40;
+                    const rim = Number(e.target.value);
+                    
+                    const diameterMm = (width * profile / 100 * 2) + (rim * 25.4);
+                    const circumferenceM = (diameterMm / 1000) * Math.PI;
+                    
+                    onChange({ 
+                      ...specs, 
+                      rimSize: rim,
+                      tireCircumference: circumferenceM
+                    });
+                  }}
+                  className="bg-muted border-border focus:border-primary"
+                  min={10}
+                  max={30}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/30 p-2 rounded">
+              <span>Calculated Circumference:</span>
+              <span className="font-mono font-medium text-foreground">
+                 {unitSystem === 'imperial' 
+                   ? `${(displayTireCircumference).toFixed(1)} in` 
+                   : `${(tireCircumferenceM).toFixed(2)} m`}
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground">
-              Used for the gearing speed charts (speed at redline / shift). Default is 2.10m.
+              Used for gearing charts. Enter values from the tire upgrade screen.
             </p>
           </div>
 

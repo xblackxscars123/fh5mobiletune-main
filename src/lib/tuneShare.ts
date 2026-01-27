@@ -53,6 +53,10 @@ export function decodeTuneFromURL(encoded: string): ShareableTune | null {
       tireCompound: compact.c || 'sport',
       horsepower: Number(compact.h) || 400,
       gearCount: Number(compact.g) || 6,
+      tireWidth: Number(compact.tw) || 245,
+      tireProfile: Number(compact.tp) || 40,
+      rimSize: Number(compact.rs) || 19,
+      tireCircumference: Number(compact.tc) || 2.1,
     };
     
     const tuneType = (['grip', 'drift', 'drag', 'rally', 'offroad', 'circuit'] as TuneType[]).includes(compact.tt) 

@@ -35,7 +35,10 @@ const defaultSpecs: CarSpecs = {
   hasAero: false,
   tireCompound: 'sport',
   horsepower: 400,
-  gearCount: 6
+  gearCount: 6,
+  tireWidth: 245,
+  tireProfile: 40,
+  rimSize: 19
 };
 
 export default function Index() {
