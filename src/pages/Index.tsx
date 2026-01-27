@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TuneTypeSelector } from '@/components/TuneTypeSelector';
 import { CarSpecsForm } from '@/components/CarSpecsForm';
@@ -17,6 +17,7 @@ import { BalanceStiffnessSliders, applyBalanceStiffness } from '@/components/Bal
 import { TuneCompare } from '@/components/TuneCompare';
 import { AuthModal } from '@/components/AuthModal';
 import { ModeSelection } from '@/components/ModeSelection';
+import { WorkflowIndicator } from '@/components/WorkflowIndicator';
 import { TuneTemplate } from '@/data/tuneTemplates';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -41,6 +42,7 @@ const defaultSpecs: CarSpecs = {
 
 export default function Index() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { savedTunes, syncLocalTunesToCloud } = useSavedTunes();
   const advancedSectionRef = useRef<HTMLDivElement>(null);
@@ -61,9 +63,34 @@ export default function Index() {
   const [stiffness, setStiffness] = useState(50);
   const [manualOverrides, setManualOverrides] = useState<Partial<TuneSettings>>({});
 
+  const scrollToFirstSpecsInput = () => {
+    setTimeout(() => {
+      const el = document.getElementById('specs-first-input') as HTMLInputElement | null;
+      if (!el) {
+        advancedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      try {
+        el.focus({ preventScroll: true });
+      } catch {
+        el.focus();
+      }
+    }, 0);
+  };
+
   useEffect(() => {
     if (location.state?.selectedCar) {
       const car = location.state.selectedCar as FH5Car;
+      const tuningMode = location.state.tuningMode as 'simple' | 'advanced' | undefined;
+      const scrollTo = location.state.scrollTo as 'specs' | undefined;
+      const isAdvanced = tuningMode === 'advanced';
+
+      if (tuningMode) {
+        setIsSimpleMode(tuningMode === 'simple');
+      }
+
       setSelectedCar(car);
       setSpecs(prev => ({
         ...prev,
@@ -72,6 +99,18 @@ export default function Index() {
         driveType: car.driveType
       }));
       toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
+
+      if (scrollTo === 'specs') {
+        scrollToFirstSpecsInput();
+
+        if (isAdvanced) {
+          setForceShowAdvancedOptions(true);
+          setTimeout(() => {
+            setForceShowAdvancedOptions(undefined);
+          }, 0);
+        }
+      }
+
       window.history.replaceState({}, document.title);
     }
     
@@ -205,21 +244,21 @@ export default function Index() {
 
   const handleModeChange = (mode: 'simple' | 'advanced') => {
     setIsSimpleMode(mode === 'simple');
-    if (mode === 'advanced') {
+    navigate('/cars', { state: { tuningMode: mode } });
+  };
+
+  const handleConfigureSpecs = () => {
+    scrollToFirstSpecsInput();
+
+    if (!isSimpleMode) {
       setForceShowAdvancedOptions(true);
       setTimeout(() => {
         setForceShowAdvancedOptions(undefined);
       }, 0);
-    } else {
-      setForceShowAdvancedOptions(false);
-      setTimeout(() => {
-        setForceShowAdvancedOptions(undefined);
-      }, 0);
     }
-    setTimeout(() => {
-      setupSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 0);
   };
+
+  const currentStep = showResults ? 3 : selectedCar ? 2 : 1;
 
   return (
     <div className="min-h-screen pb-8 md:pb-16 relative overflow-x-hidden">
@@ -263,6 +302,30 @@ export default function Index() {
           <ModeSelection
             selectedMode={isSimpleMode ? 'simple' : 'advanced'}
             onModeChange={handleModeChange}
+          />
+        </div>
+
+        <div className="mb-4">
+          <WorkflowIndicator
+            currentStep={currentStep}
+            totalSteps={3}
+            onStepClick={(step) => {
+              if (step === 1) {
+                navigate('/cars', { state: { tuningMode: isSimpleMode ? 'simple' : 'advanced' } });
+                return;
+              }
+              if (step === 2) {
+                handleConfigureSpecs();
+                return;
+              }
+              if (step === 3) {
+                if (showResults) {
+                  setTimeout(() => {
+                    resultsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 0);
+                }
+              }
+            }}
           />
         </div>
         

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { JDMStickerBombBackground } from '@/components/JDMStickerBombBackground';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { Search, ArrowLeft, Car, CheckCircle, Filter } from 'lucide-react';
 type SortOption = 'name' | 'year-asc' | 'year-desc' | 'make';
 
 export default function Cars() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [makeFilter, setMakeFilter] = useState<string>('all');
@@ -101,8 +102,9 @@ export default function Cars() {
   }, [search, makeFilter, categoryFilter, driveFilter, unverifiedOnly]);
 
   const handleSelectCar = (car: FH5Car) => {
+    const tuningMode = (location.state as any)?.tuningMode as 'simple' | 'advanced' | undefined;
     // Navigate to home with car data in state
-    navigate('/', { state: { selectedCar: car } });
+    navigate('/', { state: { selectedCar: car, tuningMode, scrollTo: 'specs' } });
   };
 
   const getCategoryColor = (category: string) => {

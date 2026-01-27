@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // Lazy load pages for code splitting
@@ -27,26 +27,33 @@ const PageLoader = () => (
   </div>
 );
 
+const router = createBrowserRouter(
+  [
+    { path: "/", element: <Index /> },
+    { path: "/cars", element: <Cars /> },
+    { path: "/community", element: <Community /> },
+    { path: "/shop", element: <Shop /> },
+    { path: "/shop/product/:handle", element: <ProductDetail /> },
+    { path: "/telemetry-guide", element: <TelemetryGuide /> },
+    { path: "*", element: <NotFound /> },
+  ],
+  {
+    future: {
+      v7_startTransition: true,
+      v7_relativeSplatPath: true,
+    } as any,
+  }
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/cars" element={<Cars />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/shop/product/:handle" element={<ProductDetail />} />
-              <Route path="/telemetry-guide" element={<TelemetryGuide />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
+        <Suspense fallback={<PageLoader />}>
+          <RouterProvider router={router} />
+        </Suspense>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
