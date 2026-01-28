@@ -1,6 +1,8 @@
 
 import fs from 'fs';
 import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+import * as XLSX from 'xlsx';
 import { FH5Car } from '../src/types/car';
 
 // Expected CSV Columns (ManteoMax / Standard):
@@ -9,7 +11,16 @@ import { FH5Car } from '../src/types/car';
 // F Tire, R Tire, Offroad, Speed, Hand, Accel, Launch, Brake
 
 const CSV_PATH = path.join(process.cwd(), 'cars.csv');
+const XLSX_PATH = path.join(process.cwd(), "Copy of ManteoMax's Forza HORIZON 5 Spreadsheets.xlsx");
 const OUTPUT_PATH = path.join(process.cwd(), 'src', 'data', 'importedCars.ts');
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const SUPABASE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  process.env.VITE_SUPABASE_ANON_KEY ||
+  '';
+const SUPABASE_TABLE = process.env.SUPABASE_CAR_TABLE || 'car_calculation_values';
 
 interface RawCar {
   Year: string;
@@ -79,6 +90,118 @@ function parseCSV(content: string): RawCar[] {
     cars.push(car);
   }
   return cars;
+}
+
+function normalizeKey(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function normalizeRow(row: Record<string, unknown>): RawCar {
+  const headerMap: Record<string, keyof RawCar> = {
+    year: 'Year',
+    make: 'Make',
+    model: 'Model',
+    type: 'Type',
+    cartype: 'Type',
+    division: 'Type',
+    rarity: 'Rarity',
+    value: 'Value',
+    boost: 'Boost',
+    hp: 'HP',
+    horsepower: 'HP',
+    power: 'HP',
+    torque: 'Torque',
+    tq: 'Torque',
+    weight: 'Weight',
+    weightlbs: 'Weight',
+    front: 'Front',
+    frontpercent: 'Front',
+    frontweight: 'Front',
+    frontweightpercent: 'Front',
+    weightdistribution: 'Front',
+    disp: 'Disp',
+    displacement: 'Disp',
+    cyl: 'Cyl',
+    cylinders: 'Cyl',
+    asp: 'Asp',
+    aspiration: 'Asp',
+    drive: 'Drive',
+    drivetrain: 'Drive',
+    gears: 'Gears',
+    gearcount: 'Gears',
+    fronttire: 'FTire',
+    ftire: 'FTire',
+    fronttirewidth: 'FTire',
+    reartire: 'RTire',
+    rtire: 'RTire',
+    reartirewidth: 'RTire',
+    pi: 'PI',
+    class: 'Class',
+    offroad: 'Offroad',
+    speed: 'Speed',
+    hand: 'Hand',
+    handling: 'Hand',
+    accel: 'Accel',
+    acceleration: 'Accel',
+    launch: 'Launch',
+    brake: 'Brake',
+    braking: 'Brake',
+    eng: 'Eng',
+    engine: 'Eng',
+    config: 'Config',
+    region: 'Region',
+    country: 'Country',
+    modelfamily: 'Model Family',
+    opentop: 'Open Top',
+    yearmakemodel: 'Year Make Model',
+    nickname: 'Nickname',
+    ordinal: 'Ordinal',
+    votes: 'Votes',
+    topic: 'Topic',
+    tags: 'Tags',
+    link: 'Link',
+    specialaccess: 'Special Access',
+    dlcpack: 'DLC Pack',
+    spec: 'Spec',
+    doors: 'Doors',
+    steering: 'Steering',
+    wheels: 'Wheels',
+    fh5debut: 'FH5 Debut',
+    forzadebut: 'Forza Debut',
+    newtoforza: 'New to Forza',
+    fh5: 'FH5',
+    fh4: 'FH4',
+    fm7: 'FM7',
+    fh3: 'FH3',
+    fm6: 'FM6',
+    fh2: 'FH2',
+    fm5: 'FM5',
+    fh1: 'FH1',
+    fm4: 'FM4',
+    fm3: 'FM3',
+    fm2: 'FM2',
+    fm1: 'FM1',
+    titles: '# Titles',
+  };
+
+  const mapped: Record<string, string> = {};
+  for (const [key, value] of Object.entries(row)) {
+    const target = headerMap[normalizeKey(key)];
+    if (target) {
+      mapped[target] = String(value ?? '');
+    }
+  }
+  return mapped as RawCar;
+}
+
+function parseXlsx(filePath: string): RawCar[] {
+  const xlsxModule = (XLSX as unknown as { default?: typeof XLSX }).default ?? XLSX;
+  const workbook = xlsxModule.readFile(filePath);
+  const sheetName =
+    workbook.SheetNames.find(name => normalizeKey(name).includes('car')) || workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  const rows = xlsxModule.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+  return rows.map(normalizeRow);
 }
 
 function cleanNumber(str: string): number {
@@ -226,24 +349,58 @@ function normalizeOpenTop(val?: string): boolean | undefined {
   return undefined;
 }
 
+async function importToSupabase(cars: FH5Car[]) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.error('❌ Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/SUPABASE_ANON_KEY.');
+    process.exit(1);
+  }
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+  const rows = cars.map(car => ({
+    id: car.id,
+    year: car.year,
+    make: car.make,
+    model: car.model,
+    car_name: `${car.year} ${car.make} ${car.model}`,
+    weight: car.weight,
+    weight_distribution: car.weightDistribution,
+    drive_type: car.driveType,
+    pi_class: car.piClass,
+    default_pi: car.defaultPI,
+    horsepower: car.horsepower ?? null,
+    torque: car.torque ?? null,
+    displacement: car.displacement ?? null,
+    gear_count: car.stockGearCount ?? null,
+    front_tire_width: car.frontTireWidth ?? null,
+    rear_tire_width: car.rearTireWidth ?? null,
+    rarity: car.rarity ?? null,
+    value: car.value ?? null,
+    boost: car.boost ?? null,
+    stats: car.stats ?? null,
+  }));
+  const { error } = await supabase.from(SUPABASE_TABLE).upsert(rows);
+  if (error) {
+    console.error('❌ Supabase import failed:', error.message);
+    process.exit(1);
+  }
+  console.log(`✅ Supabase import complete (${rows.length} rows) to ${SUPABASE_TABLE}`);
+}
+
 async function main() {
-  if (!fs.existsSync(CSV_PATH)) {
-    console.error(`❌ File not found: ${CSV_PATH}`);
-    console.log("Please download the 'Cars' sheet as CSV and place it in the root directory as 'cars.csv'.");
+  const hasXlsx = fs.existsSync(XLSX_PATH);
+  const hasCsv = fs.existsSync(CSV_PATH);
+  if (!hasXlsx && !hasCsv) {
+    console.error(`❌ File not found: ${XLSX_PATH} or ${CSV_PATH}`);
     process.exit(1);
   }
 
-  console.log(`Reading ${CSV_PATH}...`);
-  const content = fs.readFileSync(CSV_PATH, 'utf-8');
-  const rawCars = parseCSV(content);
+  const rawCars = hasXlsx ? parseXlsx(XLSX_PATH) : parseCSV(fs.readFileSync(CSV_PATH, 'utf-8'));
   
   if (rawCars.length === 0) {
-    console.error("❌ No cars found in CSV.");
+    console.error('❌ No cars found in input.');
     process.exit(1);
   }
 
-  // Debug: Print headers found
-  console.log("Found columns:", Object.keys(rawCars[0]).join(', '));
+  console.log('Found columns:', Object.keys(rawCars[0]).join(', '));
   
   console.log(`Found ${rawCars.length} cars. Mapping...`);
   const mappedCars = rawCars.map(mapToSchema);
@@ -257,6 +414,10 @@ async function main() {
   ].join('\n');
   fs.writeFileSync(OUTPUT_PATH, ts);
   console.log(`✅ Successfully imported ${mappedCars.length} cars to ${OUTPUT_PATH}`);
+
+  if (process.env.IMPORT_TO_SUPABASE === 'true') {
+    await importToSupabase(mappedCars);
+  }
 }
 
 main();

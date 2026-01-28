@@ -136,7 +136,7 @@ export default function Cars() {
     return colors[category] || 'bg-muted text-muted-foreground';
   };
 
-  const getMakeLogoDataUri = (make: string) => {
+  const getMakeLogoFallbackDataUri = (make: string) => {
     let hash = 0;
     for (let i = 0; i < make.length; i += 1) {
       hash = (hash << 5) - hash + make.charCodeAt(i);
@@ -165,6 +165,14 @@ export default function Cars() {
       </svg>
     `;
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+  };
+
+  const getMakeLogoSrc = (make: string) => {
+    const slug = make
+      .toLowerCase()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]/g, '');
+    return `https://cdn.simpleicons.org/${slug}/ffffff`;
   };
 
   return (
@@ -335,9 +343,12 @@ export default function Cars() {
                       </div>
                       <div className="flex items-center gap-2 min-w-0">
                         <img
-                          src={getMakeLogoDataUri(car.make)}
+                          src={getMakeLogoSrc(car.make)}
                           alt={`${car.make} logo`}
                           className="w-6 h-6 rounded-full border border-white/10 bg-white/10 shrink-0"
+                          onError={(e) => {
+                            e.currentTarget.src = getMakeLogoFallbackDataUri(car.make);
+                          }}
                         />
                         <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
                           {car.make}

@@ -51,6 +51,37 @@ export async function loadCarPhotos(): Promise<CarPhotoCollection[]> {
   }
 }
 
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function normalizeModel(make: string, model: string): string {
+  const normalizedMake = normalizeText(make);
+  const normalizedModel = normalizeText(model);
+  if (normalizedModel.startsWith(normalizedMake + ' ')) {
+    return normalizedModel.slice(normalizedMake.length + 1).trim();
+  }
+  return normalizedModel;
+}
+
+function buildIdentityKey(year: number, make: string, model: string): string {
+  return `${year}-${normalizeText(make)}-${normalizeModel(make, model)}`;
+}
+
+function extractModelFromRawText(rawText: string, year: string, make: string): string | null {
+  const safeMake = make.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const safeYear = year.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const normalized = rawText.replace(/\r/g, '\n');
+  const match =
+    normalized.match(new RegExp(`${safeYear}\\s+${safeMake}\\s*\\n\\s*\\n([^\\n]+)`, 'i')) ||
+    normalized.match(new RegExp(`${safeYear}\\s+${safeMake}\\s*\\n([^\\n]+)`, 'i'));
+  return match?.[1]?.trim() || null;
+}
+
 // Create a map of car photos by car ID
 export async function createCarPhotoMap(): Promise<Map<string, CarPhotoCollection>> {
   const photos = await loadCarPhotos();
@@ -58,6 +89,20 @@ export async function createCarPhotoMap(): Promise<Map<string, CarPhotoCollectio
   
   photos.forEach(photo => {
     photoMap.set(photo.id, photo);
+    const year = Number(photo.identity?.year || 0);
+    const make = photo.identity?.make || '';
+    const identityModel = photo.identity?.model || extractModelFromRawText(photo.rawTextSample || '', photo.identity?.year || '', make) || '';
+    if (year && make && identityModel) {
+      const identityKey = buildIdentityKey(year, make, identityModel);
+      if (!photoMap.has(identityKey)) {
+        photoMap.set(identityKey, photo);
+      }
+      const strippedModel = normalizeModel(make, identityModel);
+      const strippedKey = `${year}-${normalizeText(make)}-${strippedModel}`;
+      if (!photoMap.has(strippedKey)) {
+        photoMap.set(strippedKey, photo);
+      }
+    }
   });
   
   return photoMap;
@@ -65,7 +110,13 @@ export async function createCarPhotoMap(): Promise<Map<string, CarPhotoCollectio
 
 // Get photos for a specific car
 export function getCarPhotos(car: FH5Car, photoMap: Map<string, CarPhotoCollection>): CarPhoto[] {
-  const photoCollection = photoMap.get(car.id) || photoMap.get(car.fh5Id?.toString() || '');
+  const primaryKey = buildIdentityKey(car.year, car.make, car.model);
+  const modelFamilyKey = car.modelFamily ? buildIdentityKey(car.year, car.make, car.modelFamily) : '';
+  const photoCollection =
+    photoMap.get(car.id) ||
+    photoMap.get(car.fh5Id?.toString() || '') ||
+    photoMap.get(primaryKey) ||
+    (modelFamilyKey ? photoMap.get(modelFamilyKey) : undefined);
   if (!photoCollection || !photoCollection.carImages.length) {
     return [];
   }
