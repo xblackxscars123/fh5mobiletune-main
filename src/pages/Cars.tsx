@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { fh5Cars, FH5Car, getCarDisplayName } from '@/data/carDatabase';
 import { getFallbackCarImage } from '@/data/carPhotos';
 import { getVerifiedSpecs, hasVerifiedSpecs } from '@/data/verifiedCarSpecs';
@@ -25,8 +24,6 @@ export default function Cars() {
   const [unverifiedOnly, setUnverifiedOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('name');
   const [currentPage, setCurrentPage] = useState(1);
-  const [detailCar, setDetailCar] = useState<FH5Car | null>(null);
-  const [showDetail, setShowDetail] = useState(false);
   const itemsPerPage = 50;
 
   // Get unique makes and categories
@@ -106,15 +103,8 @@ export default function Cars() {
   }, [search, makeFilter, categoryFilter, driveFilter, unverifiedOnly]);
 
   const handleSelectCar = (car: FH5Car) => {
-    setDetailCar(car);
-    setShowDetail(true);
-  };
-
-  const getForumImageUrl = (car: FH5Car) => {
-    const forumLink = (car.links && car.links.length > 0) ? car.links[0] : (car.shub?.link || '');
-    if (!forumLink) return '';
-    const isImage = /\.(png|jpe?g|webp|gif)$/i.test(forumLink) || forumLink.includes('/uploads/');
-    return isImage ? forumLink : '';
+    const tuningMode = (location.state as any)?.tuningMode as 'simple' | 'advanced' | undefined;
+    navigate('/', { state: { selectedCar: car, tuningMode, scrollTo: 'specs' } });
   };
 
   const getCategoryColor = (category: string) => {
@@ -379,100 +369,6 @@ export default function Cars() {
         )}
         </div>
       </div>
-      <Dialog open={showDetail} onOpenChange={setShowDetail}>
-      <DialogContent className="max-w-lg sm:max-w-xl">
-        {detailCar && (
-          <>
-            <DialogHeader>
-              <DialogTitle className="text-base">
-                {getCarDisplayName(detailCar)}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="relative w-full h-40 overflow-hidden rounded-md border border-border">
-                {(() => {
-                  const forumLink = (detailCar.links && detailCar.links.length > 0) ? detailCar.links[0] : (detailCar.shub?.link || '');
-                  const imgSrc = forumLink || getFallbackCarImage(detailCar);
-                  return (
-                    <a href={forumLink || '#'} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
-                      <img
-                        src={imgSrc}
-                        alt={`${detailCar.make} ${detailCar.model}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = getFallbackCarImage(detailCar);
-                        }}
-                      />
-                    </a>
-                  );
-                })()}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent" />
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 rounded bg-muted/20 border border-border">
-                  <div className="text-muted-foreground">Drive</div>
-                  <div className="font-medium">{detailCar.driveType}</div>
-                </div>
-                <div className="p-2 rounded bg-muted/20 border border-border">
-                  <div className="text-muted-foreground">PI</div>
-                  <div className="font-medium">{detailCar.defaultPI} {detailCar.piClass ? `(${detailCar.piClass})` : ''}</div>
-                </div>
-                <div className="p-2 rounded bg-muted/20 border border-border">
-                  <div className="text-muted-foreground">Weight</div>
-                  <div className="font-medium">{detailCar.weight.toLocaleString()} lbs</div>
-                </div>
-                <div className="p-2 rounded bg-muted/20 border border-border">
-                  <div className="text-muted-foreground">Front%</div>
-                  <div className="font-medium">{detailCar.weightDistribution}%</div>
-                </div>
-                {detailCar.region && (
-                  <div className="p-2 rounded bg-muted/20 border border-border">
-                    <div className="text-muted-foreground">Region</div>
-                    <div className="font-medium">{detailCar.region}</div>
-                  </div>
-                )}
-                {detailCar.country && (
-                  <div className="p-2 rounded bg-muted/20 border border-border">
-                    <div className="text-muted-foreground">Country</div>
-                    <div className="font-medium">{detailCar.country}</div>
-                  </div>
-                )}
-                {detailCar.enginePlacement && (
-                  <div className="p-2 rounded bg-muted/20 border border-border">
-                    <div className="text-muted-foreground">Engine</div>
-                    <div className="font-medium">{detailCar.enginePlacement}{detailCar.engineConfig ? ` • ${detailCar.engineConfig}` : ''}</div>
-                  </div>
-                )}
-              </div>
-              {detailCar.shub && (
-                <div className="text-xs space-y-1">
-                  {detailCar.shub.spec && <div className="text-muted-foreground">Spec: <span className="text-foreground">{detailCar.shub.spec}</span></div>}
-                  {detailCar.shub.specialAccess && <div className="text-muted-foreground">Access: <span className="text-foreground">{detailCar.shub.specialAccess}</span></div>}
-                  {detailCar.shub.forzaDebut && <div className="text-muted-foreground">Debut: <span className="text-foreground">{detailCar.shub.forzaDebut}</span></div>}
-                  {detailCar.shub.newToForza && <div className="text-muted-foreground">New to Forza: <span className="text-foreground">{detailCar.shub.newToForza}</span></div>}
-                  {detailCar.shub.link && (
-                    <div>
-                      <a href={detailCar.shub.link} target="_blank" rel="noopener noreferrer" className="text-primary underline">Forum Link</a>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            <DialogFooter className="mt-3">
-              <Button variant="outline" onClick={() => setShowDetail(false)}>Cancel</Button>
-              <Button
-                onClick={() => {
-                  const tuningMode = (location.state as any)?.tuningMode as 'simple' | 'advanced' | undefined;
-                  navigate('/', { state: { selectedCar: detailCar, tuningMode, scrollTo: 'specs' } });
-                }}
-              >
-                Next
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-      </DialogContent>
-      </Dialog>
     </>
   );
 }
