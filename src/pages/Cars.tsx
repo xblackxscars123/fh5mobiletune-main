@@ -110,6 +110,13 @@ export default function Cars() {
     setShowDetail(true);
   };
 
+  const getForumImageUrl = (car: FH5Car) => {
+    const forumLink = (car.links && car.links.length > 0) ? car.links[0] : (car.shub?.link || '');
+    if (!forumLink) return '';
+    const isImage = /\.(png|jpe?g|webp|gif)$/i.test(forumLink) || forumLink.includes('/uploads/');
+    return isImage ? forumLink : '';
+  };
+
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
       'hyper': 'bg-purple-500/20 text-purple-400 border-purple-500/40',
