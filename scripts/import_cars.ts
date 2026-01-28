@@ -150,6 +150,39 @@ function mapToSchema(raw: RawCar): FH5Car {
       launch: cleanNumber(raw.Launch),
       braking: cleanNumber(raw.Brake),
       offroad: cleanNumber(raw.Offroad)
+    },
+    shub: {
+      yearMakeModel: raw['Year Make Model'] || undefined,
+      nickname: raw['Nickname'] || undefined,
+      ordinal: cleanNumber(raw['Ordinal'] || ''),
+      votes: cleanNumber(raw['Votes'] || ''),
+      topic: raw['Topic'] || undefined,
+      tags: raw['Tags'] || undefined,
+      link: raw['Link'] || undefined,
+      specialAccess: raw['Special Access'] || undefined,
+      dlcPack: raw['DLC Pack'] || undefined,
+      spec: raw['Spec'] || undefined,
+      doors: raw['Doors'] || undefined,
+      steering: raw['Steering'] || undefined,
+      wheels: raw['Wheels'] || undefined,
+      fh5Debut: raw['FH5 Debut'] || undefined,
+      forzaDebut: raw['Forza Debut'] || undefined,
+      newToForza: raw['New to Forza'] || undefined,
+      appearances: {
+        fh5: raw['FH5'] || undefined,
+        fh4: raw['FH4'] || undefined,
+        fm7: raw['FM7'] || undefined,
+        fh3: raw['FH3'] || undefined,
+        fm6: raw['FM6'] || undefined,
+        fh2: raw['FH2'] || undefined,
+        fm5: raw['FM5'] || undefined,
+        fh1: raw['FH1'] || undefined,
+        fm4: raw['FM4'] || undefined,
+        fm3: raw['FM3'] || undefined,
+        fm2: raw['FM2'] || undefined,
+        fm1: raw['FM1'] || undefined,
+        titlesCount: cleanNumber(raw['# Titles'] || '')
+      }
     }
   };
 }

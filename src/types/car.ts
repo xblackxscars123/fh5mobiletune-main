@@ -36,6 +36,39 @@ export interface FH5Car {
   modelFamily?: string;
   openTop?: boolean;
   links?: string[];
+  shub?: {
+    yearMakeModel?: string;
+    nickname?: string;
+    ordinal?: number;
+    votes?: number;
+    topic?: string;
+    tags?: string;
+    link?: string;
+    specialAccess?: string;
+    dlcPack?: string;
+    spec?: string;
+    doors?: string;
+    steering?: string;
+    wheels?: string;
+    fh5Debut?: string;
+    forzaDebut?: string;
+    newToForza?: string;
+    appearances?: {
+      fh5?: string;
+      fh4?: string;
+      fm7?: string;
+      fh3?: string;
+      fm6?: string;
+      fh2?: string;
+      fm5?: string;
+      fh1?: string;
+      fm4?: string;
+      fm3?: string;
+      fm2?: string;
+      fm1?: string;
+      titlesCount?: number;
+    };
+  };
   // Stats (0-10)
   stats?: {
     speed: number;
