@@ -11,6 +11,17 @@ export interface CarPhoto {
   naturalHeight?: number;
 }
 
+export interface RawCarImage {
+  id?: string;
+  url?: string;
+  src?: string;
+  alt?: string;
+  title?: string;
+  className?: string;
+  naturalWidth?: number;
+  naturalHeight?: number;
+}
+
 // Interface for car photo collection
 export interface CarPhotoCollection {
   id: string;
@@ -19,7 +30,7 @@ export interface CarPhotoCollection {
     make: string;
     model: string | null;
   };
-  carImages: CarPhoto[];
+  carImages: RawCarImage[];
   carImageUrls: string[];
   rawTextSample: string;
 }
@@ -59,13 +70,21 @@ export function getCarPhotos(car: FH5Car, photoMap: Map<string, CarPhotoCollecti
     return [];
   }
   
-  return photoCollection.carImages.map(img => ({
-    id: img.id,
-    url: img.url,
-    alt: img.alt || `${car.make} ${car.model}`,
-    width: img.naturalWidth,
-    height: img.naturalHeight
-  }));
+  return photoCollection.carImages.flatMap((img, index) => {
+    const url = img.url || img.src || '';
+    if (!url) {
+      return [];
+    }
+    return [{
+      id: img.id || `${photoCollection.id}-${index}`,
+      url,
+      alt: img.alt || `${car.make} ${car.model}`,
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+      naturalWidth: img.naturalWidth,
+      naturalHeight: img.naturalHeight
+    }];
+  });
 }
 
 // Get the main photo for a car (first available image)

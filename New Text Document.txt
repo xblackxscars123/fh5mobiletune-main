@@ -1,0 +1,221 @@
+### PART 1: THE INPUTS
+To effectively construct a customized base tune for your vehicle, you need to provide three essential parameters within the tuning calculator. These inputs will help tailor your setup for optimal performance:
+
+1. **Total Weight (lbs or kg)**: This is the overall weight of the vehicle, which plays a critical role in determining various tuning settings. Accurate weight measurement is vital as it influences suspension, spring rates, and overall handling dynamics.
+
+2. **Front Weight Distribution %**: Expressed as a percentage, this figure indicates how the total weight is distributed between the front and rear of the vehicle. For example, if the front weight distribution is 53%, this equates to 0.53, signaling that a bit more than half of the vehicle's weight is on the front axle, which is crucial for calculating suspension and handling characteristics.
+
+3. **Drive Type**: This denotes the vehicle's drivetrain configuration: All-Wheel Drive (AWD), Rear-Wheel Drive (RWD), or Front-Wheel Drive (FWD). Each drive type has unique handling traits and requires specific tuning considerations to maximize performance.
+
+### PART 2: THE CALCULATOR LOGIC (Formulas)
+In this section, we detail the formulas and logic rules needed to automatically generate tuning values based on the inputs provided:
+
+#### 1. Spring Rates (The Frequency Method)
+Spring rates are pivotal in defining how your car supports its weight and absorbs bumps and dips in the road. The stiffness of the springs is evaluated using "Suspension Frequency" (measured in Hz).
+
+**Tuning Logic:**
+- **Road/Race:** A frequency of 2.5 Hz is ideal, providing a firm setup that enhances responsiveness on smooth surfaces.
+- **Rally/Cross Country:** A softer frequency of 1.5 Hz is preferable, allowing the suspension to absorb uneven terrains and bumps effectively.
+- **Drag Racing:** A special setup is used, featuring a soft front spring and stiff rear spring to maximize weight transfer during acceleration.
+- **Drifting:** This requires a unique configuration as well, with normal stiffness for the front and softer springs at the rear to enable a controlled slide.
+
+**Calculations:**
+- For the front springs, use the formula: (Total Weight * Front%) * Stiffness_Constant.
+- For the rear springs, the formula is: (Total Weight * (1 - Front%)) * Stiffness_Constant.
+
+**Constants to Consider:**
+- For road racing setups, use a stiffness constant between 0.6 (optimizing grip) and 0.8 (for aero/downforce-focused vehicles).
+- Rally tuning recommends a constant of 0.3, while off-road configurations should utilize 0.25 for a softer response.
+
+#### 2. Anti-Roll Bars (ARBs)
+These components play a crucial role in managing the vehicle's balance between understeer and oversteer, significantly affecting cornering performance.
+
+**"Meta" Formula for AWD Racing:**
+- Set the Front ARB to 1, which minimizes understeer and allows for better maneuverability.
+- Max out the Rear ARB at 65, encouraging the rear of the vehicle to rotate easily during turns, enhancing agility.
+
+**"Realist" Formula for RWD/Balanced Configurations:**
+- Front ARB should be calculated as: (Front% * 65).
+- For the Rear ARB, the calculation would be: ((1 - Front%) * 65).
+
+#### 3. Damping (Rebound & Bump)
+Damping settings determine the rate at which the vehicle's weight shifts during acceleration, braking, and cornering.
+
+**Rebound Settings:**
+- Calculate Front Rebound using the formula: (Total Weight * Front%) / 20.
+- Compute Rear Rebound similarly: (Total Weight * (1 - Front%)) / 20.
+
+**Bump Settings:**
+- The bump setting for both front and rear can be established as 60% of the respective rebound values, providing a softer initial response for improved handling characteristics.
+
+#### 4. Tire Pressure
+Optimizing tire pressure is essential for achieving the right grip level based on tire temperature and weight distribution.
+
+**Racing Formula:**  
+Calculate the pressure using the equation: 30 psi + (Weight / 1000). The target is to attain 32-33 psi when tires reach operating temperature.
+
+**Drag Racing Formula:**
+- For Rear-Wheel Drive (RWD), set the front tire pressure to 45 psi and the rear to 15 psi to maximize grip at launch.
+- For All-Wheel Drive (AWD), maintain both front and rear tire pressures at 15 psi.
+
+**Drift Formula:**
+- Set the front tire pressure to 35 psi for reduced grip, facilitating greater slide control.
+- For the rear tires, adjust the pressure between 15 and 20 psi, providing enough grip to propel the car forward while maintaining a balance during drifting.
+
+### PART 3: THE DISCIPLINE CHEAT SHEET (Manual Settings)
+The following settings are fixed "Meta" values tailored for specific racing styles and do not require complex calculations.
+
+#### A. ROAD RACING (Grip Optimization)
+- **Camber Settings:** Front camber at -1.5 and rear camber at -1.0 help maximize tire contact and cornering grip.
+- **Toe Alignment:** Apply 0.1 degrees toe-out in the front and keep the rear toe at 0.0 to enhance steering response while maintaining stability.
+- **Caster Angle:** Set to 7.0 degrees (maximum) to enhance steering feedback and dynamic camber during cornering.
+- **Differential Settings (AWD):**  
+  - Front Acceleration: 15% | Deceleration: 0%  
+  - Rear Acceleration: 75% | Deceleration: 25%  
+  - Center Bias: 70% (favoring rear-wheel drive characteristics).
+
+#### B. RALLY / DIRT
+- **Spring Settings:** Reduce spring stiffness by 50% from road racing settings to soften the suspension for rough terrains.
+- **Ride Height:** Max out the ride height to prevent bottoming out on uneven surfaces.
+- **Differential Settings (AWD):**  
+  - Center Lock: 50% for a balanced power distribution on loose terrain.  
+  - Acceleration: Set to a high level (80%+) to ensure wheels maintain traction.
+
+#### C. DRIFTING (Maximizing Slide Control)
+- **Alignment Settings:**  
+  - Camber should be adjusted to a steep -5.0 for the front and a mild -0.5 for the rear, enhancing grip during slides.
+  - Toe for the front should be set to 5.0 out for an increased steering angle.
+  - Caster should remain at 7.0.
+- **Differential Settings:** Use a locked differential (100% acceleration and deceleration) to maintain predictability during drifting maneuvers.
+- **Spring Configuration:** Utilize stiff front springs to maintain control and soft rear springs to allow the rear end to squat, enhancing grip while maintaining a slide.
+
+#### D. DRAG RACING (Launch Optimization)
+- **Spring Settings:**  
+  - Front springs should be set to the softest level possible to facilitate weight transfer and lift the nose during acceleration.
+  - Rear springs should be the stiffest to prevent bottoming out and maintain stability under load. 
+
+- **Damping Settings:**  
+  - Front Rebound: Select a stiff setting to keep the front end elevated during launches.  
+  - Rear Rebound: Use a soft setting to improve weight transfer.  
+  - Front Bump: Keep this soft to allow rapid lift during acceleration.  
+  - Rear Bump: A stiff setting is necessary to absorb hard hits and maintain traction.
+
+### PART 4: THE "SECRET" KNOWLEDGE (Advanced Insights)
+- **The "1/65" ARB Exploit:** In the game FH5, AWD vehicles commonly exhibit understeer. By adjusting the front ARB to 1 and the rear ARB to 65, you can effectively balance car dynamics and improve cornering performance across most vehicles.
+- **Understanding Brake Bias:** The in-game menu designates "Front" as the left. In actuality, "Left" refers to rear bias in FH5. To enhance car rotation while cornering, set this bias to 45% (Left).
+- **Tire Profile Considerations:** Choosing larger rims (with low profile tires) enhances car responsiveness but makes it less forgiving over bumps. For Cross Country events, always select the smallest rim size (largest tire sidewall) to increase "tire float" in sandy or muddy conditions.
+- **Aero "PI Tax" Insight:** While front aero modifications have minimal PI costs, they significantly enhance grip. Installing adjustable front aero components is advisable for vehicles classified as A-Class and above in road racing.
+
+
+
+This comprehensive **Forza Horizon 5 (FH5) Master Tuning Knowledge Base** provides a unified framework for every discipline, specifically optimized for the technical demands of dirt and off-road racing in Mexico’s diverse environments.
+
+### **PART 1: THE INPUTS**
+
+To construct a customized base tune for any vehicle, input these three parameters into your calculator:
+
+* **Total Weight (lbs or kg)**: The primary factor for determining spring and damping stiffness.
+* **Front Weight Distribution %**: Expressed as a decimal (e.g., 53% = 0.53).
+* **Drive Type**: AWD, RWD, or FWD configuration.
+
+---
+
+### **PART 2: THE CALCULATOR LOGIC (Formulas)**
+
+#### **1. Spring Rates (The Frequency Method)**
+
+Springs define how the vehicle absorbs terrain and manages body roll. Stiffness is calculated using "Ride Frequency" (Hz).
+
+* **Logic (Target Frequencies)**:
+* **Road/Race (2.5 Hz)**: Firm setup for responsiveness on smooth tracks.
+* **Rally/Cross Country (1.5 Hz)**: Soft setup to maximize tire contact over bumps.
+
+
+* **Formulas**:
+* **Front Springs**: .
+* **Rear Springs**: .
+
+
+* **Simplified Method (Stiffness Constant)**:
+* **Front**: .
+* **Rear**: .
+* **Constants**: Road (**0.6–0.8**), Rally (**0.3**), Off-road (**0.25**).
+
+
+
+#### **2. Anti-Roll Bars (ARBs)**
+
+ARBs manage mid-corner balance between understeer and oversteer.
+
+* **"Meta" AWD Exploit**: Set Front to **1** and Rear to **65** to force rear rotation and eliminate AWD understeer.
+* **Standard Formulas**:
+* **Front**: .
+* **Rear**: .
+
+
+
+#### **3. Advanced Damping (The "19x" Elite Rule)**
+
+Damping prevents the car from oscillating or bouncing after impacts.
+
+* **Front Rebound**: .
+* **Rear Rebound**: .
+* **Bump Settings**: Typically set to **50%–75%** of the rebound values (Default: 63%).
+
+#### **4. Tire Pressure**
+
+* **Warm Target**: Aim for **32–34 PSI** (2.20–2.35 Bar) when tires are hot.
+* **Baseline Formula**: .
+* **Heavier Vehicles**: For every 2000 lbs over 3000 lbs (dirt), add 5 PSI.
+
+---
+
+### **PART 3: THE FINAL DRIVE CALCULATOR**
+
+Gearing must match the engine’s power band to ensure maximum acceleration out of corners.
+
+* **Empirical Formula**: .
+* **Weight/Power Scaling**: .
+* **The "Power Band" Rule**: Shift points should ensure the next gear lands at **Peak Torque RPM**.
+
+---
+
+### **PART 4: DISCIPLINE-SPECIFIC SETTINGS**
+
+#### **A. Dirt & Off-road Excellence**
+
+Dirt racing challenges include reduced traction and massive jumps requiring high ground clearance.
+
+* **Suspension**: Soften spring rates by 50% from road settings and set **Maximum Ride Height**.
+* **Alignment**: Front Camber **-1.5° to -2.0°**; Front Toe **-0.1°** (Toe-out) for turn-in; Caster **7.0°**.
+* **AWD Differential**: Center **70%–80%** (Rear bias); High Accel lock (**80%+**) to maintain traction on loose gravel.
+* **Meta Dirt Cars (2026)**:
+* **B-Class**: International Scout, Ford Escort.
+* **A-Class**: Local Motors Rally Fighter, Jeep Trailcat, #25 "Brocky" Bronco.
+* **S1-Class**: Hot Wheels Bone Shaker, Mercedes CLK GTR, Lola T70.
+* **S2-Class**: Hoonigan RS200 Evolution, Mercedes CLK GTR.
+
+
+
+#### **B. Road Racing (Grip)**
+
+* **Camber**: Front **-1.5** / Rear **-1.0**.
+* **Toe**: Front **0.1 Out** / Rear **0.0**.
+* **Diff**: Front Accel **15%** / Rear Accel **75%**.
+
+#### **C. Drifting & Drag**
+
+* **Drift Diff**: **100% Locked** (Accel/Decel).
+* **Drag Launch**: Front **45 PSI** / Rear **15 PSI** (RWD) for maximum rear contact.
+
+---
+
+### **PART 5: ADVANCED INSIGHTS & TROUBLESHOOTING**
+
+* **Brake Bias Lie**: In FH5, the slider labeled "Front" is actually **Rear Bias**. Set to **45% (Left)** to encourage rotation.
+* **The Caster Rule**: Setting Caster to **7.0°** improves turn-in and dynamic camber while allowing for straighter wheel alignment for better launches.
+* **Aero "PI Tax"**: Front adjustable aero is cheap and essential for A-Class and above to reduce high-speed understeer.
+* **Rim Size**: Use smallest rims for Cross Country to increase tire sidewall "float" in mud and sand.
+* **Telemetry Forensics**:
+* **Heat**: The difference between inside and outside tire temps should stay within **10–15°F**.
+* **Suspension**: Pink telemetry bar should move between **20–80%**; if at 100%, increase ride height or spring stiffness.

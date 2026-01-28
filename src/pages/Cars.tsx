@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { fh5Cars, FH5Car, getCarDisplayName } from '@/data/carDatabase';
-import { getFallbackCarImage } from '@/data/carPhotos';
+import { createCarPhotoMap, getFallbackCarImage, getMainCarPhoto, type CarPhotoCollection } from '@/data/carPhotos';
 import { getVerifiedSpecs, hasVerifiedSpecs } from '@/data/verifiedCarSpecs';
 import { Search, ArrowLeft, Car, CheckCircle, Filter } from 'lucide-react';
 
@@ -24,6 +24,7 @@ export default function Cars() {
   const [unverifiedOnly, setUnverifiedOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('name');
   const [currentPage, setCurrentPage] = useState(1);
+  const [photoMap, setPhotoMap] = useState<Map<string, CarPhotoCollection> | null>(null);
   const itemsPerPage = 50;
 
   // Get unique makes and categories
@@ -102,6 +103,18 @@ export default function Cars() {
     setCurrentPage(1);
   }, [search, makeFilter, categoryFilter, driveFilter, unverifiedOnly]);
 
+  useEffect(() => {
+    let isActive = true;
+    createCarPhotoMap().then(map => {
+      if (isActive) {
+        setPhotoMap(map);
+      }
+    });
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   const handleSelectCar = (car: FH5Car) => {
     const tuningMode = (location.state as any)?.tuningMode as 'simple' | 'advanced' | undefined;
     navigate('/', { state: { selectedCar: car, tuningMode, scrollTo: 'specs' } });
@@ -121,6 +134,37 @@ export default function Cars() {
       'track': 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40',
     };
     return colors[category] || 'bg-muted text-muted-foreground';
+  };
+
+  const getMakeLogoDataUri = (make: string) => {
+    let hash = 0;
+    for (let i = 0; i < make.length; i += 1) {
+      hash = (hash << 5) - hash + make.charCodeAt(i);
+      hash |= 0;
+    }
+    const hue = Math.abs(hash) % 360;
+    const initials = make
+      .split(' ')
+      .filter(Boolean)
+      .map(word => word[0])
+      .join('')
+      .slice(0, 3)
+      .toUpperCase();
+    const svg = `
+      <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:hsl(${hue}, 80%, 60%);stop-opacity:0.9" />
+            <stop offset="100%" style="stop-color:hsl(${hue}, 80%, 45%);stop-opacity:0.9" />
+          </linearGradient>
+        </defs>
+        <circle cx="24" cy="24" r="22" fill="url(#grad)" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+        <text x="24" y="28" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="white">
+          ${initials}
+        </text>
+      </svg>
+    `;
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
   };
 
   return (
@@ -260,7 +304,8 @@ export default function Cars() {
                   <div className="relative w-full h-28 mb-3 overflow-hidden rounded-md border border-[hsl(220,15%,20%)] bg-[hsl(220,15%,10%)]">
                     {(() => {
                       const forumLink = (car.links && car.links.length > 0) ? car.links[0] : (car.shub?.link || '');
-                      const imgSrc = forumLink || getFallbackCarImage(car);
+                      const mainPhoto = photoMap ? getMainCarPhoto(car, photoMap) : null;
+                      const imgSrc = mainPhoto?.url || getFallbackCarImage(car);
                       return (
                         <a href={forumLink || '#'} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
                           <img
@@ -288,9 +333,16 @@ export default function Cars() {
                           </Badge>
                         )}
                       </div>
-                      <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                        {car.make}
-                      </h3>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img
+                          src={getMakeLogoDataUri(car.make)}
+                          alt={`${car.make} logo`}
+                          className="w-6 h-6 rounded-full border border-white/10 bg-white/10 shrink-0"
+                        />
+                        <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                          {car.make}
+                        </h3>
+                      </div>
                       <p className="text-sm text-muted-foreground truncate">{car.model}</p>
                     </div>
                     <Badge className={`text-xs shrink-0 ${getCategoryColor(car.category)}`}>
