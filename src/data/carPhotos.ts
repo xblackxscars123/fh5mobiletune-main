@@ -54,7 +54,7 @@ export async function createCarPhotoMap(): Promise<Map<string, CarPhotoCollectio
 
 // Get photos for a specific car
 export function getCarPhotos(car: FH5Car, photoMap: Map<string, CarPhotoCollection>): CarPhoto[] {
-  const photoCollection = photoMap.get(car.fh5Id?.toString() || '');
+  const photoCollection = photoMap.get(car.id) || photoMap.get(car.fh5Id?.toString() || '');
   if (!photoCollection || !photoCollection.carImages.length) {
     return [];
   }

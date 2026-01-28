@@ -102,7 +102,10 @@ export const JDMStickerBombBackground = () => {
               hsl(220 20% 8%) 40%, 
               hsl(220 22% 10%) 100%
             )
-          `
+          `,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
         }}
       />
 
