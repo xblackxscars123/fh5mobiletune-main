@@ -80,6 +80,36 @@ export function CarSpecsForm({ specs, onChange, unitSystem, onUnitSystemChange, 
           <span>Essential Settings</span>
         </div>
 
+        {/* Identity - Year / Make / Model */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-1">
+            <Label className="text-xs">Year</Label>
+            <Input 
+              value={specs.year || ''} 
+              onChange={(e) => updateSpec('year', parseInt(e.target.value) || undefined)}
+              placeholder="2020"
+              type="number"
+              inputMode="numeric"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Make</Label>
+            <Input 
+              value={specs.make || ''} 
+              onChange={(e) => updateSpec('make', e.target.value)}
+              placeholder="Toyota"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Model</Label>
+            <Input 
+              value={specs.model || ''} 
+              onChange={(e) => updateSpec('model', e.target.value)}
+              placeholder="Supra"
+            />
+          </div>
+        </div>
+
         {/* Drive Type - First, it's a quick decision */}
         <div className="space-y-2 md:space-y-3">
           <TuningTooltip explanation={inputExplanations.driveType} showIcon>

@@ -108,6 +108,13 @@ export const tuneVariantsByType: Record<TuneType, { value: TuneVariant; label: s
  };
 
 export interface CarSpecs {
+  // Identity (Optional, for saving/display)
+  year?: number;
+  make?: string;
+  model?: string;
+  fullname?: string;
+
+  // Physical Stats (Current Build)
   weight: number; // in lbs or kg depending on unitSystem
   weightDistribution: number; // front weight percentage (0-100)
   driveType: DriveType;
@@ -1271,47 +1278,172 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
     finalDriveScale: number;
     toeFrontOffset: number;
     rideHeightOffset: number;
+    camberFrontOffset: number;
+    camberRearOffset: number;
+    casterOffset: number;
+    reboundScale: number;
+    bumpScale: number;
+    brakePressureOffset: number;
   }> = (() => {
     if (tuneType === 'grip') {
-      if (variant === 'technical') return { frequencyScale: 1.03, diffDecelRearOffset: 6, targetFrontBiasOffset: 2, finalDriveScale: 1.02, toeFrontOffset: 0.05 };
-      if (variant === 'highSpeed') return { frequencyScale: 0.98, diffDecelRearOffset: 8, targetFrontBiasOffset: 4, finalDriveScale: 0.96 };
-      if (variant === 'powerbuild') return { frequencyScale: 1.02, diffAccelRearOffset: 8, targetFrontBiasOffset: 2, finalDriveScale: 1.06 };
-      if (variant === 'nordschleife') return { frequencyScale: 0.96, diffDecelRearOffset: 5, rideHeightOffset: 0.5, finalDriveScale: 0.98 };
-      if (variant === 'endurance') return { frequencyScale: 0.96, diffAccelRearOffset: -5, rideHeightOffset: 0.2, targetFrontBiasOffset: -2 };
-      if (variant === 'vintage') return { frequencyScale: 0.88, diffAccelRearOffset: -10, rideHeightOffset: 0.8, toeFrontOffset: 0, finalDriveScale: 0.95 };
-      if (variant === 'rain') return { frequencyScale: 0.94, diffAccelRearOffset: -10, diffDecelRearOffset: 5, targetFrontBiasOffset: -4 };
+      if (variant === 'technical') return { 
+        frequencyScale: 1.05, 
+        diffDecelRearOffset: 8, 
+        targetFrontBiasOffset: 2, 
+        finalDriveScale: 1.05, // Shorter gears for corner exit
+        toeFrontOffset: 0.1, 
+        camberFrontOffset: -0.5, // More aggressive turn-in
+        reboundScale: 1.05,
+        brakePressureOffset: 5
+      };
+      if (variant === 'highSpeed') return { 
+        frequencyScale: 0.98, 
+        diffDecelRearOffset: 12, 
+        targetFrontBiasOffset: 4, 
+        finalDriveScale: 0.92, // Longer gears
+        camberFrontOffset: 0.3, // Less camber for stability
+        toeFrontOffset: 0,
+        casterOffset: 0.5,
+        reboundScale: 0.95
+      };
+      if (variant === 'powerbuild') return { 
+        frequencyScale: 1.08, 
+        diffAccelRearOffset: 15, // Lock it up to put power down
+        targetFrontBiasOffset: 2, 
+        finalDriveScale: 1.0,
+        camberRearOffset: 0.2, // More contact patch
+        reboundScale: 1.10
+      };
+      if (variant === 'nordschleife') return { 
+        frequencyScale: 0.94, // Softer for bumps
+        diffDecelRearOffset: 5, 
+        rideHeightOffset: 0.4, 
+        finalDriveScale: 0.98,
+        bumpScale: 0.85, // Absorb kerbs
+        reboundScale: 1.05 // Control body
+      };
+      if (variant === 'endurance') return { 
+        frequencyScale: 0.92, 
+        diffAccelRearOffset: -5, 
+        rideHeightOffset: 0.2, 
+        targetFrontBiasOffset: -2,
+        camberFrontOffset: 0.2, // Tire wear protection
+        reboundScale: 0.90
+      };
+      if (variant === 'vintage') return { 
+        frequencyScale: 0.85, 
+        diffAccelRearOffset: -10, 
+        rideHeightOffset: 0.8, 
+        toeFrontOffset: 0, 
+        finalDriveScale: 0.95,
+        camberFrontOffset: 0.5,
+        casterOffset: -1.0
+      };
+      if (variant === 'rain') return { 
+        frequencyScale: 0.88, 
+        diffAccelRearOffset: -15, 
+        diffDecelRearOffset: 10, 
+        targetFrontBiasOffset: -4,
+        reboundScale: 0.85,
+        bumpScale: 0.80,
+        brakePressureOffset: -10
+      };
       return { frequencyScale: 1.0 };
     }
     if (tuneType === 'street') {
-      if (variant === 'highSpeed') return { frequencyScale: 0.98, diffDecelRearOffset: 6, targetFrontBiasOffset: 3, finalDriveScale: 0.96 };
-      if (variant === 'touge') return { frequencyScale: 1.04, diffAccelRearOffset: 5, toeFrontOffset: 0.1, finalDriveScale: 1.05 };
-      if (variant === 'traction') return { frequencyScale: 1.01, diffAccelRearOffset: -4, diffDecelRearOffset: 6, targetFrontBiasOffset: 3 };
-      if (variant === 'vintage') return { frequencyScale: 0.85, diffAccelRearOffset: -8, rideHeightOffset: 1.0, finalDriveScale: 0.92 };
-      if (variant === 'rain') return { frequencyScale: 0.95, diffAccelRearOffset: -8, diffDecelRearOffset: 5, targetFrontBiasOffset: -3 };
+      if (variant === 'highSpeed') return { 
+        frequencyScale: 0.96, 
+        diffDecelRearOffset: 8, 
+        targetFrontBiasOffset: 3, 
+        finalDriveScale: 0.94,
+        camberFrontOffset: 0.2,
+        casterOffset: 0.5
+      };
+      if (variant === 'touge') return { 
+        frequencyScale: 1.06, 
+        diffAccelRearOffset: 10, 
+        toeFrontOffset: 0.2, 
+        finalDriveScale: 1.10, // Short gears
+        camberFrontOffset: -0.4,
+        brakePressureOffset: 5,
+        reboundScale: 1.05
+      };
+      if (variant === 'traction') return { 
+        frequencyScale: 1.01, 
+        diffAccelRearOffset: -4, 
+        diffDecelRearOffset: 6, 
+        targetFrontBiasOffset: 3,
+        camberRearOffset: 0.3
+      };
+      if (variant === 'vintage') return { 
+        frequencyScale: 0.82, 
+        diffAccelRearOffset: -8, 
+        rideHeightOffset: 1.2, 
+        finalDriveScale: 0.92,
+        casterOffset: -0.5
+      };
+      if (variant === 'rain') return { 
+        frequencyScale: 0.92, 
+        diffAccelRearOffset: -12, 
+        diffDecelRearOffset: 8, 
+        targetFrontBiasOffset: -3,
+        reboundScale: 0.90,
+        brakePressureOffset: -5
+      };
       return { frequencyScale: 1.0 };
     }
     if (tuneType === 'drift') {
-      if (variant === 'highAngle') return { frequencyScale: 1.02, toeFrontOffset: 0.5, diffAccelRearOffset: 0, diffDecelRearOffset: 0, finalDriveScale: 1.15 }; // Shorter gears for torque
-      if (variant === 'smooth') return { frequencyScale: 0.96, toeFrontOffset: -1.0, diffAccelRearOffset: -10, diffDecelRearOffset: -10, finalDriveScale: 0.95 }; // Longer gears, softer diff
+      if (variant === 'highAngle') return { frequencyScale: 1.02, toeFrontOffset: 0.5, diffAccelRearOffset: 0, diffDecelRearOffset: 0, finalDriveScale: 1.15 }; 
+      if (variant === 'smooth') return { frequencyScale: 0.96, toeFrontOffset: -1.0, diffAccelRearOffset: -10, diffDecelRearOffset: -10, finalDriveScale: 0.95 }; 
       if (variant === 'gymkhana') return { frequencyScale: 1.08, toeFrontOffset: 0.5, diffAccelRearOffset: 0, diffDecelRearOffset: 0, targetFrontBiasOffset: 5 };
       if (variant === 'show') return { frequencyScale: 0.95, rideHeightOffset: -0.5, toeFrontOffset: 0.3 };
       if (variant === 'awd_drift') return { frequencyScale: 1.10, diffAccelRearOffset: 0, diffDecelRearOffset: 0, targetFrontBiasOffset: 8 };
       return { frequencyScale: 1.0 };
     }
     if (tuneType === 'rally' || tuneType === 'offroad') {
-      if (variant === 'bumpy') return { frequencyScale: 0.92, diffAccelRearOffset: 6, diffDecelRearOffset: 4, targetFrontBiasOffset: -2, finalDriveScale: 1.04 };
-      if (variant === 'traction') return { frequencyScale: 0.96, diffAccelRearOffset: 10, diffDecelRearOffset: 6, targetFrontBiasOffset: -1 };
+      if (variant === 'bumpy') return { 
+        frequencyScale: 0.88, 
+        diffAccelRearOffset: 6, 
+        diffDecelRearOffset: 4, 
+        targetFrontBiasOffset: -2, 
+        finalDriveScale: 1.04,
+        bumpScale: 0.70, // Absorb everything
+        rideHeightOffset: 1.0
+      };
+      if (variant === 'traction') return { 
+        frequencyScale: 0.98, 
+        diffAccelRearOffset: 15, 
+        diffDecelRearOffset: 8, 
+        targetFrontBiasOffset: -1,
+        reboundScale: 0.95
+      };
       if (variant === 'mixed') return { frequencyScale: 0.97, diffAccelRearOffset: 6, diffDecelRearOffset: 4 };
-      if (variant === 'rock_crawl') return { frequencyScale: 0.60, diffAccelRearOffset: 25, diffDecelRearOffset: 25, rideHeightOffset: 2.0, finalDriveScale: 1.2 };
-      if (variant === 'desert') return { frequencyScale: 1.10, diffAccelRearOffset: 10, rideHeightOffset: 1.5, finalDriveScale: 0.9 };
+      if (variant === 'rock_crawl') return { 
+        frequencyScale: 0.55, 
+        diffAccelRearOffset: 25, 
+        diffDecelRearOffset: 25, 
+        rideHeightOffset: 2.5, 
+        finalDriveScale: 1.4, // Super short gears
+        bumpScale: 0.60,
+        reboundScale: 0.60,
+        brakePressureOffset: 10 // Holding power
+      };
+      if (variant === 'desert') return { 
+        frequencyScale: 1.15, 
+        diffAccelRearOffset: 10, 
+        rideHeightOffset: 1.5, 
+        finalDriveScale: 0.9, // Top speed for flats
+        bumpScale: 1.2, // Handle big jumps
+        reboundScale: 1.1
+      };
       if (variant === 'vintage') return { frequencyScale: 0.85, rideHeightOffset: 0.5 };
       if (variant === 'snow') return { frequencyScale: 0.90, diffAccelRearOffset: -5, diffDecelRearOffset: 10, targetFrontBiasOffset: -5 };
       return { frequencyScale: 1.0 };
     }
     if (tuneType === 'drag') {
-      if (variant === 'topSpeed') return { finalDriveScale: 0.88, diffAccelRearOffset: -2, targetFrontBiasOffset: 2 };
-      if (variant === 'noPrep') return { frequencyScale: 0.90, finalDriveScale: 1.05, diffAccelRearOffset: -5, targetFrontBiasOffset: -2 };
-      if (variant === 'wheelie') return { frequencyScale: 0.80, rideHeightOffset: 2.0, finalDriveScale: 1.1, diffAccelRearOffset: 0 };
+      if (variant === 'topSpeed') return { finalDriveScale: 0.85, diffAccelRearOffset: -2, targetFrontBiasOffset: 2, camberFrontOffset: 0, reboundScale: 1.0 };
+      if (variant === 'noPrep') return { frequencyScale: 0.85, finalDriveScale: 1.08, diffAccelRearOffset: -5, targetFrontBiasOffset: -2, bumpScale: 0.8 };
+      if (variant === 'wheelie') return { frequencyScale: 0.75, rideHeightOffset: 2.0, finalDriveScale: 1.15, diffAccelRearOffset: 0, reboundScale: 0.7, bumpScale: 1.3 };
       return { finalDriveScale: 1.0 };
     }
     return { frequencyScale: 1.0 };
@@ -1321,6 +1453,7 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
   const finalTargetFrontBias = clampNumber(targetFrontBias + (variantMods.targetFrontBiasOffset ?? 0), 45, 70);
   const finalBrakeBalance = 100 - finalTargetFrontBias;
   const finalBrakeBalanceNote = `Set slider to ${finalBrakeBalance}% to achieve ${finalTargetFrontBias}% front bias (FH5 slider is inverted)`;
+  const finalBrakePressure = clampNumber(brakes.pressure + (variantMods.brakePressureOffset ?? 0), 70, 130);
 
   // Combine surface mods + variant mods for Diff
   const finalDiffAccelRear = clampNumber(surfaceMods.diff.accel + (variantMods.diffAccelRearOffset ?? 0), 0, 100);
@@ -1337,6 +1470,16 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
   // Apply ride height offsets (e.g. for Nordschleife)
   const finalRideHeightFront = Math.round((rideHeightFront + (variantMods.rideHeightOffset ?? 0)) * 10) / 10;
   const finalRideHeightRear = Math.round((rideHeightRear + (variantMods.rideHeightOffset ?? 0)) * 10) / 10;
+  
+  // Apply Alignment & Damping Offsets
+  const finalCamberFront = clampNumber(Math.round((camberFront + (variantMods.camberFrontOffset ?? 0)) * 10) / 10, -10, 1);
+  const finalCamberRear = clampNumber(Math.round((camberRear + (variantMods.camberRearOffset ?? 0)) * 10) / 10, -10, 1);
+  const finalCaster = clampNumber(Math.round((alignment.caster + (variantMods.casterOffset ?? 0)) * 10) / 10, 0, 7.0);
+  
+  const finalReboundFront = clampNumber(Math.round(damping.reboundF * (variantMods.reboundScale ?? 1.0) * 10) / 10, 1, 20);
+  const finalReboundRear = clampNumber(Math.round(damping.reboundR * (variantMods.reboundScale ?? 1.0) * 10) / 10, 1, 20);
+  const finalBumpFront = clampNumber(Math.round(damping.bumpF * (variantMods.bumpScale ?? 1.0) * 10) / 10, 1, 20);
+  const finalBumpRear = clampNumber(Math.round(damping.bumpR * (variantMods.bumpScale ?? 1.0) * 10) / 10, 1, 20);
 
   return {
     tirePressureFront: surfaceMods.pressure.front,
@@ -1344,21 +1487,21 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
     finalDrive: Math.round(finalFinalDrive * 100) / 100,
     gearRatios,
     gearingNote: gearingNotes[tuneType],
-    camberFront: clampNumber(camberFront, -10, 1),
-    camberRear: clampNumber(camberRear, -10, 1),
+    camberFront: finalCamberFront,
+    camberRear: finalCamberRear,
     toeFront: clampNumber(Math.round((alignment.toeF + (variantMods.toeFrontOffset ?? 0)) * 10) / 10, -5, 5),
     toeRear: clampNumber(Math.round(alignment.toeR * 10) / 10, -5, 5),
-    caster: clampNumber(Math.round(alignment.caster * 10) / 10, 0, 10),
+    caster: finalCaster,
     arbFront: arbs.front,
     arbRear: arbs.rear,
     springsFront,
     springsRear,
     rideHeightFront: finalRideHeightFront,
     rideHeightRear: finalRideHeightRear,
-    reboundFront: damping.reboundF,
-    reboundRear: damping.reboundR,
-    bumpFront: damping.bumpF,
-    bumpRear: damping.bumpR,
+    reboundFront: finalReboundFront,
+    reboundRear: finalReboundRear,
+    bumpFront: finalBumpFront,
+    bumpRear: finalBumpRear,
     aeroFront,
     aeroRear,
     diffAccelFront: finalDiffAccelFront,
@@ -1366,7 +1509,7 @@ export function calculateTune(specs: CarSpecs, tuneType: TuneType, options: Calc
     diffAccelRear: finalDiffAccelRear,
     diffDecelRear: finalDiffDecelRear,
     centerBalance,
-    brakePressure: brakes.pressure,
+    brakePressure: finalBrakePressure,
     brakeBalance: finalBrakeBalance,
     brakeBalanceNote: finalBrakeBalanceNote,
     modifiers: {

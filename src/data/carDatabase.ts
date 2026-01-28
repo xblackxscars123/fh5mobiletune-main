@@ -1,23 +1,7 @@
 // Forza Horizon 5 Car Database - Complete 902+ Car Collection
 // Data compiled from community sources with estimated specs based on car type
-
-export interface FH5Car {
-  id: string;
-  make: string;
-  model: string;
-  year: number;
-  weight: number; // in lbs
-  weightDistribution: number; // front percentage
-  horsepower?: number; // HP
-  torque?: number; // lb-ft
-  displacement?: number; // Liters
-  driveType: 'RWD' | 'FWD' | 'AWD';
-  defaultPI: number;
-  category: 'retro' | 'modern' | 'super' | 'hyper' | 'muscle' | 'jdm' | 'euro' | 'offroad' | 'truck' | 'classic' | 'rally' | 'formula' | 'drift' | 'hot-hatch' | 'gt' | 'suv' | 'van' | 'buggy' | 'track';
-  carType?: string; // Original FH5 car type
-  nickname?: string;
-  fh5Id?: number;
-}
+import { FH5Car } from '../types/car';
+import { importedCars } from './importedCars';
 
 // Spec estimation based on car type
 const typeSpecs: Record<string, { weight: number; distribution: number; driveType: 'RWD' | 'FWD' | 'AWD'; pi: number; torque: number; displacement: number; category: FH5Car['category'] }> = {
@@ -970,11 +954,18 @@ const rawCarData = `2017 Abarth 124 Spider	Modern Sports Cars	Seasonal	Series 24
 2020 Zenvo TSR-S	Extreme Track Toys	Autoshow, Wheelspin	Launch	Zenvo TSR-S	3348
 2016 Zenvo TS1	Hypercars	Backstage, Seasonal	Series 13	Zenvo TS1	2621`;
 
-// Parse all cars from raw data
-function parseRawCarData(): FH5Car[] {
+// Parse all cars from raw data and merge with imported data
+function buildCarDatabase(): FH5Car[] {
   const lines = rawCarData.trim().split('\n');
-  const cars: FH5Car[] = [];
-  const seenIds = new Set<string>();
+  const carMap = new Map<string, FH5Car>();
+  
+  // 1. First load imported cars (they have high quality data)
+  for (const car of importedCars) {
+    carMap.set(car.id, car);
+  }
+  
+  // 2. Supplement with raw data for missing cars
+  const seenIds = new Set<string>(carMap.keys());
   
   for (const line of lines) {
     const parts = line.split('\t');
@@ -983,12 +974,16 @@ function parseRawCarData(): FH5Car[] {
     const [fullName, carType, , , nickname, idStr] = parts;
     const { year, make, model } = parseCarName(fullName);
     
-    // Get base specs from car type
-    const specs = typeSpecs[carType] || typeSpecs['Modern Sports Cars'];
-    
-    // Generate unique ID
+    // Generate ID
     const baseId = generateCarId(year, make, model);
     let id = baseId;
+    
+    // If we already have this exact ID from imports, skip this raw entry
+    if (carMap.has(id)) {
+      continue;
+    }
+    
+    // Handle collision for non-imported cars
     let counter = 1;
     while (seenIds.has(id)) {
       id = `${baseId}-${counter}`;
@@ -996,12 +991,14 @@ function parseRawCarData(): FH5Car[] {
     }
     seenIds.add(id);
     
+    // Get base specs from car type
+    const specs = typeSpecs[carType] || typeSpecs['Modern Sports Cars'];
+    
     // Slight variations based on year for more realistic specs
-    const yearFactor = Math.min(1, (year - 1920) / 100);
     const weightVariation = Math.floor((Math.random() - 0.5) * 200);
     const piVariation = Math.floor((Math.random() - 0.5) * 30);
     
-    cars.push({
+    carMap.set(id, {
       id,
       make,
       model,
@@ -1017,11 +1014,11 @@ function parseRawCarData(): FH5Car[] {
     });
   }
   
-  return cars;
+  return Array.from(carMap.values());
 }
 
 // Export the complete car database
-export const fh5Cars: FH5Car[] = parseRawCarData();
+export const fh5Cars: FH5Car[] = buildCarDatabase();
 
 // Helper function to get unique makes
 export function getUniqueMakes(): string[] {
