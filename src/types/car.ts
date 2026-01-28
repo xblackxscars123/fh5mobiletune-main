@@ -4,7 +4,6 @@ export interface FH5Car {
   make: string;
   model: string;
   year: number;
-  
   // Performance & Physics
   weight: number; // in lbs
   weightDistribution: number; // front percentage
@@ -14,17 +13,16 @@ export interface FH5Car {
   driveType: 'RWD' | 'FWD' | 'AWD';
   defaultPI: number;
   piClass?: string; // D, C, B, A, S1, S2, X
-  
   // Tires & Gears
   frontTireWidth?: number; // mm
   rearTireWidth?: number; // mm
   stockGearCount?: number; // 4-10
-  
   // Engine Details
   engineType?: string; // I4, V6, V8, etc.
   cylinders?: number;
   aspiration?: 'Naturally Aspirated' | 'Turbo' | 'Twin Turbo' | 'Supercharger' | 'Centrifugal Supercharger';
-  
+  enginePlacement?: 'Front' | 'Mid' | 'Rear';
+  engineConfig?: string;
   // Meta
   category: 'retro' | 'modern' | 'super' | 'hyper' | 'muscle' | 'jdm' | 'euro' | 'offroad' | 'truck' | 'classic' | 'rally' | 'formula' | 'drift' | 'hot-hatch' | 'gt' | 'suv' | 'van' | 'buggy' | 'track' | 'ute' | 'limo' | 'special';
   carType?: string; // "Modern Sports Cars", "Retro Supercars", etc.
@@ -33,7 +31,11 @@ export interface FH5Car {
   boost?: string; // "Drift Skills", etc.
   nickname?: string;
   fh5Id?: number;
-  
+  region?: string;
+  country?: string;
+  modelFamily?: string;
+  openTop?: boolean;
+  links?: string[];
   // Stats (0-10)
   stats?: {
     speed: number;

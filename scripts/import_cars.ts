@@ -1,6 +1,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { FH5Car } from '../src/types/car';
 
 // Expected CSV Columns (ManteoMax / Standard):
 // Year, Make, Model, Type (Division), Rarity, Value, Boost,
@@ -8,7 +9,7 @@ import path from 'path';
 // F Tire, R Tire, Offroad, Speed, Hand, Accel, Launch, Brake
 
 const CSV_PATH = path.join(process.cwd(), 'cars.csv');
-const OUTPUT_PATH = path.join(process.cwd(), 'src', 'data', 'importedCars.json');
+const OUTPUT_PATH = path.join(process.cwd(), 'src', 'data', 'importedCars.ts');
 
 interface RawCar {
   Year: string;
@@ -31,6 +32,18 @@ interface RawCar {
   RTire: string;
   PI: string;
   Class: string;
+  Offroad?: string;
+  Speed?: string;
+  Hand?: string;
+  Accel?: string;
+  Launch?: string;
+  Brake?: string;
+  Eng?: string;
+  Config?: string;
+  Region?: string;
+  Country?: string;
+  'Model Family'?: string;
+  'Open Top'?: string;
 }
 
 function parseCSV(content: string): RawCar[] {
@@ -73,22 +86,32 @@ function cleanNumber(str: string): number {
   return parseFloat(str.replace(/[^0-9.]/g, '')) || 0;
 }
 
-function mapToSchema(raw: any): any {
+function mapToSchema(raw: RawCar): FH5Car {
   // Generate ID
   const id = `${raw.Make}-${raw.Model}-${raw.Year}`
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-');
+
+  const linkSet = new Set<string>();
+  for (const v of Object.values(raw)) {
+    const s = String(v || '');
+    if (s.startsWith('http://') || s.startsWith('https://')) {
+      linkSet.add(s);
+    } else if (s.startsWith('www.')) {
+      linkSet.add(`https://${s}`);
+    }
+  }
+  const links = Array.from(linkSet);
 
   return {
     id,
     year: cleanNumber(raw.Year),
     make: raw.Make,
     model: raw.Model,
-    fullname: `${raw.Year} ${raw.Make} ${raw.Model}`,
     
     // Specs
     weight: cleanNumber(raw.Weight),
-    weightDistribution: cleanNumber(raw.Front) || 50, // Default to 50 if missing
+    weightDistribution: normalizeDistribution(raw.Front),
     horsepower: cleanNumber(raw.HP),
     torque: cleanNumber(raw.Torque),
     displacement: cleanNumber(raw.Disp),
@@ -97,7 +120,7 @@ function mapToSchema(raw: any): any {
     
     // Drivetrain
     driveType: raw.Drive || 'RWD',
-    gears: cleanNumber(raw.Gears),
+    stockGearCount: cleanNumber(raw.Gears),
     
     // Tires
     frontTireWidth: cleanNumber(raw.FTire),
@@ -105,18 +128,75 @@ function mapToSchema(raw: any): any {
     
     // Meta
     piClass: raw.Class,
-    pi: cleanNumber(raw.PI),
+    defaultPI: cleanNumber(raw.PI),
+    category: mapCategory(raw.Type),
     carType: raw.Type,
     rarity: raw.Rarity,
     value: cleanNumber(raw.Value),
-    boost: raw.Boost
+    boost: raw.Boost,
+    enginePlacement: normalizePlacement(raw.Eng),
+    engineConfig: raw.Config || undefined,
+    region: raw.Region || undefined,
+    country: raw.Country || undefined,
+    modelFamily: raw['Model Family'] || undefined,
+    openTop: normalizeOpenTop(raw['Open Top']),
+    links: links.length ? links : undefined,
+
+    // Stats
+    stats: {
+      speed: cleanNumber(raw.Speed),
+      handling: cleanNumber(raw.Hand),
+      acceleration: cleanNumber(raw.Accel),
+      launch: cleanNumber(raw.Launch),
+      braking: cleanNumber(raw.Brake),
+      offroad: cleanNumber(raw.Offroad)
+    }
   };
+}
+
+function normalizeDistribution(val: string): number {
+  const num = cleanNumber(val);
+  if (num > 0 && num < 1) return num * 100;
+  return num || 50;
+}
+
+function mapCategory(type: string): FH5Car['category'] {
+  // Simple mapping, default to 'modern'
+  const t = (type || '').toLowerCase();
+  if (t.includes('retro')) return 'retro';
+  if (t.includes('classic')) return 'classic';
+  if (t.includes('rally')) return 'rally';
+  if (t.includes('offroad') || t.includes('buggy')) return 'offroad';
+  if (t.includes('truck') || t.includes('pickup')) return 'truck';
+  if (t.includes('drift')) return 'drift';
+  if (t.includes('super')) return 'super';
+  if (t.includes('hyper')) return 'hyper';
+  if (t.includes('muscle')) return 'muscle';
+  if (t.includes('gt')) return 'gt';
+  if (t.includes('hot hatch')) return 'hot-hatch';
+  return 'modern';
+}
+
+function normalizePlacement(val?: string): 'Front' | 'Mid' | 'Rear' | undefined {
+  const t = String(val || '').toLowerCase();
+  if (t.includes('front')) return 'Front';
+  if (t.includes('mid')) return 'Mid';
+  if (t.includes('rear')) return 'Rear';
+  return undefined;
+}
+
+function normalizeOpenTop(val?: string): boolean | undefined {
+  const t = String(val || '').toLowerCase();
+  if (!t) return undefined;
+  if (['yes', 'true', 'open', 'y'].some(x => t.includes(x))) return true;
+  if (['no', 'false', 'closed', 'n'].some(x => t.includes(x))) return false;
+  return undefined;
 }
 
 async function main() {
   if (!fs.existsSync(CSV_PATH)) {
     console.error(`❌ File not found: ${CSV_PATH}`);
-    console.log("Please place your 'cars.csv' in the root directory.");
+    console.log("Please download the 'Cars' sheet as CSV and place it in the root directory as 'cars.csv'.");
     process.exit(1);
   }
 
@@ -124,10 +204,25 @@ async function main() {
   const content = fs.readFileSync(CSV_PATH, 'utf-8');
   const rawCars = parseCSV(content);
   
+  if (rawCars.length === 0) {
+    console.error("❌ No cars found in CSV.");
+    process.exit(1);
+  }
+
+  // Debug: Print headers found
+  console.log("Found columns:", Object.keys(rawCars[0]).join(', '));
+  
   console.log(`Found ${rawCars.length} cars. Mapping...`);
   const mappedCars = rawCars.map(mapToSchema);
   
-  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(mappedCars, null, 2));
+  const ts = [
+    "import { FH5Car } from '../types/car';",
+    "",
+    "export const importedCars: FH5Car[] = ",
+    JSON.stringify(mappedCars, null, 2),
+    ";"
+  ].join('\n');
+  fs.writeFileSync(OUTPUT_PATH, ts);
   console.log(`✅ Successfully imported ${mappedCars.length} cars to ${OUTPUT_PATH}`);
 }
 
