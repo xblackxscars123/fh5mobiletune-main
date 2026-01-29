@@ -3,7 +3,7 @@ import path from 'path';
 import * as XLSX from 'xlsx';
 import { fileURLToPath } from 'url';
 
-// Robust import for xlsx
+// Robust import for xlsx to handle ESM/CommonJS interop
 const xlsxModule = (XLSX && XLSX.default) ? XLSX.default : XLSX;
 
 const __filename = fileURLToPath(import.meta.url);

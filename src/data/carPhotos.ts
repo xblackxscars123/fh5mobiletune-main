@@ -1,4 +1,4 @@
-import type { FH5Car } from './carDatabase';
+import type { FH5Car } from '../types/car';
 
 // Interface for car photo data
 export interface CarPhoto {
