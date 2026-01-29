@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Radio, BookOpen, Wrench, HelpCircle, Lightbulb, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { SetupTabs } from '@/components/guide/SetupTabs';
 import { TelemetryDataCard } from '@/components/guide/TelemetryDataCard';
 import { IssueFixTable } from '@/components/guide/IssueFixTable';

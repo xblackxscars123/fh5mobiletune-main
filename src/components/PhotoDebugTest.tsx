@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FH5Car } from '@/data/carDatabase';
 import { getMainCarPhoto, getFallbackCarImage, loadCarPhotos } from '@/data/carPhotos';
 import { Card } from '@/components/ui/card';

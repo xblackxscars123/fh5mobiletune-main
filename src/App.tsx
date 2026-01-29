@@ -27,15 +27,17 @@ const PageLoader = () => (
   </div>
 );
 
+import RouteError from "./components/RouteError";
+
 const router = createBrowserRouter(
   [
-    { path: "/", element: <Index /> },
-    { path: "/cars", element: <Cars /> },
-    { path: "/community", element: <Community /> },
-    { path: "/shop", element: <Shop /> },
-    { path: "/shop/product/:handle", element: <ProductDetail /> },
-    { path: "/telemetry-guide", element: <TelemetryGuide /> },
-    { path: "*", element: <NotFound /> },
+    { path: "/", element: <Index />, errorElement: <RouteError /> },
+    { path: "/cars", element: <Cars />, errorElement: <RouteError /> },
+    { path: "/community", element: <Community />, errorElement: <RouteError /> },
+    { path: "/shop", element: <Shop />, errorElement: <RouteError /> },
+    { path: "/shop/product/:handle", element: <ProductDetail />, errorElement: <RouteError /> },
+    { path: "/telemetry-guide", element: <TelemetryGuide />, errorElement: <RouteError /> },
+    { path: "*", element: <NotFound />, errorElement: <RouteError /> },
   ],
   {
     future: {
