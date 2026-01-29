@@ -89,20 +89,6 @@ export async function createCarPhotoMap(): Promise<Map<string, CarPhotoCollectio
   
   photos.forEach(photo => {
     photoMap.set(photo.id, photo);
-    const year = Number(photo.identity?.year || 0);
-    const make = photo.identity?.make || '';
-    const identityModel = photo.identity?.model || extractModelFromRawText(photo.rawTextSample || '', photo.identity?.year || '', make) || '';
-    if (year && make && identityModel) {
-      const identityKey = buildIdentityKey(year, make, identityModel);
-      if (!photoMap.has(identityKey)) {
-        photoMap.set(identityKey, photo);
-      }
-      const strippedModel = normalizeModel(make, identityModel);
-      const strippedKey = `${year}-${normalizeText(make)}-${strippedModel}`;
-      if (!photoMap.has(strippedKey)) {
-        photoMap.set(strippedKey, photo);
-      }
-    }
   });
   
   return photoMap;

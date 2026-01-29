@@ -17,6 +17,13 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [photoMap, setPhotoMap] = useState<Map<string, any>>(new Map());
 
+  useEffect(() => {
+    if (selectedCar) {
+      setQuery(getCarDisplayName(selectedCar));
+    }
+  }, [selectedCar]);
+
+
   // Load photo map once when component mounts
   useEffect(() => {
     createCarPhotoMap().then(map => {
