@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
+import { FH5Car } from '@/data/carDatabase';
 import { getMainCarPhoto, getFallbackCarImage, loadCarPhotos } from '@/data/carPhotos';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

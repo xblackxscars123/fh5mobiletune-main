@@ -26,12 +26,19 @@ console.log(`Using sheet: ${sheetName}`);
 const sheet = workbook.Sheets[sheetName];
 const rows = xlsxModule.utils.sheet_to_json(sheet, { defval: '' });
 
-const normalizeKey = (v) => String(v).toLowerCase().replace(/[^a-z0-9]+/g, '');
+if (rows.length > 0) {
+  console.log('First row keys:', Object.keys(rows[0]));
+  console.log('First row sample:', JSON.stringify(rows[0]).substring(0, 200));
+}
+
+const normalizeKey = (v) => String(v).toLowerCase().replace(/[^a-z0-9%]+/g, '');
 
 const headerMap = {
   year: 'year',
   make: 'make',
+  makes134: 'make', // Specific to this sheet version
   model: 'model',
+  models902: 'model', // Specific to this sheet version
   cartype: 'car_type',
   type: 'car_type',
   division: 'car_type',
@@ -39,18 +46,24 @@ const headerMap = {
   pi: 'default_pi',
   rarity: 'rarity',
   value: 'value',
+  carvalue: 'value',
   boost: 'boost',
+  feboost: 'boost',
   drive: 'drive_type',
   hp: 'horsepower',
   horsepower: 'horsepower',
   torque: 'torque',
+  t: 'torque',
   weight: 'weight',
   weightlbs: 'weight',
+  wt: 'weight',
   front: 'weight_distribution',
   frontpercent: 'weight_distribution',
   weightdistribution: 'weight_distribution',
+  '%': 'weight_distribution',
   disp: 'displacement',
   displacement: 'displacement',
+  displcc: 'displacement',
   gears: 'gear_count',
   gearcount: 'gear_count',
   ftire: 'front_tire_width',
@@ -58,14 +71,20 @@ const headerMap = {
   rtire: 'rear_tire_width',
   reartirewidth: 'rear_tire_width',
   speed: 'stat_speed',
+  s1: 'stat_speed',
   handling: 'stat_handling',
   hand: 'stat_handling',
+  h: 'stat_handling',
   accel: 'stat_acceleration',
   acceleration: 'stat_acceleration',
+  a: 'stat_acceleration',
   launch: 'stat_launch',
+  l: 'stat_launch',
   brake: 'stat_braking',
   braking: 'stat_braking',
-  offroad: 'stat_offroad'
+  b: 'stat_braking',
+  offroad: 'stat_offroad',
+  o: 'stat_offroad'
 };
 
 const cleanNumber = (v) => {

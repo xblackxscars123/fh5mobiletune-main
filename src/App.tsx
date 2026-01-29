@@ -53,9 +53,11 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <Suspense fallback={<PageLoader />}>
-          <RouterProvider router={router} />
-        </Suspense>
+        <ErrorBoundary fallbackTitle="Application Error">
+          <Suspense fallback={<PageLoader />}>
+            <RouterProvider router={router} />
+          </Suspense>
+        </ErrorBoundary>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
