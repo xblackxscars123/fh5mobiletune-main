@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FH5Car } from '@/types/car';
 import { searchCars, getCarDisplayName } from '@/data/carDatabase';
 import { getVerifiedSpecs } from '@/data/verifiedCarSpecs';
+import { useMobileDebounce } from '@/hooks/useMobileOptimization';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Search, Car, CheckCircle } from 'lucide-react';
@@ -16,16 +17,25 @@ interface CarSelectorProps {
 
 export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [photoMap, setPhotoMap] = useState<Map<string, CarPhotoCollection>>(new Map());
   const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>('bottom');
 
+  // Debounce search for mobile performance
+  const debouncedSetQuery = useMobileDebounce(setDebouncedQuery, 300);
+
   useEffect(() => {
     if (selectedCar) {
       setQuery(getCarDisplayName(selectedCar));
+      setDebouncedQuery(getCarDisplayName(selectedCar));
     }
   }, [selectedCar]);
 
+  // Update debounced query when input changes
+  useEffect(() => {
+    debouncedSetQuery(query);
+  }, [query, debouncedSetQuery]);
 
   // Load photo map once when component mounts
   useEffect(() => {
@@ -36,7 +46,7 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
     });
   }, []);
 
-  const results = useMemo(() => searchCars(query), [query]);
+  const results = useMemo(() => searchCars(debouncedQuery), [debouncedQuery]);
 
   return (
     <div className="space-y-3">

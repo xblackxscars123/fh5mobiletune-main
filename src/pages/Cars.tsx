@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { fh5Cars, FH5Car, getCarDisplayName } from '@/data/carDatabase';
+import { fh5Cars, getCarDisplayName } from '@/data/carDatabase';
+import { FH5Car } from '@/types/car';
 import { createCarPhotoMap, getFallbackCarImage, getMainCarPhoto, type CarPhotoCollection } from '@/data/carPhotos';
 import { getVerifiedSpecs, hasVerifiedSpecs } from '@/data/verifiedCarSpecs';
+import { useMobileDebounce } from '@/hooks/useMobileOptimization';
 import { Search, ArrowLeft, Car, CheckCircle, Filter } from 'lucide-react';
 
 type SortOption = 'name' | 'year-asc' | 'year-desc' | 'make';
@@ -18,6 +20,7 @@ export default function Cars() {
   const location = useLocation();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [makeFilter, setMakeFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [driveFilter, setDriveFilter] = useState<string>('all');
@@ -26,6 +29,14 @@ export default function Cars() {
   const [currentPage, setCurrentPage] = useState(1);
   const [photoMap, setPhotoMap] = useState<Map<string, CarPhotoCollection> | null>(null);
   const itemsPerPage = 50;
+
+  // Debounce search for mobile performance
+  const debouncedSetSearch = useMobileDebounce(setDebouncedSearch, 300);
+
+  // Update debounced search when input changes
+  useEffect(() => {
+    debouncedSetSearch(search);
+  }, [search, debouncedSetSearch]);
 
   // Get unique makes and categories
   const uniqueMakes = useMemo(() => {
@@ -42,9 +53,9 @@ export default function Cars() {
   const filteredCars = useMemo(() => {
     let cars = [...fh5Cars];
 
-    // Search filter
-    if (search) {
-      const searchLower = search.toLowerCase();
+    // Search filter (using debounced search for performance)
+    if (debouncedSearch) {
+      const searchLower = debouncedSearch.toLowerCase();
       cars = cars.filter(car => 
         car.make.toLowerCase().includes(searchLower) ||
         car.model.toLowerCase().includes(searchLower) ||
@@ -89,7 +100,7 @@ export default function Cars() {
     }
 
     return cars;
-  }, [search, makeFilter, categoryFilter, driveFilter, sortBy, unverifiedOnly]);
+  }, [debouncedSearch, makeFilter, categoryFilter, driveFilter, sortBy, unverifiedOnly]);
 
   // Pagination
   const totalPages = Math.ceil(filteredCars.length / itemsPerPage);

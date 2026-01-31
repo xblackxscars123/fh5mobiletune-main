@@ -2,9 +2,39 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 export interface BackgroundImage {
   src: string;
+  lowResSrc?: string; // For mobile optimization
   alt: string;
   focusX?: number; // -1 to 1 for Ken Burns drift direction
   focusY?: number;
+}
+
+interface UseBackgroundSlideshowOptions {
+  interval?: number;
+  transitionDuration?: number;
+  preloadCount?: number;
+  enableOnMobile?: boolean;
+  reduceQualityOnMobile?: boolean;
+}
+
+interface SlideshowState {
+  currentIndex: number;
+  nextIndex: number;
+  isTransitioning: boolean;
+  isPaused: boolean;
+  transitionType: TransitionType;
+  failedImages: Set<string>;
+}
+
+interface UseSlideshowReturn {
+  currentImage: BackgroundImage;
+  nextImage: BackgroundImage;
+  isTransitioning: boolean;
+  isPaused: boolean;
+  transitionType: TransitionType;
+  pause: () => void;
+  play: () => void;
+  goToNext: () => void;
+  goToPrev: () => void;
 }
 
 // 10 unique transition effects
