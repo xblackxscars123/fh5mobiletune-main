@@ -13,6 +13,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Loader2, LogIn, UserPlus } from 'lucide-react';
+import { validateEmail, validateDisplayName } from '@/lib/security';
 
 interface AuthModalProps {
   open: boolean;
@@ -31,9 +32,17 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
     e.preventDefault();
     setLoading(true);
 
+    // Validate email
+    const sanitizedEmail = email.toLowerCase().trim();
+    if (!validateEmail(sanitizedEmail)) {
+      toast.error('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: sanitizedEmail,
         password,
       });
 
@@ -56,7 +65,7 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
               onClick: async () => {
                 const { error: resendError } = await supabase.auth.resend({
                   type: 'signup',
-                  email,
+                  email: sanitizedEmail,
                   options: {
                     emailRedirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || `${window.location.origin}/`
                   }
@@ -79,16 +88,27 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
     e.preventDefault();
     setLoading(true);
 
+    // Validate email
+    const sanitizedEmail = email.toLowerCase().trim();
+    if (!validateEmail(sanitizedEmail)) {
+      toast.error('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    // Validate and sanitize display name
+    const sanitizedName = validateDisplayName(displayName);
+
     try {
       const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: sanitizedEmail,
         password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            display_name: displayName || email.split('@')[0],
+            display_name: sanitizedName,
           },
         },
       });

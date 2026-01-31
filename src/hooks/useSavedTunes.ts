@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { Json } from '@/integrations/supabase/types';
+import { safeJsonParse, validateTuneName, validateCarSpecs } from '@/lib/security';
 
 export interface SavedTune {
   id: string;
@@ -76,10 +77,10 @@ export function useSavedTunes() {
       // Load from localStorage
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) {
-        try {
-          setSavedTunes(JSON.parse(stored));
-        } catch (e) {
-          console.error('Error parsing stored tunes:', e);
+        const parsed = safeJsonParse(stored, []);
+        if (Array.isArray(parsed)) {
+          setSavedTunes(parsed);
+        } else {
           setSavedTunes([]);
         }
       }
@@ -104,14 +105,19 @@ export function useSavedTunes() {
     specs: CarSpecs,
     tuneOverride?: TuneSettings
   ): Promise<SavedTune | null> => {
-    const tune = tuneOverride || calculateTune(specs, tuneType);
+    // Validate and sanitize inputs
+    const sanitizedName = validateTuneName(name);
+    const sanitizedCarName = validateTuneName(carName);
+    const validatedSpecs = validateCarSpecs(specs) as unknown as CarSpecs;
+    
+    const tune = tuneOverride || calculateTune(validatedSpecs, tuneType);
     
     const newTune: SavedTune = {
       id: crypto.randomUUID(),
-      name,
-      carName,
+      name: sanitizedName,
+      carName: sanitizedCarName,
       tuneType,
-      specs,
+      specs: validatedSpecs,
       tune,
       createdAt: new Date().toISOString(),
       isPublic: false,

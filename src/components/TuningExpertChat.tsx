@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { CarSpecs, TuneType, TuneSettings, UnitSystem } from '@/lib/tuningCalculator';
 import { sendGeminiMessage } from '@/lib/gemini';
+import { sanitizeChatMessage, safeJsonParse } from '@/lib/security';
 import {
   parseSuggestionsWithImpact,
   calculateTuneImpact,
@@ -71,7 +72,7 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion, user }: Tunin
       try {
         const saved = localStorage.getItem(CHAT_HISTORY_KEY);
         if (saved) {
-          const parsed = JSON.parse(saved);
+          const parsed = safeJsonParse(saved, []);
           if (Array.isArray(parsed)) {
             setMessages(parsed.slice(-MAX_MESSAGES));
           }
@@ -217,8 +218,12 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion, user }: Tunin
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    // Sanitize user input
+    const sanitizedInput = sanitizeChatMessage(input.trim());
+    if (!sanitizedInput) return;
+
     setError(null);
-    const userMessage: Message = { role: 'user', content: input.trim() };
+    const userMessage: Message = { role: 'user', content: sanitizedInput };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
@@ -805,16 +810,16 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion, user }: Tunin
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={isAuthenticated === false ? "Sign in to chat..." : tuneContext?.carName ? `Ask about your ${tuneContext.tuneType} tune...` : "Ask about tuning..."}
+                  placeholder={!user ? "Sign in to chat..." : tuneContext?.carName ? `Ask about your ${tuneContext.tuneType} tune...` : "Ask about tuning..."}
                   className="flex-1 bg-[hsl(220,15%,12%)] border border-[hsl(220,15%,20%)] rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 disabled:opacity-50"
-                  disabled={isLoading || isAuthenticated === false}
+                  disabled={isLoading || !user}
                 />
                 <Button
                   onClick={() => {
                     const name = prompt('Profile name:', tuneContext?.carName);
                     if (name) saveTuneProfile(name);
                   }}
-                  disabled={!tuneContext?.currentTune || isAuthenticated === false}
+                  disabled={!tuneContext?.currentTune || !user}
                   variant="ghost"
                   size="sm"
                   title="Save current tune as profile"
@@ -824,7 +829,7 @@ export function TuningExpertChat({ tuneContext, onApplySuggestion, user }: Tunin
                 </Button>
                 <Button
                   onClick={handleSend}
-                  disabled={!input.trim() || isLoading || isAuthenticated === false}
+                  disabled={!input.trim() || isLoading || !user}
                   className="bg-primary hover:bg-primary/80 text-black px-3"
                 >
                   {isLoading ? (

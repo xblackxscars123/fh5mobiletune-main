@@ -1,4 +1,5 @@
 import { CarSpecs, TuneType } from './tuningCalculator';
+import { validateUrlParam, safeJsonParse } from './security';
 
 export interface ShareableTune {
   specs: CarSpecs;
@@ -23,7 +24,7 @@ export function encodeTuneToURL(tune: ShareableTune): string {
       tq: tune.specs.torque,
       dp: tune.specs.displacement,
       g: tune.specs.gearCount,
-      tw: tune.specs.tireWidth,
+      tw: tune.specs.frontTireWidth || tune.specs.rearTireWidth,
       tp: tune.specs.tireProfile,
       rs: tune.specs.rimSize,
       tc: tune.specs.tireCircumference,
@@ -46,8 +47,13 @@ export function encodeTuneToURL(tune: ShareableTune): string {
  */
 export function decodeTuneFromURL(encoded: string): ShareableTune | null {
   try {
-    const jsonString = atob(encoded);
-    const compact = JSON.parse(jsonString);
+    // Validate and sanitize the input parameter
+    const sanitizedEncoded = validateUrlParam(encoded, 2000);
+    if (!sanitizedEncoded) return null;
+    
+    const jsonString = atob(sanitizedEncoded);
+    const compact = safeJsonParse(jsonString, null);
+    if (!compact) return null;
     
     // Validate and reconstruct the full tune object
     const specs: CarSpecs = {
@@ -61,8 +67,9 @@ export function decodeTuneFromURL(encoded: string): ShareableTune | null {
       torque: Number(compact.tq) || undefined,
       displacement: Number(compact.dp) || undefined,
       gearCount: Number(compact.g) || 6,
-      tireWidth: Number(compact.tw) || 245,
-      tireProfile: Number(compact.tp) || 40,
+      frontTireWidth: Number(compact.tw) || undefined,
+      rearTireWidth: Number(compact.tw) || undefined,
+      tireProfile: Number(compact.tp) || undefined,
       rimSize: Number(compact.rs) || 19,
       tireCircumference: Number(compact.tc) || 2.1,
     };
