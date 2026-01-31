@@ -5,6 +5,7 @@ import { CarSpecs, TuneType, TuneVariant, calculateTune, UnitSystem, TuneSetting
 import { parseTuneFromCurrentURL } from '@/lib/tuneShare';
 import { FH5Car } from '@/types/car';
 import { getCarDisplayName } from '@/data/carDatabase';
+import { getVerifiedSpecs, hasVerifiedSpecs } from '@/data/verifiedCarSpecs';
 import { applyBalanceStiffness } from '@/components/BalanceStiffnessSliders';
 
 const defaultSpecs: CarSpecs = {
@@ -70,13 +71,30 @@ export const useTuneState = ({ user, syncLocalTunesToCloud }: UseTuneStateOption
       }
 
       setSelectedCar(car);
-      setSpecs(prev => ({
-        ...prev,
-        weight: car.weight,
-        weightDistribution: car.weightDistribution,
-        driveType: car.driveType
-      }));
-      toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
+      
+      // Check for verified specs first
+      const verifiedSpecs = getVerifiedSpecs(car.year, car.make, car.model);
+      
+      if (verifiedSpecs) {
+        // Use verified specs if available
+        setSpecs(prev => ({ 
+          ...prev, 
+          weight: verifiedSpecs.weight, 
+          weightDistribution: verifiedSpecs.weightDistribution, 
+          driveType: verifiedSpecs.driveType,
+          piClass: car.piClass // Keep original PI class for tune calculations
+        }));
+        toast.success(`Loaded ${car.year} ${car.make} ${car.model} (Verified Specs)`);
+      } else {
+        // Use default car specs
+        setSpecs(prev => ({
+          ...prev,
+          weight: car.weight,
+          weightDistribution: car.weightDistribution,
+          driveType: car.driveType
+        }));
+        toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
+      }
 
       window.history.replaceState({}, document.title);
     }
@@ -125,17 +143,35 @@ export const useTuneState = ({ user, syncLocalTunesToCloud }: UseTuneStateOption
   // Callback handlers
   const handleCarSelect = useCallback((car: FH5Car) => {
     setSelectedCar(car);
-    setSpecs(prev => ({ 
-      ...prev, 
-      weight: car.weight, 
-      weightDistribution: car.weightDistribution, 
-      driveType: car.driveType 
-    }));
+    
+    // Check for verified specs first
+    const verifiedSpecs = getVerifiedSpecs(car.year, car.make, car.model);
+    
+    if (verifiedSpecs) {
+      // Use verified specs if available
+      setSpecs(prev => ({ 
+        ...prev, 
+        weight: verifiedSpecs.weight, 
+        weightDistribution: verifiedSpecs.weightDistribution, 
+        driveType: verifiedSpecs.driveType,
+        piClass: car.piClass // Keep original PI class for tune calculations
+      }));
+      toast.success(`Loaded ${car.year} ${car.make} ${car.model} (Verified Specs)`);
+    } else {
+      // Use default car specs
+      setSpecs(prev => ({ 
+        ...prev, 
+        weight: car.weight, 
+        weightDistribution: car.weightDistribution, 
+        driveType: car.driveType 
+      }));
+      toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
+    }
+    
     setVariant(defaultTuneVariantByType[tuneType]);
     setBalance(0);
     setStiffness(50);
     setManualOverrides({});
-    toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
   }, [tuneType]);
 
   const handleCalculate = useCallback(() => {

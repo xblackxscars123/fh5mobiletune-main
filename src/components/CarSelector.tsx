@@ -2,11 +2,12 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FH5Car } from '@/types/car';
 import { searchCars, getCarDisplayName } from '@/data/carDatabase';
+import { getVerifiedSpecs } from '@/data/verifiedCarSpecs';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Search, Car } from 'lucide-react';
+import { Search, Car, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getMainCarPhoto, getFallbackCarImage, createCarPhotoMap } from '@/data/carPhotos';
+import { getMainCarPhoto, getFallbackCarImage, createCarPhotoMap, type CarPhotoCollection } from '@/data/carPhotos';
 
 interface CarSelectorProps {
   onSelect: (car: FH5Car) => void;
@@ -16,7 +17,7 @@ interface CarSelectorProps {
 export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [photoMap, setPhotoMap] = useState<Map<string, any>>(new Map());
+  const [photoMap, setPhotoMap] = useState<Map<string, CarPhotoCollection>>(new Map());
   const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>('bottom');
 
   useEffect(() => {
@@ -79,6 +80,11 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
             {results.map((car) => {
               const mainPhoto = getMainCarPhoto(car, photoMap);
               const photoUrl = mainPhoto ? mainPhoto.url : getFallbackCarImage(car);
+              const verifiedSpecs = getVerifiedSpecs(car.year, car.make, car.model);
+              const isVerified = verifiedSpecs !== null;
+              const weight = verifiedSpecs?.weight ?? car.weight;
+              const weightDistribution = verifiedSpecs?.weightDistribution ?? car.weightDistribution;
+              const driveType = verifiedSpecs?.driveType ?? car.driveType;
               
               return (
                 <button
@@ -95,9 +101,15 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <p className="font-display text-sm truncate">{getCarDisplayName(car)}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-display text-sm truncate">{getCarDisplayName(car)}</p>
+                        {isVerified && (
+                          <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">
-                        {car.driveType} • {car.weight} lbs • {car.weightDistribution}% front
+                        {driveType} • {weight.toLocaleString()} lbs • {weightDistribution}% front
+                        {isVerified && <span className="text-green-400 ml-1">• Verified</span>}
                       </p>
                     </div>
                     <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground whitespace-nowrap">
@@ -124,30 +136,43 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
         )}
       </div>
 
-      {selectedCar && (
-        <Card className="p-3 rounded-lg bg-primary/10 border border-primary/30 animate-fade-in">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <p className="font-display text-primary text-sm">{getCarDisplayName(selectedCar)}</p>
-              <p className="text-xs text-muted-foreground">
-                {selectedCar.driveType} • {selectedCar.weight} lbs • {selectedCar.weightDistribution}% front • PI {selectedCar.defaultPI}
-              </p>
+      {selectedCar && (() => {
+        const verifiedSpecs = getVerifiedSpecs(selectedCar.year, selectedCar.make, selectedCar.model);
+        const isVerified = verifiedSpecs !== null;
+        const weight = verifiedSpecs?.weight ?? selectedCar.weight;
+        const weightDistribution = verifiedSpecs?.weightDistribution ?? selectedCar.weightDistribution;
+        const driveType = verifiedSpecs?.driveType ?? selectedCar.driveType;
+        
+        return (
+          <Card className="p-3 rounded-lg bg-primary/10 border border-primary/30 animate-fade-in">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-display text-primary text-sm truncate">{getCarDisplayName(selectedCar)}</p>
+                  {isVerified && <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {driveType} • {weight.toLocaleString()} lbs • {weightDistribution}% front
+                  {isVerified && <span className="text-green-400 ml-1">• Verified</span>}
+                  {' '}• PI {selectedCar.defaultPI}
+                </p>
+              </div>
             </div>
-          </div>
-          
-          <div className="relative w-full h-20">
-            <img
-              src={getMainCarPhoto(selectedCar, photoMap)?.url || getFallbackCarImage(selectedCar)}
-              alt={`${selectedCar.make} ${selectedCar.model}`}
-              className="w-full h-full object-cover rounded-md border border-primary/30"
-              onError={(e) => {
-                e.currentTarget.src = getFallbackCarImage(selectedCar);
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-md" />
-          </div>
-        </Card>
-      )}
+            
+            <div className="relative w-full h-20">
+              <img
+                src={getMainCarPhoto(selectedCar, photoMap)?.url || getFallbackCarImage(selectedCar)}
+                alt={`${selectedCar.make} ${selectedCar.model}`}
+                className="w-full h-full object-cover rounded-md border border-primary/30"
+                onError={(e) => {
+                  e.currentTarget.src = getFallbackCarImage(selectedCar);
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-md" />
+            </div>
+          </Card>
+        );
+      })()}
     </div>
   );
 }
