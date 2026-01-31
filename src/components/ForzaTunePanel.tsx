@@ -3,11 +3,13 @@ import { TuneSettings, DriveType, TuneType, tuneTypeDescriptions, UnitSystem, co
 import { TuningTooltip } from '@/components/TuningTooltip';
 import { Button } from '@/components/ui/button';
 import { AdvancedModeToggle } from '@/components/AdvancedModeToggle';
+import { BuildManager } from '@/components/BuildManager';
 import { outputExplanations } from '@/data/tuningGuide';
 import { cn } from '@/lib/utils';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Moon, Sun } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ForzaTunePanelProps {
   tune: TuneSettings;
@@ -130,6 +132,7 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem, carName 
   const [activeTab, setActiveTab] = useState<TuneTab>('tyres');
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const tuneInfo = tuneTypeDescriptions[tuneType];
   
   // Get visible tabs based on advanced mode
@@ -460,6 +463,15 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem, carName 
             💡 Hover 1.5s on any value for explanation
           </div>
           <Button 
+            onClick={toggleDarkMode}
+            variant="outline"
+            size="sm"
+            className="gap-1.5 h-7 text-xs border-[hsl(220,15%,25%)] hover:bg-[hsl(var(--racing-cyan))] hover:text-black hover:border-[hsl(var(--racing-cyan))]"
+          >
+            {isDarkMode ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+            <span className="hidden sm:inline">{isDarkMode ? 'Light' : 'Dark'}</span>
+          </Button>
+          <Button 
             onClick={handleCopyAll}
             variant="outline"
             size="sm"
@@ -482,6 +494,16 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem, carName 
             Basic mode shows essential tuning parameters. Advanced mode reveals additional controls like alignment, damping, aero, and differential settings.
           </div>
         )}
+      </div>
+      
+      {/* Build Manager */}
+      <div className="bg-[hsl(220,18%,7%)] px-3 sm:px-4 py-2 border-b border-[hsl(220,15%,18%)]">
+        <BuildManager 
+          tune={tune}
+          tuneType={tuneType}
+          driveType={driveType}
+          carName={carName}
+        />
       </div>
       
       {/* Tab Navigation - Scrollable on mobile with smooth height transition */}

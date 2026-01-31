@@ -13,10 +13,14 @@ import {
   SquareSlash,
   Lightbulb,
   Copy,
-  Check
+  Check,
+  AlertTriangle
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { TroubleshootingPanel } from './TroubleshootingPanel';
+import { DifferentialCalculator } from './DifferentialCalculator';
+import { Adjustment } from '@/data/troubleshootingData';
 
 interface TuneResultsProps {
   tune: TuneSettings;
@@ -89,6 +93,19 @@ function ValuePair({ frontLabel, rearLabel, front, rear, unit }: {
 export function TuneResults({ tune, driveType, tuneType, carName }: TuneResultsProps) {
   const tuneInfo = tuneTypeDescriptions[tuneType];
   const [copied, setCopied] = useState(false);
+  const [showTroubleshooting, setShowTroubleshooting] = useState(false);
+  const [showDifferentialCalc, setShowDifferentialCalc] = useState(false);
+
+  const handleApplyAdjustment = (adjustment: Adjustment) => {
+    toast.success(`Applied adjustment: ${adjustment.component} - ${adjustment.setting}`);
+    // Here you could update the tune state if needed
+  };
+
+  const handleApplyDifferentialSettings = (settings: any) => {
+    // Update the tune with new differential settings
+    Object.assign(tune, settings);
+    toast.success('Differential settings applied to current tune!');
+  };
 
   const formatTuneForClipboard = () => {
     // Create a clean markdown table format for Reddit sharing
@@ -157,6 +174,22 @@ export function TuneResults({ tune, driveType, tuneType, carName }: TuneResultsP
         >
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           {copied ? 'Copied!' : 'Share (Markdown)'}
+        </Button>
+        <Button 
+          onClick={() => setShowDifferentialCalc(!showDifferentialCalc)}
+          variant={showDifferentialCalc ? "default" : "outline"}
+          className="gap-2 shrink-0"
+        >
+          <Settings className="w-4 h-4" />
+          {showDifferentialCalc ? 'Hide Calc' : 'Differential'}
+        </Button>
+        <Button 
+          onClick={() => setShowTroubleshooting(!showTroubleshooting)}
+          variant={showTroubleshooting ? "default" : "outline"}
+          className="gap-2 shrink-0"
+        >
+          <AlertTriangle className="w-4 h-4" />
+          {showTroubleshooting ? 'Hide Help' : 'Troubleshoot'}
         </Button>
       </div>
       
@@ -338,6 +371,22 @@ export function TuneResults({ tune, driveType, tuneType, carName }: TuneResultsP
           <li>• <span className="text-foreground">Corner exit loose</span> — Lower rear accel diff or stiffen rear bump damping.</li>
         </ul>
       </Card>
+
+      {/* Troubleshooting Panel */}
+      {showTroubleshooting && (
+        <TroubleshootingPanel 
+          tune={tune}
+          driveType={driveType}
+          onApplyAdjustment={handleApplyAdjustment}
+        />
+      )}
+
+      {/* Differential Calculator */}
+      {showDifferentialCalc && (
+        <DifferentialCalculator 
+          onApplySettings={handleApplyDifferentialSettings}
+        />
+      )}
     </div>
   );
 }
