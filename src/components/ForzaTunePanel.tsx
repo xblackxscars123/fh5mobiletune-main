@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { TuneSettings, DriveType, TuneType, tuneTypeDescriptions, UnitSystem, convertTuneToUnits, getUnitLabels } from '@/lib/tuningCalculator';
 import { TuningTooltip } from '@/components/TuningTooltip';
 import { Button } from '@/components/ui/button';
+import { AdvancedModeToggle } from '@/components/AdvancedModeToggle';
 import { outputExplanations } from '@/data/tuningGuide';
 import { cn } from '@/lib/utils';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
@@ -18,17 +19,25 @@ interface ForzaTunePanelProps {
 
 type TuneTab = 'tyres' | 'gearing' | 'alignment' | 'antiroll' | 'springs' | 'damping' | 'aero' | 'brake' | 'differential';
 
-const tabs: { id: TuneTab; label: string }[] = [
+// Basic tabs (always visible)
+const basicTabs: { id: TuneTab; label: string }[] = [
   { id: 'tyres', label: 'TYRES' },
   { id: 'gearing', label: 'GEARING' },
-  { id: 'alignment', label: 'ALIGNMENT' },
   { id: 'antiroll', label: 'ANTIROLL BARS' },
   { id: 'springs', label: 'SPRINGS' },
+  { id: 'brake', label: 'BRAKE' },
+];
+
+// Advanced tabs (only visible in advanced mode)
+const advancedTabs: { id: TuneTab; label: string }[] = [
+  { id: 'alignment', label: 'ALIGNMENT' },
   { id: 'damping', label: 'DAMPING' },
   { id: 'aero', label: 'AERO' },
-  { id: 'brake', label: 'BRAKE' },
   { id: 'differential', label: 'DIFFERENTIAL' },
 ];
+
+// All tabs (for reference)
+const allTabs: { id: TuneTab; label: string }[] = [...basicTabs, ...advancedTabs];
 
 function ForzaSlider({ 
   label, 
@@ -119,8 +128,15 @@ function ForzaValueRow({ label, value, unit = '' }: { label: string; value: stri
 
 export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem, carName }: ForzaTunePanelProps) {
   const [activeTab, setActiveTab] = useState<TuneTab>('tyres');
+  const [isAdvancedMode, setIsAdvancedMode] = useState(false);
   const [copied, setCopied] = useState(false);
   const tuneInfo = tuneTypeDescriptions[tuneType];
+  
+  // Get visible tabs based on advanced mode
+  const visibleTabs = isAdvancedMode ? allTabs : basicTabs;
+  
+  // Ensure active tab is still visible when switching modes
+  const safeActiveTab = visibleTabs.find(tab => tab.id === activeTab)?.id || visibleTabs[0]?.id || 'tyres';
   
   // Convert tune to selected unit system
   const displayTune = convertTuneToUnits(tune, unitSystem);
@@ -220,18 +236,18 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem, carName 
 
   // Swipe gesture handlers for mobile tab navigation
   const goToNextTab = useCallback(() => {
-    const currentIndex = tabs.findIndex(t => t.id === activeTab);
-    if (currentIndex < tabs.length - 1) {
-      setActiveTab(tabs[currentIndex + 1].id);
+    const currentIndex = visibleTabs.findIndex(t => t.id === safeActiveTab);
+    if (currentIndex < visibleTabs.length - 1) {
+      setActiveTab(visibleTabs[currentIndex + 1].id);
     }
-  }, [activeTab]);
+  }, [safeActiveTab, visibleTabs]);
 
   const goToPrevTab = useCallback(() => {
-    const currentIndex = tabs.findIndex(t => t.id === activeTab);
+    const currentIndex = visibleTabs.findIndex(t => t.id === safeActiveTab);
     if (currentIndex > 0) {
-      setActiveTab(tabs[currentIndex - 1].id);
+      setActiveTab(visibleTabs[currentIndex - 1].id);
     }
-  }, [activeTab]);
+  }, [safeActiveTab, visibleTabs]);
 
   const swipeHandlers = useSwipeGesture({
     onSwipeLeft: goToNextTab,
@@ -455,22 +471,51 @@ export function ForzaTunePanel({ tune, driveType, tuneType, unitSystem, carName 
         </div>
       </div>
       
-      {/* Tab Navigation - Scrollable on mobile */}
-      <div className="flex overflow-x-auto bg-[hsl(220,18%,7%)] border-b border-[hsl(220,15%,18%)] scrollbar-hide">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-display uppercase tracking-wide transition-colors flex-shrink-0 min-w-fit",
-              activeTab === tab.id 
-                ? "bg-[hsl(var(--racing-yellow))] text-black" 
-                : "text-muted-foreground hover:text-foreground hover:bg-[hsl(220,15%,12%)]"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Advanced Mode Toggle */}
+      <div className="bg-[hsl(220,18%,7%)] px-3 sm:px-4 py-2 border-b border-[hsl(220,15%,18%)]">
+        <AdvancedModeToggle 
+          isAdvancedMode={isAdvancedMode}
+          onToggle={setIsAdvancedMode}
+        />
+        {!isAdvancedMode && (
+          <div className="mt-2 text-xs text-muted-foreground">
+            Basic mode shows essential tuning parameters. Advanced mode reveals additional controls like alignment, damping, aero, and differential settings.
+          </div>
+        )}
+      </div>
+      
+      {/* Tab Navigation - Scrollable on mobile with smooth height transition */}
+      <div className="bg-[hsl(220,18%,7%)] border-b border-[hsl(220,15%,18%)] transition-all duration-300 ease-in-out">
+        <div 
+          className="flex overflow-x-auto scrollbar-hide transition-all duration-300 ease-in-out"
+          style={{
+            height: isAdvancedMode ? 'auto' : '48px', // Fixed height for basic mode, auto for advanced
+          }}
+        >
+          {visibleTabs.map((tab, index) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-display uppercase tracking-wide transition-all duration-300 flex-shrink-0 min-w-fit",
+                "transform transition-all duration-300",
+                safeActiveTab === tab.id 
+                  ? "bg-[hsl(var(--racing-yellow))] text-black scale-105" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-[hsl(220,15%,12%)] hover:scale-102",
+                // Animation for new tabs appearing
+                isAdvancedMode && basicTabs.length <= index && [
+                  "animate-in slide-in-from-right-2 fade-in-0 duration-300",
+                  "delay-[var(--animation-delay)]"
+                ]
+              )}
+              style={{
+                '--animation-delay': `${(index - basicTabs.length + 1) * 50}ms`,
+              } as React.CSSProperties}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Content Area with Performance Stats */}
