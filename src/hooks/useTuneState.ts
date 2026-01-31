@@ -79,6 +79,10 @@ export const useTuneState = ({ user, syncLocalTunesToCloud }: UseTuneStateOption
         // Use verified specs if available
         setSpecs(prev => ({ 
           ...prev, 
+          year: car.year,
+          make: car.make,
+          model: car.model,
+          fullname: `${car.year} ${car.make} ${car.model}`,
           weight: verifiedSpecs.weight, 
           weightDistribution: verifiedSpecs.weightDistribution, 
           driveType: verifiedSpecs.driveType,
@@ -89,6 +93,10 @@ export const useTuneState = ({ user, syncLocalTunesToCloud }: UseTuneStateOption
         // Use default car specs
         setSpecs(prev => ({
           ...prev,
+          year: car.year,
+          make: car.make,
+          model: car.model,
+          fullname: `${car.year} ${car.make} ${car.model}`,
           weight: car.weight,
           weightDistribution: car.weightDistribution,
           driveType: car.driveType
@@ -176,6 +184,10 @@ export const useTuneState = ({ user, syncLocalTunesToCloud }: UseTuneStateOption
       // Use verified specs if available
       setSpecs(prev => ({ 
         ...prev, 
+        year: car.year,
+        make: car.make,
+        model: car.model,
+        fullname: `${car.year} ${car.make} ${car.model}`,
         weight: verifiedSpecs.weight, 
         weightDistribution: verifiedSpecs.weightDistribution, 
         driveType: verifiedSpecs.driveType,
@@ -186,6 +198,10 @@ export const useTuneState = ({ user, syncLocalTunesToCloud }: UseTuneStateOption
       // Use default car specs
       setSpecs(prev => ({ 
         ...prev, 
+        year: car.year,
+        make: car.make,
+        model: car.model,
+        fullname: `${car.year} ${car.make} ${car.model}`,
         weight: car.weight, 
         weightDistribution: car.weightDistribution, 
         driveType: car.driveType 
