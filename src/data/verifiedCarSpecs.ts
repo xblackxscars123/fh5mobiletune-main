@@ -12,6 +12,68 @@ export interface VerifiedCarSpec {
 // Key format: "year make model" (lowercase, spaces replaced with -)
 // Example: "1999-nissan-skyline-gt-r-v-spec"
 export const verifiedSpecs: Record<string, VerifiedCarSpec> = {
+  // ===== LIGHTWEIGHT CARS =====
+  '1993-autozam-az-1': {
+    weight: 1587,
+    weightDistribution: 44,
+    driveType: 'RWD',
+    defaultPI: 532,
+    notes: 'Mazda Autozam AZ-1 - Mid-engine kei car',
+  },
+  '2013-caterham-superlight-r500': {
+    weight: 1156,
+    weightDistribution: 47,
+    driveType: 'RWD',
+    defaultPI: 724,
+    notes: 'Caterham R500 - Ultra-lightweight track car',
+  },
+  '2014-bac-mono': {
+    weight: 1192,
+    weightDistribution: 45,
+    driveType: 'RWD',
+    defaultPI: 756,
+    notes: 'BAC Mono - Single-seater track car',
+  },
+  '2013-ariel-atom-500-v8': {
+    weight: 1350,
+    weightDistribution: 42,
+    driveType: 'RWD',
+    defaultPI: 856,
+    notes: 'Ariel Atom 500 V8 - Extreme lightweight',
+  },
+  '2016-ariel-nomad': {
+    weight: 1543,
+    weightDistribution: 50,
+    driveType: 'RWD',
+    defaultPI: 614,
+    notes: 'Ariel Nomad - Off-road buggy',
+  },
+  
+  // ===== VINTAGE RACERS =====
+  '1939-auto-union-type-d': {
+    weight: 1984,
+    weightDistribution: 52,
+    driveType: 'RWD',
+    defaultPI: 418,
+    notes: 'Auto Union Type D - Pre-war Grand Prix car',
+  },
+  '1958-aston-martin-dbr1': {
+    weight: 1764,
+    weightDistribution: 49,
+    driveType: 'RWD',
+    defaultPI: 542,
+    notes: 'Aston Martin DBR1 - Le Mans winner',
+  },
+  
+  // ===== UTV/BUGGIES =====
+  '2018-can-am-maverick-x-rs-turbo-r': {
+    weight: 1741,
+    weightDistribution: 50,
+    driveType: 'AWD',
+    defaultPI: 602,
+    notes: 'Can-Am Maverick X3 Turbo R - UTV',
+  },
+  
   // ===== JDM LEGENDS =====
   '1999-nissan-skyline-gt-r-v-spec': {
     weight: 3450,

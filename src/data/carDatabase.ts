@@ -14,10 +14,10 @@ const typeSpecs: Record<string, { weight: number; distribution: number; driveTyp
   'Super Saloons': { weight: 3800, distribution: 54, driveType: 'AWD', pi: 780, torque: 450, displacement: 4.0, category: 'modern' },
   'GT Cars': { weight: 3600, distribution: 50, driveType: 'RWD', pi: 760, torque: 400, displacement: 4.0, category: 'gt' },
   'Retro Saloons': { weight: 3400, distribution: 54, driveType: 'RWD', pi: 620, torque: 280, displacement: 3.0, category: 'retro' },
-  'Classic Racers': { weight: 2000, distribution: 48, driveType: 'RWD', pi: 550, torque: 300, displacement: 3.0, category: 'classic' },
+  'Classic Racers': { weight: 2200, distribution: 48, driveType: 'RWD', pi: 280, torque: 150, displacement: 2.0, category: 'classic' },
   'Rare Classics': { weight: 2600, distribution: 50, driveType: 'RWD', pi: 520, torque: 250, displacement: 3.0, category: 'classic' },
   'Unlimited Offroad': { weight: 4500, distribution: 52, driveType: 'AWD', pi: 750, torque: 600, displacement: 6.2, category: 'offroad' },
-  'Unlimited Buggies': { weight: 2200, distribution: 48, driveType: 'AWD', pi: 700, torque: 300, displacement: 2.5, category: 'buggy' },
+  'Unlimited Buggies': { weight: 2500, distribution: 48, driveType: 'AWD', pi: 700, torque: 300, displacement: 2.5, category: 'buggy' },
   'Classic Muscle': { weight: 3600, distribution: 54, driveType: 'RWD', pi: 520, torque: 400, displacement: 6.0, category: 'muscle' },
   'Extreme Track Toys': { weight: 2800, distribution: 45, driveType: 'RWD', pi: 920, torque: 500, displacement: 4.0, category: 'track' },
   'Hypercars': { weight: 3200, distribution: 44, driveType: 'AWD', pi: 980, torque: 700, displacement: 6.0, category: 'hyper' },
@@ -25,7 +25,7 @@ const typeSpecs: Record<string, { weight: number; distribution: number; driveTyp
   'Super GT': { weight: 3700, distribution: 50, driveType: 'RWD', pi: 820, torque: 550, displacement: 5.2, category: 'gt' },
   'Track Toys': { weight: 2900, distribution: 47, driveType: 'RWD', pi: 850, torque: 400, displacement: 3.8, category: 'track' },
   'Retro Supercars': { weight: 3200, distribution: 45, driveType: 'RWD', pi: 750, torque: 380, displacement: 3.5, category: 'super' },
-  'Vintage Racers': { weight: 1800, distribution: 50, driveType: 'RWD', pi: 280, torque: 150, displacement: 2.0, category: 'classic' },
+  'Vintage Racers': { weight: 2100, distribution: 50, driveType: 'RWD', pi: 280, torque: 150, displacement: 2.0, category: 'classic' },
   'Retro Muscle': { weight: 3500, distribution: 54, driveType: 'RWD', pi: 620, torque: 350, displacement: 5.7, category: 'muscle' },
   'Modern Muscle': { weight: 3900, distribution: 53, driveType: 'RWD', pi: 780, torque: 450, displacement: 6.2, category: 'muscle' },
   'Pickups & 4x4s': { weight: 5200, distribution: 56, driveType: 'AWD', pi: 650, torque: 400, displacement: 5.0, category: 'truck' },
@@ -38,8 +38,8 @@ const typeSpecs: Record<string, { weight: number; distribution: number; driveTyp
   'Classic Sports Cars': { weight: 2400, distribution: 50, driveType: 'RWD', pi: 420, torque: 150, displacement: 2.0, category: 'classic' },
   'Drift Cars': { weight: 3000, distribution: 52, driveType: 'RWD', pi: 700, torque: 400, displacement: 3.0, category: 'drift' },
   'Offroad': { weight: 3800, distribution: 52, driveType: 'AWD', pi: 680, torque: 350, displacement: 4.0, category: 'offroad' },
-  'Buggies': { weight: 1800, distribution: 48, driveType: 'RWD', pi: 550, torque: 150, displacement: 1.6, category: 'buggy' },
-  "UTV's": { weight: 1600, distribution: 50, driveType: 'AWD', pi: 500, torque: 120, displacement: 1.0, category: 'offroad' },
+  'Buggies': { weight: 2000, distribution: 48, driveType: 'RWD', pi: 550, torque: 150, displacement: 1.6, category: 'buggy' },
+  "UTV's": { weight: 1800, distribution: 50, driveType: 'AWD', pi: 500, torque: 120, displacement: 1.0, category: 'offroad' },
 };
 
 // Parse car data from the user's provided list
@@ -998,12 +998,15 @@ function buildCarDatabase(): FH5Car[] {
     const weightVariation = Math.floor((Math.random() - 0.5) * 200);
     const piVariation = Math.floor((Math.random() - 0.5) * 30);
     
+    // Ensure weight never goes below 1000 lbs (minimum safe weight)
+    const finalWeight = Math.max(1000, specs.weight + weightVariation);
+    
     carMap.set(id, {
       id,
       make,
       model,
       year,
-      weight: specs.weight + weightVariation,
+      weight: finalWeight,
       weightDistribution: specs.distribution + Math.floor((Math.random() - 0.5) * 4),
       driveType: specs.driveType,
       defaultPI: Math.max(100, Math.min(998, specs.pi + piVariation)),
