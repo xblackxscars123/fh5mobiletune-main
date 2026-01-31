@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -38,13 +39,7 @@ const router = createBrowserRouter(
     { path: "/shop/product/:handle", element: <ProductDetail />, errorElement: <RouteError /> },
     { path: "/telemetry-guide", element: <TelemetryGuide />, errorElement: <RouteError /> },
     { path: "*", element: <NotFound />, errorElement: <RouteError /> },
-  ],
-  {
-    future: {
-      v7_startTransition: true,
-      v7_relativeSplatPath: true,
-    } as any,
-  }
+  ]
 );
 
 const App = () => (

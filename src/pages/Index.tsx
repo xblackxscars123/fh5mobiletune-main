@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useMemo, useRef, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TuneTypeSelector } from '@/components/TuneTypeSelector';
 import { CarSpecsForm } from '@/components/CarSpecsForm';
@@ -13,38 +13,23 @@ import { ThemeBackground } from '@/components/ThemeBackground';
 import { TuningExpertChat, TuneContext } from '@/components/TuningExpertChat';
 import { TroubleshootingWizard } from '@/components/TroubleshootingWizard';
 import { TemplateSelector } from '@/components/TemplateSelector';
-import { BalanceStiffnessSliders, applyBalanceStiffness } from '@/components/BalanceStiffnessSliders';
+import { BalanceStiffnessSliders } from '@/components/BalanceStiffnessSliders';
 import { TuneCompare } from '@/components/TuneCompare';
 import { AuthModal } from '@/components/AuthModal';
 import { ModeSelection } from '@/components/ModeSelection';
 import { WorkflowIndicator } from '@/components/WorkflowIndicator';
-import { TuneTemplate } from '@/data/tuneTemplates';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CarSpecs, TuneType, TuneVariant, calculateTune, UnitSystem, TuneSettings, tuneVariantsByType, defaultTuneVariantByType } from '@/lib/tuningCalculator';
-import { parseTuneFromCurrentURL, copyShareURLToClipboard, generateShareURL } from '@/lib/tuneShare';
-import { FH5Car, getCarDisplayName } from '@/data/carDatabase';
-import { SavedTune, useSavedTunes } from '@/hooks/useSavedTunes';
+import { TuneVariant, tuneVariantsByType } from '@/lib/tuningCalculator';
+import { copyShareURLToClipboard, generateShareURL } from '@/lib/tuneShare';
+import { useSavedTunes } from '@/hooks/useSavedTunes';
 import { useAuth } from '@/hooks/useAuth';
+import { useTuneState } from '@/hooks/useTuneState';
 import { Calculator, RotateCcw, ShoppingBag, Zap, Settings, Wrench, Share2, Scale, CloudOff, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
-const defaultSpecs: CarSpecs = {
-  weight: 3000,
-  weightDistribution: 52,
-  driveType: 'RWD',
-  piClass: 'A',
-  hasAero: false,
-  tireCompound: 'sport',
-  horsepower: 400,
-  gearCount: 6,
-  tireWidth: 245,
-  tireProfile: 40,
-  rimSize: 19
-};
 
 export default function Index() {
-  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { savedTunes, syncLocalTunesToCloud } = useSavedTunes();
@@ -52,22 +37,45 @@ export default function Index() {
   const setupSectionRef = useRef<HTMLDivElement>(null);
   const resultsSectionRef = useRef<HTMLDivElement>(null);
   const tuneTypeSectionRef = useRef<HTMLDivElement>(null);
-  const [tuneType, setTuneType] = useState<TuneType>('grip');
-  const [variant, setVariant] = useState<TuneVariant>(defaultTuneVariantByType.grip);
-  const [specs, setSpecs] = useState<CarSpecs>(defaultSpecs);
-  const [showResults, setShowResults] = useState(false);
-  const [selectedCar, setSelectedCar] = useState<FH5Car | null>(null);
-  const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
-  const [isSimpleMode, setIsSimpleMode] = useState(true);
-  const [forceShowAdvancedOptions, setForceShowAdvancedOptions] = useState<boolean | undefined>(undefined);
-  const [showTroubleshooting, setShowTroubleshooting] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   
-  const [balance, setBalance] = useState(0);
-  const [stiffness, setStiffness] = useState(50);
-  const [manualOverrides, setManualOverrides] = useState<Partial<TuneSettings>>({});
+  // Use custom hook for state management
+  const tuneState = useTuneState({ user, syncLocalTunesToCloud });
+  const {
+    tuneType,
+    variant,
+    specs,
+    showResults,
+    selectedCar,
+    unitSystem,
+    isSimpleMode,
+    forceShowAdvancedOptions,
+    showTroubleshooting,
+    showAuthModal,
+    balance,
+    stiffness,
+    tuneSettings,
+    carName,
+    setTuneType,
+    setVariant,
+    setSpecs,
+    setUnitSystem,
+    setIsSimpleMode,
+    setForceShowAdvancedOptions,
+    setShowTroubleshooting,
+    setShowAuthModal,
+    setBalance,
+    setStiffness,
+    handleCarSelect,
+    handleCalculate,
+    handleReset,
+    handleLoadTune,
+    handleApplyAISuggestion,
+    handleApplyTemplate,
+    handleModeChange,
+  } = tuneState;
 
-  const scrollToFirstSpecsInput = () => {
+  // Memoized callbacks for optimization
+  const scrollToFirstSpecsInput = useCallback(() => {
     setTimeout(() => {
       const el = document.getElementById('specs-first-input') as HTMLInputElement | null;
       if (!el) {
@@ -82,145 +90,15 @@ export default function Index() {
         el.focus();
       }
     }, 0);
-  };
-
-  useEffect(() => {
-    if (location.state?.selectedCar) {
-      const car = location.state.selectedCar as FH5Car;
-      const tuningMode = location.state.tuningMode as 'simple' | 'advanced' | undefined;
-      const scrollTo = location.state.scrollTo as 'specs' | 'tuneType' | undefined;
-      const isAdvanced = tuningMode === 'advanced';
-
-      if (tuningMode) {
-        setIsSimpleMode(tuningMode === 'simple');
-      }
-
-      setSelectedCar(car);
-      setSpecs(prev => ({
-        ...prev,
-        weight: car.weight,
-        weightDistribution: car.weightDistribution,
-        driveType: car.driveType
-      }));
-      toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
-
-      if (scrollTo === 'tuneType') {
-        setTimeout(() => {
-          tuneTypeSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 0);
-      } else if (scrollTo === 'specs') {
-        scrollToFirstSpecsInput();
-
-        if (isAdvanced) {
-          setForceShowAdvancedOptions(true);
-          setTimeout(() => {
-            setForceShowAdvancedOptions(undefined);
-          }, 0);
-        }
-      }
-
-      window.history.replaceState({}, document.title);
-    }
-    
-    // Handle loading tune from community page
-    if (location.state?.loadTune) {
-      const { specs: tuneSpecs, tuneType: loadedTuneType, carName: loadedCarName } = location.state.loadTune;
-      setSpecs(tuneSpecs);
-      setTuneType(loadedTuneType);
-      setVariant(defaultTuneVariantByType[loadedTuneType]);
-      setShowResults(true);
-      setSelectedCar(null);
-      setBalance(0);
-      setStiffness(50);
-      setManualOverrides({});
-      toast.success(`Loaded community tune for ${loadedCarName}`);
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
-
-  useEffect(() => {
-    const sharedTune = parseTuneFromCurrentURL();
-    if (sharedTune) {
-      setSpecs(sharedTune.specs);
-      setTuneType(sharedTune.tuneType);
-      setVariant(defaultTuneVariantByType[sharedTune.tuneType]);
-      setShowResults(true);
-      toast.success('Loaded shared tune!');
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
   }, []);
 
-  useEffect(() => {
-    setVariant(defaultTuneVariantByType[tuneType]);
-  }, [tuneType]);
-
-  useEffect(() => {
-    if (user) {
-      syncLocalTunesToCloud();
-    }
-  }, [user, syncLocalTunesToCloud]);
-
-  const tuneSettings = useMemo(() => {
-    const baseTune = calculateTune(specs, tuneType, { variant });
-    const { arbFront, arbRear, springsFront, springsRear } = applyBalanceStiffness(
-      baseTune.arbFront, baseTune.arbRear, baseTune.springsFront, baseTune.springsRear, balance, stiffness
-    );
-    return { ...baseTune, arbFront, arbRear, springsFront, springsRear, ...manualOverrides };
-  }, [specs, tuneType, variant, balance, stiffness, manualOverrides]);
-
-  const carName = selectedCar ? getCarDisplayName(selectedCar) : 'Custom Car';
-
-  const tuneContext: TuneContext | undefined = showResults ? {
-    carName, tuneType, specs, currentTune: tuneSettings, unitSystem
-  } : undefined;
-
-  const handleCarSelect = (car: FH5Car) => {
-    setSelectedCar(car);
-    setSpecs({ ...specs, weight: car.weight, weightDistribution: car.weightDistribution, driveType: car.driveType });
-    setVariant(defaultTuneVariantByType[tuneType]);
-    setBalance(0);
-    setStiffness(50);
-    setManualOverrides({});
-    toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
-  };
-
-  const handleCalculate = () => {
-    setShowResults(true);
-    toast.success('Tune calculated!');
-    setTimeout(() => {
-      resultsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 0);
-  };
-
-  const handleReset = () => {
-    setSpecs(defaultSpecs);
-    setTuneType('grip');
-    setVariant(defaultTuneVariantByType.grip);
-    setShowResults(false);
-    setSelectedCar(null);
-    setBalance(0);
-    setStiffness(50);
-    setManualOverrides({});
-  };
-
-  const handleLoadTune = (tune: SavedTune) => {
-    setSpecs(tune.specs);
-    setTuneType(tune.tuneType);
-    setVariant(defaultTuneVariantByType[tune.tuneType]);
-    setShowResults(true);
-    setSelectedCar(null);
-    setBalance(0);
-    setStiffness(50);
-    setManualOverrides({});
-  };
-
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     const success = await copyShareURLToClipboard({ specs, tuneType, carName });
     if (success) toast.success('Share link copied!');
     else toast.error('Failed to copy link');
-  };
+  }, [specs, tuneType, carName]);
 
-  const handleShareToReddit = () => {
+  const handleShareToReddit = useCallback(() => {
     const url = generateShareURL({ specs, tuneType, carName });
     if (!url) {
       toast.error('Failed to generate share link');
@@ -230,28 +108,9 @@ export default function Index() {
     const title = `FH5 Tune: ${carName} (${tuneType})`;
     const redditSubmitUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
     window.open(redditSubmitUrl, '_blank', 'noopener,noreferrer');
-  };
+  }, [specs, tuneType, carName]);
 
-  const handleApplyAISuggestion = (setting: string, value: number) => {
-    const settingMap: Record<string, keyof TuneSettings> = {
-      'arb front': 'arbFront', 'arb rear': 'arbRear', 'front arb': 'arbFront', 'rear arb': 'arbRear',
-      'springs front': 'springsFront', 'springs rear': 'springsRear',
-    };
-    const key = settingMap[setting.toLowerCase()];
-    if (key) {
-      setManualOverrides(prev => ({ ...prev, [key]: value }));
-      toast.success(`Applied: ${setting} → ${value}`);
-    }
-  };
-
-  const handleApplyTemplate = (template: TuneTemplate) => {
-    setBalance(template.modifiers.balance);
-    setStiffness(template.modifiers.stiffness);
-    setManualOverrides({});
-    toast.success(`Applied "${template.name}" template`);
-  };
-
-  const handleSwitchToAdvanced = () => {
+  const handleSwitchToAdvanced = useCallback(() => {
     setIsSimpleMode(false);
     setForceShowAdvancedOptions(true);
     setTimeout(() => {
@@ -260,14 +119,9 @@ export default function Index() {
     setTimeout(() => {
       setForceShowAdvancedOptions(undefined);
     }, 0);
-  };
+  }, [setIsSimpleMode, setForceShowAdvancedOptions]);
 
-  const handleModeChange = (mode: 'simple' | 'advanced') => {
-    setIsSimpleMode(mode === 'simple');
-    navigate('/cars', { state: { tuningMode: mode } });
-  };
-
-  const handleConfigureSpecs = () => {
+  const handleConfigureSpecs = useCallback(() => {
     scrollToFirstSpecsInput();
 
     if (!isSimpleMode) {
@@ -276,9 +130,19 @@ export default function Index() {
         setForceShowAdvancedOptions(undefined);
       }, 0);
     }
-  };
+  }, [scrollToFirstSpecsInput, isSimpleMode, setForceShowAdvancedOptions]);
 
-  const currentStep = showResults ? 3 : selectedCar ? 2 : 1;
+  // Memoized current step calculation
+  const currentStep = useMemo(() => {
+    return showResults ? 3 : selectedCar ? 2 : 1;
+  }, [showResults, selectedCar]);
+
+  // Memoized tune context
+  const tuneContext: TuneContext | undefined = useMemo(() => {
+    return showResults ? {
+      carName, tuneType, specs, currentTune: tuneSettings, unitSystem
+    } : undefined;
+  }, [showResults, carName, tuneType, specs, tuneSettings, unitSystem]);
 
   return (
     <div className="min-h-screen pb-8 md:pb-16 relative overflow-x-hidden">
