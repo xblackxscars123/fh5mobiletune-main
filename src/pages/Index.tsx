@@ -1,4 +1,4 @@
-import { useMemo, useRef, useCallback, useEffect } from 'react';
+import { useMemo, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TuneTypeSelector } from '@/components/TuneTypeSelector';
@@ -132,10 +132,7 @@ export default function Index() {
     }
   }, [scrollToFirstSpecsInput, isSimpleMode, setForceShowAdvancedOptions]);
 
-  // Debug logging to track selectedCar state
-  useEffect(() => {
-    console.log('Index page selectedCar:', selectedCar);
-  }, [selectedCar]);
+  // Memoized current step calculation
   const currentStep = useMemo(() => {
     return showResults ? 3 : selectedCar ? 2 : 1;
   }, [showResults, selectedCar]);

@@ -315,16 +315,34 @@ export default function Cars() {
                       const mainPhoto = photoMap ? getMainCarPhoto(car, photoMap) : null;
                       const imgSrc = mainPhoto?.url || getFallbackCarImage(car);
                       return (
-                        <a href={forumLink || '#'} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                        <div className="relative w-full h-full">
                           <img
                             src={imgSrc}
                             alt={`${car.make} ${car.model}`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover cursor-pointer"
                             onError={(e) => {
                               e.currentTarget.src = getFallbackCarImage(car);
                             }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectCar(car);
+                            }}
                           />
-                        </a>
+                          {forumLink && (
+                            <a
+                              href={forumLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white p-1.5 rounded-full transition-colors"
+                              title="View forum thread"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          )}
+                        </div>
                       );
                     })()}
                   </div>

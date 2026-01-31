@@ -63,8 +63,6 @@ export const useTuneState = ({ user, syncLocalTunesToCloud }: UseTuneStateOption
   // Handle location state changes (navigation from other pages)
   useEffect(() => {
     const processSelectedCar = (car: FH5Car, tuningMode?: 'simple' | 'advanced') => {
-      console.log('Loading car from location state:', car);
-
       if (tuningMode) {
         setIsSimpleMode(tuningMode === 'simple');
       }
