@@ -5,7 +5,7 @@ import { CarSpecs, TuneType, TuneVariant, calculateTune, UnitSystem, TuneSetting
 import { parseTuneFromCurrentURL } from '@/lib/tuneShare';
 import { FH5Car } from '@/types/car';
 import { getCarDisplayName } from '@/data/carDatabase';
-import { getVerifiedSpecs, hasVerifiedSpecs } from '@/data/verifiedCarSpecs';
+import { getVerifiedSpecs } from '@/data/verifiedCarSpecs';
 import { applyBalanceStiffness } from '@/components/BalanceStiffnessSliders';
 
 const defaultSpecs: CarSpecs = {
@@ -62,15 +62,17 @@ export const useTuneState = ({ user, syncLocalTunesToCloud }: UseTuneStateOption
 
   // Handle location state changes (navigation from other pages)
   useEffect(() => {
-    if (location.state?.selectedCar) {
-      const car = location.state.selectedCar as FH5Car;
-      const tuningMode = location.state.tuningMode as 'simple' | 'advanced' | undefined;
+    const processSelectedCar = (car: FH5Car, tuningMode?: 'simple' | 'advanced') => {
+      console.log('Loading car from location state:', car);
 
       if (tuningMode) {
         setIsSimpleMode(tuningMode === 'simple');
       }
 
       setSelectedCar(car);
+      
+      // Store in sessionStorage as backup
+      sessionStorage.setItem('selectedCar', JSON.stringify(car));
       
       // Check for verified specs first
       const verifiedSpecs = getVerifiedSpecs(car.year, car.make, car.model);
@@ -95,11 +97,33 @@ export const useTuneState = ({ user, syncLocalTunesToCloud }: UseTuneStateOption
         }));
         toast.success(`Loaded ${car.year} ${car.make} ${car.model}`);
       }
+    };
 
+    if (location.state?.selectedCar) {
+      const car = location.state.selectedCar as FH5Car;
+      const tuningMode = location.state.tuningMode as 'simple' | 'advanced' | undefined;
+      
+      processSelectedCar(car, tuningMode);
+      
+      // Clear location state after processing
       window.history.replaceState({}, document.title);
+    } else if (!selectedCar) {
+      // Check sessionStorage as backup
+      const storedCar = sessionStorage.getItem('selectedCar');
+      if (storedCar) {
+        try {
+          const car = JSON.parse(storedCar) as FH5Car;
+          processSelectedCar(car);
+        } catch (error) {
+          console.error('Failed to parse stored car:', error);
+          sessionStorage.removeItem('selectedCar');
+        }
+      }
     }
-    
-    // Handle loading tune from community page
+  }, [location.state, selectedCar]);
+
+  // Handle loading tune from community page
+  useEffect(() => {
     if (location.state?.loadTune) {
       const { specs: tuneSpecs, tuneType: loadedTuneType, carName: loadedCarName } = location.state.loadTune;
       setSpecs(tuneSpecs);
@@ -143,6 +167,9 @@ export const useTuneState = ({ user, syncLocalTunesToCloud }: UseTuneStateOption
   // Callback handlers
   const handleCarSelect = useCallback((car: FH5Car) => {
     setSelectedCar(car);
+    
+    // Clear sessionStorage since user is manually selecting
+    sessionStorage.removeItem('selectedCar');
     
     // Check for verified specs first
     const verifiedSpecs = getVerifiedSpecs(car.year, car.make, car.model);
@@ -188,6 +215,9 @@ export const useTuneState = ({ user, syncLocalTunesToCloud }: UseTuneStateOption
     setBalance(0);
     setStiffness(50);
     setManualOverrides({});
+    
+    // Clear sessionStorage on reset
+    sessionStorage.removeItem('selectedCar');
   }, []);
 
   const handleLoadTune = useCallback((tune: { specs: CarSpecs; tuneType: TuneType }) => {

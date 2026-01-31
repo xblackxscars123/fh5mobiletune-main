@@ -21,6 +21,7 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
   const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>('bottom');
 
   useEffect(() => {
+    console.log('CarSelector selectedCar changed:', selectedCar);
     if (selectedCar) {
       setQuery(getCarDisplayName(selectedCar));
     }
