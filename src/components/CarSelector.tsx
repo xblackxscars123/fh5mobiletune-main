@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FH5Car, searchCars, getCarDisplayName } from '@/data/carDatabase';
+import { FH5Car } from '@/types/car';
+import { searchCars, getCarDisplayName } from '@/data/carDatabase';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Search, Car } from 'lucide-react';
@@ -16,6 +17,7 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [photoMap, setPhotoMap] = useState<Map<string, any>>(new Map());
+  const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>('bottom');
 
   useEffect(() => {
     if (selectedCar) {
@@ -49,7 +51,13 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
           placeholder="Search 700+ cars... (e.g., Supra, M3, GT-R)"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setIsFocused(true)}
+          onFocus={(e) => {
+            setIsFocused(true);
+            const rect = e.currentTarget.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const estimatedDropdownHeight = 400; // max-h-96 in pixels
+            setDropdownPosition(spaceBelow < estimatedDropdownHeight ? 'top' : 'bottom');
+          }}
           onBlur={() => setTimeout(() => setIsFocused(false), 200)}
           className="pl-10 bg-muted border-border focus:border-primary h-12"
         />
@@ -65,7 +73,9 @@ export function CarSelector({ onSelect, selectedCar }: CarSelectorProps) {
         </div>
         
         {isFocused && results.length > 0 && (
-          <Card className="absolute z-50 w-full mt-1 max-h-64 overflow-y-auto bg-card border-border shadow-xl">
+          <Card className={`absolute z-50 w-full max-h-96 overflow-y-auto bg-card border-border shadow-xl ${
+            dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}>
             {results.map((car) => {
               const mainPhoto = getMainCarPhoto(car, photoMap);
               const photoUrl = mainPhoto ? mainPhoto.url : getFallbackCarImage(car);
